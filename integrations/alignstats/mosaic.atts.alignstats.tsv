@@ -1,0 +1,11 @@
+project	Alignstats Data	string
+sample	Duplicate Reads Percent (Alignstats)	float	DuplicateReadsPct	Percent (%)	Sample Count
+sample	Insert Size Mean (Alignstats)	float	InsertSizeMean	Mean Size (bp)	Sample Count
+sample	Insert Size Median (Alignstats)	float	InsertSizeMedian	Median Size (bp)	Sample Count
+sample	Q20 Bases Percent (Alignstats)	float	Q20BasesPct	Percent (%)	Sample Count
+sample	Soft Clipped Bases Percent (Alignstats)	float	SoftClippedBasesPct	Percent (%)	Sample Count
+sample	Soft Clipped Reads Percent (Alignstats)	float	SoftClippedReadsPct	Percent (%)	Sample Count
+sample	Unmapped Reads Percent (Alignstats)	float	UnmappedReadsPct	Percent (%)	Sample Count
+sample	WGS Coverage Bases 20 Percent (Alignstats)	float	WgsCoverageBases20Pct	Coverage	Sample Count
+sample	WGS Coverage Mean (Alignstats)	float	WgsCoverageMean	Coverage	Sample Count
+sample	WGS Coverage Median (Alignstats)	float	WgsCoverageMedian	Coverage	Sample Count
