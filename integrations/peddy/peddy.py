@@ -118,8 +118,8 @@ def parseAttributes(args):
     elif attributes[0] == "sample":
 
       # Put the attributes in the correct array.
-      location = str(attributes[3]) + "/" + str(attributes[4])
-      sampleAttributes[attributes[1]] = {"id": False, "uid": False, "type": attributes[2], "html": location, "values": {}}
+      location = str(attributes[4]) + "/" + str(attributes[5])
+      sampleAttributes[attributes[1]] = {"id": False, "uid": False, "type": attributes[2], "html": location, "xlabel": attributes[3], "ylabel": "", "values": {}}
   
     # If the attribute is not correctly defined, add the line to the errors
     else:
@@ -157,7 +157,9 @@ def createAttributes(args):
   command = args.apiCommands + "/create_sample_attribute.sh " + args.token + " \"" + args.url + "\" " + str(peddyProjectId)
   for attribute in sampleAttributes:
     attType  = sampleAttributes[attribute]["type"]
-    body     = " \"" + str(attribute) + "\" \"" + str(attType) + "\" Null true"
+    xlabel   = sampleAttributes[attribute]["xlabel"]
+    ylabel   = sampleAttributes[attribute]["ylabel"]
+    body     = " \"" + str(attribute) + "\" \"" + str(attType) + "\" \"" + xlabel + "\" \"" + ylabel + "\" Null true"
     jsonData = json.loads(os.popen(command + body).read())
 
 # Import the attributes into the current project
@@ -282,8 +284,8 @@ def buildAttributes():
   for sample in samples:
     ran = float((random() - 0.5)/ 2)
     sex = sampleAttributes["Sex (Peddy)"]["values"][sample]
-    if sex == "male": sampleAttributes["Sex spread (Peddy)"]["values"][sample] = float ( 1 + ran)
-    elif sex == "female": sampleAttributes["Sex spread (Peddy)"]["values"][sample] = ran
+    if sex == "male": sampleAttributes["Sex Spread (Peddy)"]["values"][sample] = float ( 1 + ran)
+    elif sex == "female": sampleAttributes["Sex Spread (Peddy)"]["values"][sample] = ran
     else: print("Unknown gender for sample ", sample, ": \"", sex, "\"", sep = ""); exit(1)
 
 # Print out data for import into Mosaic

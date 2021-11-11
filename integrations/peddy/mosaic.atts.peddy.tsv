@@ -1,26 +1,26 @@
 project	Peddy Data	string
-sample	Sex Het Count (Peddy)	float	sex_data	het_count
-sample	Sex Het Ratio (Peddy)	float	sex_data	het_ratio
-sample	Sex Hom Alt count (Peddy)	float	sex_data	hom_alt_count
-sample	Sex Hom Ref count (Peddy)	float	sex_data	hom_ref_count
-sample	Sex (Peddy)	string	sex_data	ped_sex
-sample	Predicted Sex (Peddy)	string	sex_data	predicted_sex
-sample	Depth Outlier (Peddy)	string	het_data	depth_outlier
-sample	Het Count (Peddy)	float	het_data	het_count
-sample	Het Ratio (Peddy)	float	het_data	het_ratio
-sample	Het Idr Baf (Peddy)	float	het_data	idr_baf
-sample	Mean Depth (Peddy)	float	het_data	mean_depth
-sample	Median Depth (Peddy)	float	het_data	median_depth
-sample	P10 (Peddy)	float	het_data	p10
-sample	P90 (Peddy)	float	het_data	p90
-sample	Sampled Sites (Peddy)	float	het_data	sampled_sites
-sample	Call Rate (Peddy)	float	het_data	call_rate
-sample	Ancestry PC1 (Peddy)	float	het_data	PC1
-sample	Ancestry PC2 (Peddy)	float	het_data	PC2
-sample	Ancestry PC3 (Peddy)	float	het_data	PC3
-sample	Ancestry PC4 (Peddy)	float	het_data	PC4
-sample	Ancestry Prediction (Peddy)	string	het_data	ancestry-prediction
-sample	Ancestry Probability (Peddy)	float	het_data	ancestry-prob
-sample	Phenotype (Peddy)	string	pedigree	phenotype
-sample	Sex Error (Peddy)	string	pedigree	sex_error
-sample	Sex Spread (Peddy)	float	additional	sex_random
+sample	Sex Het Count (Peddy)	float	Count	sex_data	het_count
+sample	Sex Het Ratio (Peddy)	float	Ratio	sex_data	het_ratio
+sample	Sex Hom Alt Count (Peddy)	float	Count	sex_data	hom_alt_count
+sample	Sex Hom Ref Count (Peddy)	float	Count	sex_data	hom_ref_count
+sample	Sex (Peddy)	string	Sex	sex_data	ped_sex
+sample	Predicted Sex (Peddy)	string	Predicted Sex	sex_data	predicted_sex
+sample	Depth Outlier (Peddy)	string	Is Outlier	het_data	depth_outlier
+sample	Het Count (Peddy)	float	Count	het_data	het_count
+sample	Het Ratio (Peddy)	float	Ratio	het_data	het_ratio
+sample	Het Idr Baf (Peddy)	float	Idr Baf	het_data	idr_baf
+sample	Mean Depth (Peddy)	float	Depth (X)	het_data	mean_depth
+sample	Median Depth (Peddy)	float	Depth (X)	het_data	median_depth
+sample	P10 (Peddy)	float	P10	het_data	p10
+sample	P90 (Peddy)	float	P90	het_data	p90
+sample	Sampled Sites (Peddy)	float	Number of Sites	het_data	sampled_sites
+sample	Call Rate (Peddy)	float	Rate	het_data	call_rate
+sample	Ancestry PC1 (Peddy)	float	PC1	het_data	PC1
+sample	Ancestry PC2 (Peddy)	float	PC2	het_data	PC2
+sample	Ancestry PC3 (Peddy)	float	PC3	het_data	PC3
+sample	Ancestry PC4 (Peddy)	float	PC4	het_data	PC4
+sample	Ancestry Prediction (Peddy)	string	Ancestry	het_data	ancestry-prediction
+sample	Ancestry Probability (Peddy)	float	Probability	het_data	ancestry-prob
+sample	Phenotype (Peddy)	string	Phenotype	pedigree	phenotype
+sample	Sex Error (Peddy)	string	Error	pedigree	sex_error
+sample	Sex Spread (Peddy)	float	Spread	additional	sex_random
