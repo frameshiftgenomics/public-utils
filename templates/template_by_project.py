@@ -261,6 +261,9 @@ def processProjectConversations(args, template, projectId, pinnedConversations):
     description    = conversation["description"]
     conversationId = conversation["id"]
 
+    # The description might contain multiple lines which will break the curl command. Replace all newlines with \n
+    if "\n" in description: description = description.replace("\n", "\\n")
+
     # Build the command to create the conversation if a conversation of the same title doesn't already exist
     if title not in existingConvs:
       command   = args.path + "/post_conversation.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project)
