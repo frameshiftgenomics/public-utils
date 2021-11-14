@@ -8,6 +8,7 @@ import json
 import math
 
 def main():
+  global startingAttributes
 
   # Parse the command line
   args = parseCommandLine()
@@ -23,16 +24,11 @@ def main():
   # all others
   templateOrder.append(args.template)
 
+  # Determine the starting status of the project
+  getStartingAttributes(args)
+
   # Loop over the templates and pull in the relevant information
   for template in templateOrder: processTemplateProject(args, template)
-  exit(0)
-
-  # Get all the public attributes in Mosaic
-  getPublicAttributes(args)
-
-  # Create conversations and import the project attributes
-  createConversations(args)
-  importAttributes(args)
 
 # Input options
 def parseCommandLine():
@@ -158,7 +154,19 @@ def processNestedTemplates(template):
   for order in sorted(observedOrder.keys()): templateOrder.append(observedOrder[order])
 
   return templateOrder
-  
+
+# Get all the proect attributes in the working project prior to running the template. If the template is run on an
+# existing project, existing attributes will not be overwritten
+def getStartingAttributes(args):
+  global startingAttributes
+
+  # Get all the project attributes
+  command  = args.path + "/get_project_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(args.project)
+  jsonData = json.loads(os.popen(command).read())
+
+  # Loop over the attributes
+  for attribute in jsonData: startingAttributes.append(attribute["id"])
+
 # Extract all the information from a project and import into the new project
 def processTemplateProject(args, template):
   global availableTemplates
@@ -175,6 +183,45 @@ def processTemplateProject(args, template):
   # Process conversations
   processProjectConversations(args, template, projectId, pinnedConversations)
 
+# Take the public project attributes from a template and make available in the working project
+def processProjectAttributes(args, template, projectId, pinnedAttributes):
+  global templateAttributes
+  global projectAttributes
+  global startingAttributes
+
+  # Begin by getting all the public attributes from the project
+  command = args.path + "/get_project_attributes.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(projectId)
+  data    = json.loads(os.popen(command).read())
+
+  # If the same object is pinned to the dashboard multiple times, it will appear on the dashboard multiple times. Get
+  # the attributes that are pinned to the working project to make sure no double pinning takes place
+  pinnedProjectAttributes, pinnedProjectConversations = processDashboard(args, template, args.project)
+
+  # Loop over the attributes
+  for attribute in data:
+    attributeId    = attribute["id"]
+    attributeValue = attribute["values"][0]["value"]
+
+    # Ignore template attributes
+    if (attributeId not in templateAttributes) and (attributeId not in startingAttributes):
+
+      # Check if the attribute is already present in the project being set up. If not, import the attribute, otherwise,
+      # update it with the value defined here
+      if attributeId in projectAttributes:
+        command    = str(args.path) + "/put_project_attribute_value.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project)
+        command   += " " + str(attributeId) + " \"" + str(attributeValue) + "\""
+        updateData = json.loads(os.popen(command).read())
+      else:
+        projectAttributes.append(attributeId)
+        command    = str(args.path) + "/import_project_attribute.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) 
+        command   += " " + str(attributeId) + " \"" + str(attributeValue) + "\""
+        importData = json.loads(os.popen(command).read())
+
+      # If the attribute needs to be pinned to the dashboard, pin in
+      if attributeId in pinnedAttributes and attributeId not in pinnedProjectAttributes:
+        command = str(args.path) + "/pin_attribute.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) + " " + str(attributeId)
+        pinData = json.loads(os.popen(command).read())
+  
 # Determine the status of objects on the dashboard in the template project and replicate in the working project
 def processDashboard(args, template, projectId):
   pinnedAttributes    = []
@@ -195,44 +242,6 @@ def processDashboard(args, template, projectId):
       elif dashboardObject["type"] == "conversation": pinnedConversations.append(dashboardObject["project_conversation_id"])
 
   return pinnedAttributes, pinnedConversations
-
-# Take the public project attributes from a template and make available in the working project
-def processProjectAttributes(args, template, projectId, pinnedAttributes):
-  global templateAttributes
-  global projectAttributes
-
-  # Begin by getting all the public attributes from the project
-  command = args.path + "/get_project_attributes.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(projectId)
-  data    = json.loads(os.popen(command).read())
-
-  # If the same object is pinned to the dashboard multiple times, it will appear on the dashboard multiple times. Get
-  # the attributes that are pinned to the working project to make sure no double pinning takes place
-  pinnedProjectAttributes, pinnedProjectConversations = processDashboard(args, template, args.project)
-
-  # Loop over the attributes
-  for attribute in data:
-    attributeId    = attribute["id"]
-    attributeValue = attribute["values"][0]["value"]
-
-    # Ignore template attributes
-    if attributeId not in templateAttributes:
-
-      # Check if the attribute is already present in the project being set up. If not, import the attribute, otherwise,
-      # update it with the value defined here
-      if attributeId in projectAttributes:
-        command    = str(args.path) + "/put_project_attribute_value.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project)
-        command   += " " + str(attributeId) + " \"" + str(attributeValue) + "\""
-        updateData = json.loads(os.popen(command).read())
-      else:
-        projectAttributes.append(attributeId)
-        command    = str(args.path) + "/import_project_attribute.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) 
-        command   += " " + str(attributeId) + " \"" + str(attributeValue) + "\""
-        importData = json.loads(os.popen(command).read())
-
-      # If the attribute needs to be pinned to the dashboard, pin in
-      if attributeId in pinnedAttributes and attributeId not in pinnedProjectAttributes:
-        command = str(args.path) + "/pin_attribute.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) + " " + str(attributeId)
-        pinData = json.loads(os.popen(command).read())
 
 # Take the conversations from a template and make available in the working project
 def processProjectConversations(args, template, projectId, pinnedConversations):
@@ -294,6 +303,9 @@ def fail(text):
 
 
 # Initialise global variables
+
+# Store the ids of the project attributes present on the dashboard prior to running the template
+startingAttributes = []
 
 # Store the project ids of the available templates
 availableTemplates = {}
