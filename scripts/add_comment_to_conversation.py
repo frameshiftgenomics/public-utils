@@ -56,10 +56,17 @@ def  getConversationID(args):
     # Break the loop if the conversation has been found
     if conversationId: continue
 
+  # If the conversation wasn't found, fail.
+  if not conversationId:
+    print("Couldn't find a conversation with the title: ", args.conversationTitle, sep = "")
+    exit(1)
+
   return conversationId
 
 # Add the comment to the conversation
 def addComment(args, conversationId):
+  command = args.apiCommands + "/post_conversation_comment.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) + " \"" + str(args.comment) + "\" " + str(conversationId)
+  data    = json.loads(os.popen(command).read())
 
 # Initialise global variables
 
