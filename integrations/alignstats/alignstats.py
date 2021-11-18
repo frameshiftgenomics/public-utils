@@ -56,7 +56,7 @@ def main():
 def parseCommandLine():
   parser = argparse.ArgumentParser(description='Process the command line arguments')
   parser.add_argument('--input', '-i', required = True, metavar = "file", help = "The input file listing samples and json files")
-  parser.add_argument('--attributesFile', '-f', required = True, metavar = "file", help = "The input file listing the Peddy attributes")
+  parser.add_argument('--attributesFile', '-f', required = True, metavar = "file", help = "The input file listing the Alignstats attributes")
   parser.add_argument('--output', '-o', required = True, metavar = "file", help = "The output file containing the values to upload. Extension must be tsv")
   parser.add_argument('--attributesProject', '-a', required = True, metavar = "integer", help = "The Mosaic project id that contains public attributes")
   parser.add_argument('--token', '-t', required = True, metavar = "string", help = "The Mosaic authorization token")
@@ -354,7 +354,7 @@ def outputErrors(errorCode):
 # The id of the project holding alignstats attributes
 alignstatsProjectId = False
   
-# Dictionaries to match Peddy attribute names to their location in the html file
+# Dictionaries to match Alignstats attribute names to their location in the html file
 projectAttributes = {}
 sampleAttributes  = {}
 
