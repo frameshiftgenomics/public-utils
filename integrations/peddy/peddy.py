@@ -73,6 +73,7 @@ def checkStatus(args):
   # Check the public attributes project for the project attribute indicating that the peddy integration
   # has been run before
   command = args.apiCommands + "/get_project_attributes.sh " + args.token + " " + args.url + " " + args.attributesProject
+  print(command)
   data    = json.loads(os.popen(command).read())
 
   # Loop over all the project attributes and look for attribute "Peddy Integration xa545Ihs"
@@ -268,6 +269,21 @@ def readPeddyHtml(args):
     # Get the background data
     elif line.startswith("var background_pca"):
       background = json.loads(line.split("= ")[1])
+
+      # The background file contains information for some known attriubtes. Change the name of the
+      # attributes to the Mosaic uid.
+      pc1      = sampleAttributes["Ancestry PC1 (Peddy)"]["uid"]
+      pc2      = sampleAttributes["Ancestry PC2 (Peddy)"]["uid"]
+      pc3      = sampleAttributes["Ancestry PC3 (Peddy)"]["uid"]
+      pc4      = sampleAttributes["Ancestry PC4 (Peddy)"]["uid"]
+      ancestry = sampleAttributes["Ancestry Prediction (Peddy)"]["uid"]
+      for info in background:
+        info[pc1]      = info.pop("PC1")
+        info[pc2]      = info.pop("PC2")
+        info[pc3]      = info.pop("PC3")
+        info[pc4]      = info.pop("PC4")
+        info[ancestry] = info.pop("ancestry")
+
       backgroundFile = open(args.background, "w")
       print(json.dumps(background), file = backgroundFile)
       backgroundFile.close()
