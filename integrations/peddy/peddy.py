@@ -46,6 +46,10 @@ def main():
   # Import the attributes into the current project and upload the values
   importAttributes(args)
 
+  # In order to build the ancestry chart, the background data needs to be posted to the project
+  backgroundsId = postBackgrounds(args)
+  buildChart(args, backgroundsId)
+
   # Output the observed errors.
   outputErrors(0)
 
@@ -351,16 +355,48 @@ def importAttributes(args):
   # Loop over all the defined sample attributes and import them, but only if the parsing of the peddy
   # html was successful
   if hasSampleAttributes:
-    command = args.apiCommands + "/import_sample_attribute.sh " + args.token + " \"" + args.url + "\" \"" + str(args.project) + "\" "
+    command = args.apiCommands + "/import_sample_attribute.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
     for attribute in sampleAttributes:
       attributeId = sampleAttributes[attribute]["id"]
       body        = "\"" + str(attributeId) + "\""
       jsonData    = json.loads(os.popen(command + body).read())
   
     # Upload the sample attribute values tsv
-    command  = args.apiCommands + "/upload_sample_attribute_tsv.sh " + args.token + " \"" + args.url + "\" \"" + str(args.project) + "\" \""
+    command  = args.apiCommands + "/upload_sample_attribute_tsv.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" \""
     command += str(args.path) + "/" + str(args.output) + "\""
     data     = os.popen(command)
+
+# Post the background data
+def postBackgrounds(args):
+
+  # Build the command to POST
+  command  = args.apiCommands + "/post_backgrounds.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
+  command += "\"Ancestry Backgrounds\" " + str(args.background)
+  try: data = json.loads(os.popen(command).read())
+  except:
+    print("Failed to post backgrounds")
+    exit(1)
+
+  return data["id"]
+
+# Build the ancestry chart
+def buildChart(args, backgroundsId):
+  global sampleAttributes
+
+  # Get the ids of the PC1 and PC2 attributes
+  pc1     = sampleAttributes["Ancestry PC1 (Peddy)"]["id"]
+  pc2     = sampleAttributes["Ancestry PC2 (Peddy)"]["id"]
+  colorBy = sampleAttributes["Ancestry Prediction (Peddy)"]["id"]
+
+  # Build the command to post a chart
+  command  = args.apiCommands + "/post_backgrounds_chart.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
+  command += "\"" + str(pc2) + "\" \"" + str(backgroundsId) + "\" \"Ancestry (Peddy)\" \"" + str(colorBy) + "\" \"" + str(pc1) + "\" "
+  command += "\"PC2\""
+
+  try: data = json.loads(os.popen(command).read())
+  except:
+    print("Failed to post chart")
+    exit(1)
 
 ###############
 ###############
