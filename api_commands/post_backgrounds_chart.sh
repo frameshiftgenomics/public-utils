@@ -10,7 +10,7 @@ COLOR=$7
 COMPARE=$8
 YLABEL=$9
 
-BODY="{\"name\": \"$NAME\", \"chart_type\": \"scatterplot\", \"y_label\": \"$YLABEL\", \"attribute_id\": \"$ATTRIBUTE_ID\", \"project_background_id\": \"$BACKGROUND_ID\", \"saved_chart_data\": {\"x_domain\": [], \"color_by_attribute_id\": \"$COLOR\", \"compare_to_attribute_id\": \"$COMPARE\"}}"
+BODY="{\"name\": \"$NAME\", \"chart_type\": \"scatterplot\", \"y_label\": \"$YLABEL\", \"attribute_id\": \"$ATTRIBUTE_ID\", \"project_background_id\": \"$BACKGROUND_ID\", \"saved_chart_data\": {\"x_axis\": \"attribute\", \"color_by\": \"attribute\", \"color_by_attribute_id\": \"$COLOR\", \"compare_to_attribute_id\": \"$COMPARE\"}}"
 
 curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
 -d "$BODY" \
