@@ -9,4 +9,6 @@ NAME=$6
 
 curl -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer $TOKEN" \
 -F "file=@$FILENAME" \
-$URL"v1/projects/$PROJECT_ID/variants/upload?type=$TYPE&name=$NAME"
+-F "type=$TYPE" \
+-F "name=$NAME" \
+$URL"v1/projects/$PROJECT_ID/variants/upload"
