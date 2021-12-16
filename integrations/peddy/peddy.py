@@ -77,7 +77,6 @@ def checkStatus(args):
   # Check the public attributes project for the project attribute indicating that the peddy integration
   # has been run before
   command = args.apiCommands + "/get_project_attributes.sh " + args.token + " " + args.url + " " + args.attributesProject
-  print(command)
   data    = json.loads(os.popen(command).read())
 
   # Loop over all the project attributes and look for attribute "Peddy Integration xa545Ihs"
@@ -278,14 +277,14 @@ def readPeddyHtml(args):
       # attributes to the Mosaic uid.
       pc1      = sampleAttributes["Ancestry PC1 (Peddy)"]["uid"]
       pc2      = sampleAttributes["Ancestry PC2 (Peddy)"]["uid"]
-      pc3      = sampleAttributes["Ancestry PC3 (Peddy)"]["uid"]
-      pc4      = sampleAttributes["Ancestry PC4 (Peddy)"]["uid"]
+      #pc3      = sampleAttributes["Ancestry PC3 (Peddy)"]["uid"]
+      #pc4      = sampleAttributes["Ancestry PC4 (Peddy)"]["uid"]
       ancestry = sampleAttributes["Ancestry Prediction (Peddy)"]["uid"]
       for info in background:
         info[pc1]      = info.pop("PC1")
         info[pc2]      = info.pop("PC2")
-        info[pc3]      = info.pop("PC3")
-        info[pc4]      = info.pop("PC4")
+        #info[pc3]      = info.pop("PC3")
+        #info[pc4]      = info.pop("PC4")
         info[ancestry] = info.pop("ancestry")
 
       backgroundFile = open(args.background, "w")
@@ -377,6 +376,10 @@ def postBackgrounds(args):
     print("Failed to post backgrounds")
     exit(1)
 
+  if "id" not in data:
+    print("Failed to post backgrounds")
+    exit(1)
+
   return data["id"]
 
 # Build the ancestry chart
@@ -391,7 +394,21 @@ def buildChart(args, backgroundsId):
   # Build the command to post a chart
   command  = args.apiCommands + "/post_backgrounds_chart.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
   command += "\"" + str(pc2) + "\" \"" + str(backgroundsId) + "\" \"Ancestry (Peddy)\" \"" + str(colorBy) + "\" \"" + str(pc1) + "\" "
-  command += "\"PC2\""
+  command += "\"Ancestry PC2 (Peddy)\""
+
+  try: data = json.loads(os.popen(command).read())
+  except:
+    print("Failed to post chart")
+    exit(1)
+
+  # Get the id of the chart that was created
+  try: chartId = data["id"]
+  except:
+    print("Failed to get id of chart")
+    exit(1)
+
+  # Pin the chart to the dashboard
+  command = args.apiCommands + "/pin_chart.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" \"" + str(chartId) + "\""
 
   try: data = json.loads(os.popen(command).read())
   except:
