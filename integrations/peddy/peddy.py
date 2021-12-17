@@ -72,12 +72,18 @@ def parseCommandLine():
 
 # Check if the Peddy attributes have already been created or if then need to be created
 def checkStatus(args):
+  global errors
   global peddyProjectId
 
   # Check the public attributes project for the project attribute indicating that the peddy integration
   # has been run before
   command = args.apiCommands + "/get_project_attributes.sh " + args.token + " " + args.url + " " + args.attributesProject
-  data    = json.loads(os.popen(command).read())
+  data = json.loads(os.popen(command).read())
+
+  # If the public attributse project doesn't exist, terminate
+  if "message" in data:
+    errors.append("Public attributes project (" + args.attributesProject + ") does not exist. Create a Public Attributes project before executing integrations")
+    outputErrors(1)
 
   # Loop over all the project attributes and look for attribute "Peddy Integration xa545Ihs"
   peddyProjectId = False
