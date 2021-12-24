@@ -56,17 +56,17 @@ def main():
 # Input options
 def parseCommandLine():
   parser = argparse.ArgumentParser(description='Process the command line arguments')
-  parser.add_argument('--input', '-i', required = True, metavar = "file", help = "The html file output from Peddy")
-  parser.add_argument('--attributesFile', '-f', required = True, metavar = "file", help = "The input file listing the Peddy attributes")
-  parser.add_argument('--output', '-o', required = True, metavar = "file", help = "The output file containing the values to upload")
-  parser.add_argument('--attributesProject', '-a', required = True, metavar = "integer", help = "The Mosaic project id that contains public attributes")
   parser.add_argument('--token', '-t', required = True, metavar = "string", help = "The Mosaic authorization token")
-  parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
+  parser.add_argument('--url', '-u', required = True, metavar = "string", help = "The base url for Mosaic curl commands, up to an including \"api/\"")
   parser.add_argument('--path', '-d', required = True, metavar = "string", help = "The path where the tsv will be generated")
   parser.add_argument('--apiCommands', '-c', required = True, metavar = "string", help = "The path to the directory of api commands")
-  parser.add_argument('--url', '-u', required = True, metavar = "string", help = "The base url for Mosaic curl commands, up to an including \"api/\"")
-  parser.add_argument('--background', '-b', required = True, metavar = "file", help = "The output json containing background ancestry information")
+  parser.add_argument('--attributesFile', '-f', required = True, metavar = "file", help = "The input file listing the Peddy attributes")
+  parser.add_argument('--attributesProject', '-a', required = True, metavar = "integer", help = "The Mosaic project id that contains public attributes")
   parser.add_argument('--reference', '-r', required = True, metavar = "string", help = "The genome reference for the project")
+  parser.add_argument('--input', '-i', required = True, metavar = "file", help = "The html file output from Peddy")
+  parser.add_argument('--output', '-o', required = True, metavar = "file", help = "The output file containing the values to upload")
+  parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
+  parser.add_argument('--background', '-b', required = True, metavar = "file", help = "The output json containing background ancestry information")
 
   return parser.parse_args()
 
