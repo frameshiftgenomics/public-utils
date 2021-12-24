@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from __future__ import print_function
+from os.path import exists
 
 import os
 import argparse
@@ -12,6 +13,9 @@ def main():
 
   # Parse the command line
   args = parseCommandLine()
+
+  # Check the api directory is correct
+  checkApi(args)
 
   # Get all of the available template projects from the Attribute project
   getAvailableTemplates(args)
@@ -35,12 +39,40 @@ def parseCommandLine():
   parser = argparse.ArgumentParser(description='Process the command line')
   parser.add_argument('--token', '-t', required = True, metavar = "string", help = "The Mosaic authorization token")
   parser.add_argument('--url', '-u', required = True, metavar = "string", help = "The base url for Mosaic curl commands, up to an including \"api\". Do NOT include a trailing /")
-  parser.add_argument('--path', '-c', required = True, metavar = "string", help = "The path where the api calls scripts live")
+  parser.add_argument('--apiCommands', '-c', required = True, metavar = "string", help = "The path to the directory of api commands")
   parser.add_argument('--attributesProject', '-a', required = True, metavar = "integer", help = "The Mosaic project id that contains public attributes")
   parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
   parser.add_argument('--template', '-m', required = True, metavar = "string", help = "The template to run")
 
   return parser.parse_args()
+
+# Check the api directory is correct
+def checkApi(args):
+
+  # Check that all the api commands used in this script exist.
+  apiCommands = {}
+  apiCommands["get_project_attributes.sh"] = True
+  apiCommands["get_user_project_attributes.sh"] = True
+  apiCommands["put_project_attribute_value.sh"] = True
+  apiCommands["import_project_attribute.sh"] = True
+  apiCommands["pin_attribute.sh"] = True
+  apiCommands["get_dashboard.sh"] = True
+  apiCommands["post_conversation.sh"] = True
+  apiCommands["get_project_conversations.sh"] = True
+
+  isMissing = False
+  for command in apiCommands:
+    if not exists(args.apiCommands + "/" + command):
+      isMissing = True
+      apiCommands[command] = False
+
+  # If any of the api commands are missing fail
+  if isMissing:
+    print("The following api commands were not found. Please check the supplied path, and that the public-utils repo is up to date.")
+    for command in apiCommands:
+      if not apiCommands[command]: print("  ", args.apiCommands + "/" + command)
+    print()
+    fail("Terminated as a result of missing api commands")
 
 # Find all templates from the Attributes project. Look through all public attributes and identify
 # those that begin with "Template". The value associated with these attributes is the mosaic project
@@ -303,7 +335,6 @@ def getConversations(args, projectId):
 def fail(text):
   print(text)
   exit(1)
-
 
 # Initialise global variables
 
