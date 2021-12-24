@@ -84,7 +84,7 @@ def getAvailableTemplates(args):
   global templateOrder
 
   # Get all the project attributes
-  command  = args.path + "/get_project_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(args.attributesProject)
+  command  = args.apiCommands + "/get_project_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(args.attributesProject)
   jsonData = json.loads(os.popen(command).read())
 
   # Loop over all the attributes and identify the templates
@@ -101,7 +101,7 @@ def getAvailableTemplates(args):
           templateProjects[project["value"]]  = templateName
 
   # Get the values for the template attributes across all projects
-  command  = args.path + "/get_user_project_attributes.sh " + str(args.token) + " " + str(args.url)
+  command  = args.apiCommands + "/get_user_project_attributes.sh " + str(args.token) + " " + str(args.url)
   jsonData = json.loads(os.popen(command).read())
   for attribute in jsonData:
 
@@ -193,7 +193,7 @@ def getStartingAttributes(args):
   global startingAttributes
 
   # Get all the project attributes
-  command  = args.path + "/get_project_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(args.project)
+  command  = args.apiCommands + "/get_project_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(args.project)
   jsonData = json.loads(os.popen(command).read())
 
   # Loop over the attributes
@@ -222,7 +222,7 @@ def processProjectAttributes(args, template, projectId, pinnedAttributes):
   global startingAttributes
 
   # Begin by getting all the public attributes from the project
-  command = args.path + "/get_project_attributes.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(projectId)
+  command = args.apiCommands + "/get_project_attributes.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(projectId)
   data    = json.loads(os.popen(command).read())
 
   # If the same object is pinned to the dashboard multiple times, it will appear on the dashboard multiple times. Get
@@ -240,18 +240,18 @@ def processProjectAttributes(args, template, projectId, pinnedAttributes):
       # Check if the attribute is already present in the project being set up. If not, import the attribute, otherwise,
       # update it with the value defined here
       if attributeId in projectAttributes:
-        command    = str(args.path) + "/put_project_attribute_value.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project)
+        command    = str(args.apiCommands) + "/put_project_attribute_value.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project)
         command   += " " + str(attributeId) + " \"" + str(attributeValue) + "\""
         updateData = json.loads(os.popen(command).read())
       else:
         projectAttributes.append(attributeId)
-        command    = str(args.path) + "/import_project_attribute.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) 
+        command    = str(args.apiCommands) + "/import_project_attribute.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) 
         command   += " " + str(attributeId) + " \"" + str(attributeValue) + "\""
         importData = json.loads(os.popen(command).read())
 
       # If the attribute needs to be pinned to the dashboard, pin in
       if attributeId in pinnedAttributes and attributeId not in pinnedProjectAttributes:
-        command = str(args.path) + "/pin_attribute.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) + " " + str(attributeId)
+        command = str(args.apiCommands) + "/pin_attribute.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) + " " + str(attributeId)
         pinData = json.loads(os.popen(command).read())
   
 # Determine the status of objects on the dashboard in the template project and replicate in the working project
@@ -260,7 +260,7 @@ def processDashboard(args, template, projectId):
   pinnedConversations = []
 
   # Get the dashboard information
-  command = str(args.path) + "/get_dashboard.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(projectId) 
+  command = str(args.apiCommands) + "/get_dashboard.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(projectId) 
   data    = json.loads(os.popen(command).read())
 
   for dashboardObject in data:
@@ -298,14 +298,14 @@ def processProjectConversations(args, template, projectId, pinnedConversations):
 
     # Build the command to create the conversation if a conversation of the same title doesn't already exist
     if title not in existingConvs:
-      command   = args.path + "/post_conversation.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project)
+      command   = args.apiCommands + "/post_conversation.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project)
       command  += " \"" + str(title) + "\" \"" + str(description) + "\""
       postData  = json.loads(os.popen(command).read())
       createdId = postData["id"]
 
       # Pin the conversation to the dashboard if requested
       if conversationId in pinnedConversations:
-        command = str(args.path) + "/pin_conversation.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) + " " + str(createdId)
+        command = str(args.apiCommands) + "/pin_conversation.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) + " " + str(createdId)
         pinData = json.loads(os.popen(command).read())
 
 # Return all conversations in a project
@@ -313,7 +313,7 @@ def getConversations(args, projectId):
 
   # Begin by getting all the conversations from the project. The resulting object is paginated, so determine the number of conversations
   # and consequently the number of pages of conversations that need to be returned
-  command = args.path + "/get_project_conversations.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(projectId) + " 1"
+  command = args.apiCommands + "/get_project_conversations.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(projectId) + " 1"
   data    = json.loads(os.popen(command).read())
 
   # Determine the number of pages
@@ -322,7 +322,7 @@ def getConversations(args, projectId):
   # Loop over all necessary pages
   conversations = []
   for i in range(0, noPages):
-    command = args.path + "/get_project_conversations.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(projectId) + " " + str(i + 1)
+    command = args.apiCommands + "/get_project_conversations.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(projectId) + " " + str(i + 1)
     data    = json.loads(os.popen(command).read())
 
     # Loop over the conversations from all the templates and create then
