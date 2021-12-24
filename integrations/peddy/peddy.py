@@ -418,7 +418,7 @@ def buildChart(args, backgroundsId):
 
   try: data = json.loads(os.popen(command).read())
   except:
-    print("Failed to post chart")
+    print("Failed to pin chart")
     exit(1)
 
 ###############

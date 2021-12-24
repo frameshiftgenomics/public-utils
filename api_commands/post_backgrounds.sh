@@ -6,7 +6,8 @@ PROJECT_ID=$3
 NAME=$4
 FILE=$5
 
-BODY="{\"name\": \"$NAME\", \"payload\": `cat $FILE`}"
+BODY="{\"name\": \"$NAME\", \
+	\"payload\": `cat $FILE`}"
 
 curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
 -d "$BODY" \
