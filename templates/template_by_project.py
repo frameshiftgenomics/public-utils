@@ -33,12 +33,12 @@ def main():
 # Input options
 def parseCommandLine():
   parser = argparse.ArgumentParser(description='Process the command line')
-  parser.add_argument('--template', '-m', required = True, metavar = "string", help = "The template to run")
-  parser.add_argument('--attributesProject', '-a', required = True, metavar = "integer", help = "The Mosaic project id that contains public attributes")
   parser.add_argument('--token', '-t', required = True, metavar = "string", help = "The Mosaic authorization token")
   parser.add_argument('--url', '-u', required = True, metavar = "string", help = "The base url for Mosaic curl commands, up to an including \"api\". Do NOT include a trailing /")
-  parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
   parser.add_argument('--path', '-c', required = True, metavar = "string", help = "The path where the api calls scripts live")
+  parser.add_argument('--attributesProject', '-a', required = True, metavar = "integer", help = "The Mosaic project id that contains public attributes")
+  parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
+  parser.add_argument('--template', '-m', required = True, metavar = "string", help = "The template to run")
 
   return parser.parse_args()
 
