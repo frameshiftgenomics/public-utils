@@ -277,22 +277,27 @@ def readPeddyHtml(args):
 
     # Get the background data
     elif line.startswith("var background_pca"):
-      background = json.loads(line.split("= ")[1])
+      htmlBackground = json.loads(line.split("= ")[1])
 
       # The background file contains information for some known attriubtes. Change the name of the
       # attributes to the Mosaic uid.
       pc1      = sampleAttributes["Ancestry PC1 (Peddy)"]["uid"]
       pc2      = sampleAttributes["Ancestry PC2 (Peddy)"]["uid"]
-      #pc3      = sampleAttributes["Ancestry PC3 (Peddy)"]["uid"]
-      #pc4      = sampleAttributes["Ancestry PC4 (Peddy)"]["uid"]
+      pc3      = sampleAttributes["Ancestry PC3 (Peddy)"]["uid"]
+      pc4      = sampleAttributes["Ancestry PC4 (Peddy)"]["uid"]
       ancestry = sampleAttributes["Ancestry Prediction (Peddy)"]["uid"]
-      for info in background:
+      for info in htmlBackground:
         info[pc1]      = info.pop("PC1")
         info[pc2]      = info.pop("PC2")
-        #info[pc3]      = info.pop("PC3")
-        #info[pc4]      = info.pop("PC4")
         info[ancestry] = info.pop("ancestry")
 
+        # Remove the pc3 and pc4 info
+        info.pop("PC3")
+        info.pop("PC4")
+
+      # Create a json object with the background name defined, and add the background data as the payload
+      background = json.loads('{"name":"Ancestry Backgrounds","payload":[]}')
+      background["payload"] = htmlBackground
       backgroundFile = open(args.background, "w")
       print(json.dumps(background), file = backgroundFile)
       backgroundFile.close()
@@ -375,8 +380,7 @@ def importAttributes(args):
 def postBackgrounds(args):
 
   # Build the command to POST
-  command  = args.apiCommands + "/post_backgrounds.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
-  command += "\"Ancestry Backgrounds\" " + str(args.background)
+  command  = args.apiCommands + "/post_backgrounds.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" " + str(args.background)
   try: data = json.loads(os.popen(command).read())
   except:
     print("Failed to post backgrounds")
