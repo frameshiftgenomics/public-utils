@@ -46,6 +46,9 @@ def main():
   # Import the attributes into the current project and upload the values
   importAttributes(args)
 
+  # Create an attribute set
+  createAttributeSet(args)
+
   # In order to build the ancestry chart, the background data needs to be posted to the project
   backgroundsId = postBackgrounds(args)
   buildChart(args, backgroundsId)
@@ -375,6 +378,24 @@ def importAttributes(args):
     command  = args.apiCommands + "/upload_sample_attribute_tsv.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" \""
     command += str(args.path) + "/" + str(args.output) + "\""
     data     = os.popen(command)
+
+# Create an attribute set
+def createAttributeSet(args):
+  global sampleAttributes
+
+  # Loop over the imported attributes and create a string of all the ids
+  idString = ""
+  for attribute in sampleAttributes: idString += str(sampleAttributes[attribute]["id"]) + ","
+  idString = idString.rstrip(",")
+
+  # Create the attribute set from these ids
+  command  = args.apiCommands + "/post_attribute_set.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
+  command += "\"Peddy\" \"Imported Peddy attributes\" true \"[" + str(idString) + "]\" \"sample\""
+
+  try: data = json.loads(os.popen(command).read())
+  except:
+    print("Failed to create attribute set")
+    exit(1)
 
 # Post the background data
 def postBackgrounds(args):
