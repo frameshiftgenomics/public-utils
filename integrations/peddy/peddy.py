@@ -29,6 +29,9 @@ def main():
   # Import the attributes into the project with Peddy data
   getAttributeIds(args)
 
+  # Check if the attributes already exist in the target project
+  checkAttributesExist(args)
+
   # Read through the Peddy file
   passed = readPeddyHtml(args)
 
@@ -132,7 +135,7 @@ def parseAttributes(args):
 
       # Put the attributes in the correct array.
       location = str(attributes[4]) + "/" + str(attributes[5])
-      sampleAttributes[attributes[1]] = {"id": False, "uid": False, "type": attributes[2], "html": location, "xlabel": attributes[3], "ylabel": "", "values": {}}
+      sampleAttributes[attributes[1]] = {"id": False, "uid": False, "type": attributes[2], "html": location, "xlabel": attributes[3], "ylabel": "", "values": {}, "present": False}
   
     # If the attribute is not correctly defined, add the line to the errors
     else:
@@ -175,14 +178,14 @@ def createAttributes(args):
     body     = " \"" + str(attribute) + "\" \"" + str(attType) + "\" \"" + xlabel + "\" \"" + ylabel + "\" Null true"
     jsonData = json.loads(os.popen(command + body).read())
 
-# Import the attributes into the current project
+# Get the attributes to be imported into the current project
 def getAttributeIds(args):
   global peddyProjectId
   global projectAttributes
   global sampleAttributes
 
   # First, get all the project attribute ids from the Peddy Attributes project
-  command  = args.apiCommands + "/get_project_attributes.sh " + args.token + " " + args.url + " " + str(peddyProjectId)
+  command  = args.apiCommands + "/get_project_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(peddyProjectId)
   jsonData = json.loads(os.popen(command).read())
 
   # Loop over the project attributes and store the ids
@@ -191,7 +194,7 @@ def getAttributeIds(args):
     projectAttributes[str(attribute["name"])]["uid"] = attribute["uid"]
 
   # Get all the sample attribute ids from the Peddy Attributes project
-  command  = args.apiCommands + "/get_sample_attributes.sh " + args.token + " " + args.url + " " + str(peddyProjectId)
+  command  = args.apiCommands + "/get_sample_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(peddyProjectId)
   jsonData = json.loads(os.popen(command).read())
 
   # Loop over the project attributes and store the ids
@@ -202,6 +205,32 @@ def getAttributeIds(args):
     if str(attribute["is_custom"]) == "True":
       sampleAttributes[str(attribute["name"])]["id"]  = attribute["id"]
       sampleAttributes[str(attribute["name"])]["uid"] = attribute["uid"]
+
+# Check if the attributes already exist in the target project and check if the Peddy integration has
+# already been run (attributes could have been deleted, so both checks are required)
+def checkAttributesExist(args):
+  global sampleAttributes
+  global projectAttributes
+  global hasRun
+
+  for attribute in projectAttributes:
+    if attribute == "Peddy Data": peddyId = projectAttributes[attribute]["id"]
+
+  # Get all the project attributes in the target project
+  command  = args.apiCommands + "/get_project_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(args.project)
+  jsonData = json.loads(os.popen(command).read())
+  for attribute in jsonData: 
+    if attribute["name"] == "Peddy Data" and attribute["id"] == peddyId: hasRun = True
+
+  # Get all the sample attributes in the target project
+  command  = args.apiCommands + "/get_sample_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(args.project)
+  jsonData = json.loads(os.popen(command).read())
+  projectSampleAttributes = []
+  for attribute in jsonData: projectSampleAttributes.append(attribute["id"])
+
+  # Loop over the sample attributes and check if they exist in the target project
+  for attribute in sampleAttributes:
+    if sampleAttributes[attribute]["id"] in projectSampleAttributes: sampleAttributes[attribute]["present"] = True
 
 # Read through the peddy html and pull out the data json
 def readPeddyHtml(args):
@@ -370,9 +399,12 @@ def importAttributes(args):
   if hasSampleAttributes:
     command = args.apiCommands + "/import_sample_attribute.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
     for attribute in sampleAttributes:
-      attributeId = sampleAttributes[attribute]["id"]
-      body        = "\"" + str(attributeId) + "\""
-      jsonData    = json.loads(os.popen(command + body).read())
+
+      # Only import the attribute if it wasn't already in the project
+      if not sampleAttributes[attribute]["present"]:
+        attributeId = sampleAttributes[attribute]["id"]
+        body        = "\"" + str(attributeId) + "\""
+        jsonData    = json.loads(os.popen(command + body).read())
   
     # Upload the sample attribute values tsv
     command  = args.apiCommands + "/upload_sample_attribute_tsv.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" \""
@@ -382,20 +414,24 @@ def importAttributes(args):
 # Create an attribute set
 def createAttributeSet(args):
   global sampleAttributes
+  global hasRun
 
-  # Loop over the imported attributes and create a string of all the ids
-  idString = ""
-  for attribute in sampleAttributes: idString += str(sampleAttributes[attribute]["id"]) + ","
-  idString = idString.rstrip(",")
+  # If the Peddy integration has been run previously, do not recreate the attribute set
+  if not hasRun:
 
-  # Create the attribute set from these ids
-  command  = args.apiCommands + "/post_attribute_set.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
-  command += "\"Peddy\" \"Imported Peddy attributes\" true \"[" + str(idString) + "]\" \"sample\""
-
-  try: data = json.loads(os.popen(command).read())
-  except:
-    print("Failed to create attribute set")
-    exit(1)
+    # Loop over the imported attributes and create a string of all the ids
+    idString = ""
+    for attribute in sampleAttributes: idString += str(sampleAttributes[attribute]["id"]) + ","
+    idString = idString.rstrip(",")
+  
+    # Create the attribute set from these ids
+    command  = args.apiCommands + "/post_attribute_set.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
+    command += "\"Peddy\" \"Imported Peddy attributes\" true \"[" + str(idString) + "]\" \"sample\""
+  
+    try: data = json.loads(os.popen(command).read())
+    except:
+      print("Failed to create attribute set")
+      exit(1)
 
 # Post the background data
 def postBackgrounds(args):
@@ -416,6 +452,20 @@ def postBackgrounds(args):
 # Build the ancestry chart
 def buildChart(args, backgroundsId):
   global sampleAttributes
+
+  # Loop over all the charts in the project and find any charts that use a background
+  command  = args.apiCommands + "/get_project_charts.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\""
+  data     = json.loads(os.popen(command).read())
+
+  # Store the ids of charts that use a background and have the name "Ancestry (Peddy)"
+  chartsToRemove = []
+  for chart in data:
+    if chart["project_background_id"] != None and chart["name"] == "Ancestry (Peddy)": chartsToRemove.append(chart["id"])
+
+  # Remove old ancestry charts before adding the new one
+  command = args.apiCommands + "/delete_chart.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
+  for chart in chartsToRemove:
+    data = os.popen(command + "\"" + str(chart) + "\"")
 
   # Get the ids of the PC1 and PC2 attributes
   pc1     = sampleAttributes["Ancestry PC1 (Peddy)"]["id"]
@@ -467,6 +517,9 @@ def outputErrors(errorCode):
 
 # The id of the project holding Peddy attributes
 peddyProjectId = False
+
+# Record if the Peddy integration has previously run
+hasRun = False
 
 # Dictionaries to match Peddy attribute names to their location in the html file
 projectAttributes = {}
