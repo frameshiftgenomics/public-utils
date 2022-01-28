@@ -31,6 +31,9 @@ def main():
   # Determine the starting status of the project
   getStartingAttributes(args)
 
+  # Get a list of users for the project
+  getProjectUserIds(args)
+
   # Loop over the templates and pull in the relevant information
   for template in templateOrder: processTemplateProject(args, template)
 
@@ -117,7 +120,7 @@ def getAvailableTemplates(args):
         # are in the public attributes project by design
         if int(project["project_id"]) != int(args.attributesProject):
 
-          # Get the name of the template this temple attribute appears in, then store this template along with the order it
+          # Get the name of the template this template attribute appears in, then store this template along with the order it
           # should be processed in with this template
           appearsIn = templateProjects[project["project_id"]]
           availableTemplates[appearsIn]["contains_templates"].append({"template": templateName, "order": project["value"]})
@@ -199,9 +202,35 @@ def getStartingAttributes(args):
   # Loop over the attributes
   for attribute in jsonData: startingAttributes.append(attribute["id"])
 
+# Get a list of users for the project
+def getProjectUserIds(args):
+  global projectUserIds
+
+  # Get the number of users attached to the project
+  command = args.apiCommands + "/get_project_roles.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) + " 1 1"
+  data    = json.loads(os.popen(command).read())
+
+  # This action will have failed in the user has insufficient role
+  if "message" in data: fail(data["message"])
+
+  # Determine the number of pages of results, given 100 users per page
+  noPages = int( math.ceil( float(data["count"]) / float(100.) ) )
+
+  # Loop over all necessary pages
+  for i in range(0, noPages):
+    command = args.apiCommands + "/get_project_roles.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) + " 100 " + str(i + 1)
+    data    = json.loads(os.popen(command).read())
+
+    # Loop over the users and get the ids
+    for user in data["data"]: projectUserIds.append(user["user_id"])
+
 # Extract all the information from a project and import into the new project
 def processTemplateProject(args, template):
   global availableTemplates
+  global privateProjectAttributes
+
+  # Reset the privateProjectAttributes to only include attributes for this project
+  privateProjectAttributes = {}
 
   # Get the project id of the template being processed
   projectId = availableTemplates[template]["projectId"]
@@ -234,20 +263,28 @@ def processProjectAttributes(args, template, projectId, pinnedAttributes):
     attributeId    = attribute["id"]
     attributeValue = attribute["values"][0]["value"]
 
-    # Ignore template attributes
+    # Ignore template attributes and attributes that were already in the project. If the template is rerun on a project,
+    # the values in the project should not be overwritten.
     if (attributeId not in templateAttributes) and (attributeId not in startingAttributes):
+      isPublic = attribute["is_public"]
 
-      # Check if the attribute is already present in the project being set up. If not, import the attribute, otherwise,
-      # update it with the value defined here
+      # If the project was imported from a nested template, then the value should be updated. Nested templates are
+      # ordered so that the values assigned to the last template to be processed should be used. Updating values
+      # only occurs for nested templates - if the project already had the attribute, it is not updated.
       if attributeId in projectAttributes:
         command    = str(args.apiCommands) + "/put_project_attribute_value.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project)
         command   += " " + str(attributeId) + " \"" + str(attributeValue) + "\""
         updateData = json.loads(os.popen(command).read())
-      else:
+
+      # If the attribute has not yet been seen, and is a public attribute import it.
+      elif isPublic:
         projectAttributes.append(attributeId)
         command    = str(args.apiCommands) + "/import_project_attribute.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) 
         command   += " " + str(attributeId) + " \"" + str(attributeValue) + "\""
         importData = json.loads(os.popen(command).read())
+
+      #  If this is a private attribute, store it. These attributes can be used to provide directions for the template
+      elif not isPublic: privateProjectAttributes[attribute["name"]] = attribute
 
       # If the attribute needs to be pinned to the dashboard, pin in
       if attributeId in pinnedAttributes and attributeId not in pinnedProjectAttributes:
@@ -279,6 +316,7 @@ def processDashboard(args, template, projectId):
 def processProjectConversations(args, template, projectId, pinnedConversations):
   global templateAttributes
   global projectConversations
+  global projectUserIds
 
   # If a template is run on an existing project, conversations may already exist from the previously applied template.
   # Get all the conversations in the working project and do not duplicate conversations with the same name.
@@ -288,10 +326,15 @@ def processProjectConversations(args, template, projectId, pinnedConversations):
 
   # Get all of the conversations in the template and add into the working project
   conversations = getConversations(args, projectId)
+
+  # Check if any conversations should have users set as watchers
+  watchers = getWatchers(args, projectId)
+
   for conversation in conversations:
     title          = conversation["title"]
     description    = conversation["description"]
     conversationId = conversation["id"]
+    isWatcher = True if title in watchers else False
 
     # The description might contain multiple lines which will break the curl command. Replace all newlines with \n
     if "\n" in description: description = description.replace("\n", "\\n")
@@ -307,6 +350,30 @@ def processProjectConversations(args, template, projectId, pinnedConversations):
       if conversationId in pinnedConversations:
         command = str(args.apiCommands) + "/pin_conversation.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) + " " + str(createdId)
         pinData = json.loads(os.popen(command).read())
+
+      # If the conversation is listed as a watcher, add all users in the project as watchers
+      if isWatcher:
+        command  = str(args.apiCommands) + "/post_conversation_watchers.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) + " \""
+        command += str(conversationId) + "\" \"" + str(projectUserIds) + "\"" 
+        data     = json.loads(os.popen(command).read())
+
+# Check if any conversations should have users set as watchers
+def getWatchers(args, projectId):
+  global privateProjectAttributes
+  conversations = []
+
+  # Loop over the private project attributes
+  for attribute in privateProjectAttributes:
+
+    # If watchers are to be automatically assigned to any conversations, the conversation names
+    # will be stored in the "Watchers" attribute
+    if attribute == "Watchers": 
+      for values in privateProjectAttributes[attribute]["values"]:
+        if values["project_id"] == projectId:
+          for conversation in values["value"].split(","): conversations.append(conversation)
+
+  # Return the names of the conversations that every user should be a watcher on
+  return conversations
 
 # Return all conversations in a project
 def getConversations(args, projectId):
@@ -349,6 +416,13 @@ templateProjects   = {}
 # Store the ids of the public attributes and conversations in the project being set up
 projectAttributes    = []
 projectConversations = []
+
+# Store information on private project attributes in the templates. These attributes can be used
+# to provde information on actions to be taken as part of the template.
+privateProjectAttributes = {}
+
+# Store a list of user_ids for all users in the project
+projectUserIds = []
 
 if __name__ == "__main__":
   main()
