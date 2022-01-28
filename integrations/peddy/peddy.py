@@ -197,7 +197,7 @@ def getAttributeIds(args):
   command  = args.apiCommands + "/get_sample_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(peddyProjectId)
   jsonData = json.loads(os.popen(command).read())
 
-  # Loop over the project attributes and store the ids
+  # Loop over the sample attributes and store the ids
   for attribute in jsonData:
 
     # Only include custom attributes (e.g. ignore global default attributes like Median Read Coverage that are

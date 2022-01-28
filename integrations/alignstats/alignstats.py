@@ -29,6 +29,9 @@ def main():
   # Import the attributes into the project with Alignstats data
   getAttributeIds(args)
 
+  # Check if the attributes already exist in the target project
+  checkAttributesExist(args)
+
   ###### MAKE SURE ERROR REPORTING IS DONE. PROJECT VARIABLE SHOULD BE SET TO PASS / FAIL WHERE POSSIBLE
   # Each sample has a separate json file. Get the names of all the files and the sample names
   if not getSampleFiles(args): outputErrors(1)
@@ -47,6 +50,10 @@ def main():
 
   # Import the attributes into the current project and upload the values
   importAttributes(args)
+
+  # Create an attribute set
+  createAttributeSet(args)
+
   exit(0)
 
   # Output the observed errors.
@@ -55,16 +62,20 @@ def main():
 # Input options
 def parseCommandLine():
   parser = argparse.ArgumentParser(description='Process the command line arguments')
-  parser.add_argument('--input', '-i', required = True, metavar = "file", help = "The input file listing samples and json files")
-  parser.add_argument('--attributesFile', '-f', required = True, metavar = "file", help = "The input file listing the Alignstats attributes")
-  parser.add_argument('--output', '-o', required = True, metavar = "file", help = "The output file containing the values to upload. Extension must be tsv")
-  parser.add_argument('--attributesProject', '-a', required = True, metavar = "integer", help = "The Mosaic project id that contains public attributes")
+
+  # Typically unchanged parameters for a Mosaic instance
   parser.add_argument('--token', '-t', required = True, metavar = "string", help = "The Mosaic authorization token")
-  parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
-  parser.add_argument('--path', '-d', required = True, metavar = "string", help = "The path where the tsv will be generated")
-  parser.add_argument('--apiCommands', '-c', required = True, metavar = "string", help = "The path to the directory of api commands")
   parser.add_argument('--url', '-u', required = True, metavar = "string", help = "The base url for Mosaic curl commands, up to an including \"api\". Do NOT include a trailing /")
+  parser.add_argument('--apiCommands', '-c', required = True, metavar = "string", help = "The path to the directory of api commands")
+  parser.add_argument('--attributesFile', '-f', required = True, metavar = "file", help = "The input file listing the Alignstats attributes")
+  parser.add_argument('--attributesProject', '-a', required = True, metavar = "integer", help = "The Mosaic project id that contains public attributes")
+
+  # Dynamic parameters
   parser.add_argument('--reference', '-r', required = True, metavar = "string", help = "The genome reference for the project")
+  parser.add_argument('--input', '-i', required = True, metavar = "file", help = "The input file listing samples and json files")
+  parser.add_argument('--path', '-d', required = True, metavar = "string", help = "The path where the tsv will be generated")
+  parser.add_argument('--output', '-o', required = True, metavar = "file", help = "The output file containing the values to upload. Extension must be tsv")
+  parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
 
   return parser.parse_args()
 
@@ -118,7 +129,7 @@ def parseAttributes(args):
     # With sample attributes, we need both the attribute id and uid which will be determined later. For now,
     # set the id and uid to False, and read in the value type
     elif attributes[0] == "sample":
-      sampleAttributes[attributes[1]] = {"id": False, "uid": False, "type": attributes[2], "name": attributes[3], "xlabel": attributes[4], "ylabel": attributes[5], "values": {}, "processed": False}
+      sampleAttributes[attributes[1]] = {"id": False, "uid": False, "type": attributes[2], "name": attributes[3], "xlabel": attributes[4], "ylabel": attributes[5], "values": {}, "processed": False, "present": False}
       sampleNames[attributes[3]]      = attributes[1]
 
     # If the attribute is not correctly defined, add the line to the errors
@@ -170,9 +181,9 @@ def getAttributeIds(args):
   global sampleAttributes
 
   # First, get all the project attribute ids from the Alignstats Attributes project
-  command  = args.apiCommands + "/get_project_attributes.sh " + args.token + " " + args.url + " " + str(alignstatsProjectId)
+  command  = args.apiCommands + "/get_project_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(alignstatsProjectId)
   jsonData = json.loads(os.popen(command).read())
-                                                                                                       
+
   # Loop over the project attributes and store the ids                                                 
   for attribute in jsonData:
     projectAttributes[str(attribute["name"])]["id"]  = attribute["id"]
@@ -214,6 +225,32 @@ def getAttributeIds(args):
       sampleAttributes[str(jsonData["name"])]["id"]        = jsonData["id"]
       sampleAttributes[str(jsonData["name"])]["uid"]       = jsonData["uid"]
       sampleAttributes[str(jsonData["name"])]["processed"] = True
+
+# Check if the attributes already exist in the target project and check if the Alignstats integration has
+# already been run (attributes could have been deleted, so both checks are required)
+def checkAttributesExist(args):
+  global sampleAttributes
+  global projectAttributes
+  global hasRun
+
+  for attribute in projectAttributes:
+    if attribute == "Alignstats Data": alignstatsId = projectAttributes[attribute]["id"]
+
+  # Get all the project attributes in the target project
+  command  = args.apiCommands + "/get_project_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(args.project)
+  jsonData = json.loads(os.popen(command).read())
+  for attribute in jsonData:
+    if attribute["name"] == "Alignstats Data" and attribute["id"] == alignstatsId: hasRun = True
+
+  # Get all the sample attributes in the target project
+  command  = args.apiCommands + "/get_sample_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(args.project)
+  jsonData = json.loads(os.popen(command).read())
+  projectSampleAttributes = []
+  for attribute in jsonData: projectSampleAttributes.append(attribute["id"])
+
+  # Loop over the sample attributes and check if they exist in the target project
+  for attribute in sampleAttributes:
+    if sampleAttributes[attribute]["id"] in projectSampleAttributes: sampleAttributes[attribute]["present"] = True
 
 # Read the input file to get the names of the json files for all the samples in the project
 def getSampleFiles(args):
@@ -345,6 +382,28 @@ def importAttributes(args):
     command += str(args.path) + "/" + str(args.output) + "\""
     data     = os.popen(command)
 
+# Create an attribute set
+def createAttributeSet(args):
+  global sampleAttributes
+  global hasRun
+
+  # If the Alignstats integration has been run previously, do not recreate the attribute set
+  if not hasRun:
+
+    # Loop over the imported attributes and create a string of all the ids
+    idString = ""
+    for attribute in sampleAttributes: idString += str(sampleAttributes[attribute]["id"]) + ","
+    idString = idString.rstrip(",")
+
+    # Create the attribute set from these ids
+    command  = args.apiCommands + "/post_attribute_set.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
+    command += "\"Alignstats\" \"Imported Alignstats attributes\" true \"[" + str(idString) + "]\" \"sample\""
+
+    try: data = json.loads(os.popen(command).read())
+    except:
+      print("Failed to create attribute set")
+      exit(1)
+
 # Output errors
 def outputErrors(errorCode):
   global errors
@@ -354,6 +413,9 @@ def outputErrors(errorCode):
 # The id of the project holding alignstats attributes
 alignstatsProjectId = False
   
+# Record if the Alignstats integration has previously run
+hasRun = False
+
 # Dictionaries to match Alignstats attribute names to their location in the html file
 projectAttributes = {}
 sampleAttributes  = {}
