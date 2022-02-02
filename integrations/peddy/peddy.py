@@ -414,20 +414,46 @@ def importAttributes(args):
 # Create an attribute set
 def createAttributeSet(args):
   global sampleAttributes
-  global hasRun
 
-  # If the Peddy integration has been run previously, do not recreate the attribute set
-  if not hasRun:
+  # Get any existing attribute sets
+  command = args.apiCommands + "/get_attribute_sets.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\""
+  data    = json.loads(os.popen(command).read())
 
-    # Loop over the imported attributes and create a string of all the ids
-    idString = ""
-    for attribute in sampleAttributes: idString += str(sampleAttributes[attribute]["id"]) + ","
-    idString = idString.rstrip(",")
-  
-    # Create the attribute set from these ids
+  # Loop over the existing attribute sets and see if the Peddy set already exists
+  setId = False
+  existingIds = []
+  for attributeSet in data:
+    if attributeSet["name"] == "Peddy": 
+      setId       = attributeSet["id"]
+      existingIds = attributeSet["attribute_ids"]
+
+  # Loop over the imported attributes and create a string of all the ids. Count the number of attributes to go into the set
+  attributeIds = []
+  for attribute in sampleAttributes: attributeIds.append(sampleAttributes[attribute]["id"])
+
+  # If there already exists a Peddy attribute set, check that the attribute string is the same. If not, replace the existing set
+  createSet = False
+  deleteSet = False
+  if setId:
+    if sorted(existingIds) != sorted(attributeIds):
+      createSet = True
+      deleteSet = True
+
+  #  If no attribute set exists, one needs to be created
+  else: createSet = True
+
+  # Delete the existing set if necessary
+  if deleteSet:
+    command  = args.apiCommands + "/delete_attribute_set.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
+    command += "\"" + str(setId) + "\""
+    try: data = os.popen(command).read()
+    except: print("Failed to delete attribute set with id:", setId, sep = "")
+
+  # Create the attribute set from these ids
+  if createSet:
     command  = args.apiCommands + "/post_attribute_set.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
-    command += "\"Peddy\" \"Imported Peddy attributes\" true \"[" + str(idString) + "]\" \"sample\""
-  
+    command += "\"Peddy\" \"Imported Peddy attributes\" true \"" + str(attributeIds) + "\" \"sample\""
+
     try: data = json.loads(os.popen(command).read())
     except:
       print("Failed to create attribute set")
