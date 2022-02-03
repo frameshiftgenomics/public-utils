@@ -12,7 +12,6 @@ NAME=$6
 
 curl -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer $TOKEN" \
 -F "file=@$FILENAME" \
--F "disable_queue=true" \
 -F "type=$TYPE" \
 -F "name=$NAME" \
 $URL"v1/projects/$PROJECT_ID/variants/upload"
