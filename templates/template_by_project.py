@@ -337,7 +337,8 @@ def processProjectConversations(args, template, projectId, pinnedConversations):
     isWatcher = True if title in watchers else False
 
     # The description might contain multiple lines which will break the curl command. Replace all newlines with \n
-    if "\n" in description: description = description.replace("\n", "\\n")
+    if description: 
+      if "\n" in description: description = description.replace("\n", "\\n")
 
     # Build the command to create the conversation if a conversation of the same title doesn't already exist
     if title not in existingConvs:
