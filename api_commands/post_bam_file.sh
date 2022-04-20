@@ -8,7 +8,7 @@ FILE=$5
 NAME=$6
 REF=$7
 
-curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
 -d "{\"type\": \"bam\", \
 	\"name\": \"$NAME\",
 	\"reference\": \"$REF\", \

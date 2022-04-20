@@ -9,7 +9,7 @@ NAME=$6
 REF=$7
 TYPE=$8
 
-curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
 -d "{\"type\": \"$TYPE\", \
 	\"name\": \"$NAME\",
 	\"reference\": \"$REF\", \

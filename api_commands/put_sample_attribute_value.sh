@@ -8,6 +8,6 @@ ATTRIBUTE_ID=$5
 ATTRIBUTE_VALUE=$6
 
 BODY="{\"value\": \"$ATTRIBUTE_VALUE\"}"
-curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
 -d "$BODY" \
 $URL"/v1/projects/$PROJECT_ID/samples/$SAMPLE_ID/attributes/$ATTRIBUTE_ID"

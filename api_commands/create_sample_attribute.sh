@@ -10,7 +10,7 @@ YLABEL=$7
 VALUE=$8
 PUBLIC=$9
 
-curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
 -d "{\"name\": \"$NAME\", \
 	\"value_type\": \"$TYPE\", \
 	\"value\": \"$VALUE\", \

@@ -22,6 +22,6 @@ BODY="{\"name\": \"$NAME\", \
 		\"compare_to_attribute_id\": $COMPARE} \
 	}"
 
-curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
 -d "$BODY" \
 $URL"/v1/projects/$PROJECT_ID/charts"

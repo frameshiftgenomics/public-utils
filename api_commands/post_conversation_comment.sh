@@ -10,6 +10,6 @@ BODY="{\"text\": \"$COMMENT\", \
 	\"type\": \"project_conversation\", \
 	\"id\": $CONVERSATION_ID}"
 
-curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
 -d "$BODY" \
 $URL"/v1/projects/$PROJECT_ID/comments"

@@ -10,7 +10,7 @@ FILENAME=$4
 TYPE=$5
 NAME=$6
 
-curl -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer $TOKEN" \
+curl -S -s -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer $TOKEN" \
 -F "file=@$FILENAME" \
 -F "type=$TYPE" \
 -F "name=$NAME" \

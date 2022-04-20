@@ -9,7 +9,7 @@ NAME=$6
 REF=$7
 VCF_SAMPLE_NAME=$8
 
-curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
 -d "{\"type\": \"tbi\", \
 	\"vcf_sample_name\": \"$VCF_SAMPLE_NAME\", \
 	\"name\": \"$NAME\",
