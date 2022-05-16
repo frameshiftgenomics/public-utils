@@ -14,6 +14,12 @@ def main():
   # Parse the command line
   args = parseCommandLine()
 
+  # Parse the config file, if supplied
+  if args.config: parseConfig(args)
+
+  # Check that the token, url, and api commands directory are set
+  checkCommands(args)
+
   # Check the api directory is correct
   checkApi(args)
 
@@ -40,17 +46,94 @@ def main():
 # Input options
 def parseCommandLine():
   parser = argparse.ArgumentParser(description='Process the command line')
-  parser.add_argument('--token', '-t', required = True, metavar = "string", help = "The Mosaic authorization token")
-  parser.add_argument('--url', '-u', required = True, metavar = "string", help = "The base url for Mosaic curl commands, up to an including \"api\". Do NOT include a trailing /")
-  parser.add_argument('--apiCommands', '-c', required = True, metavar = "string", help = "The path to the directory of api commands")
-  parser.add_argument('--attributesProject', '-a', required = True, metavar = "integer", help = "The Mosaic project id that contains public attributes")
+  parser.add_argument('--config', '-c', required = False, metavar = "string", help = "A config file containing token / url information")
+  parser.add_argument('--token', '-t', required = False, metavar = "string", help = "The Mosaic authorization token")
+  parser.add_argument('--url', '-u', required = False, metavar = "string", help = "The base url for Mosaic curl commands, up to an including \"api\". Do NOT include a trailing /")
+  parser.add_argument('--apiCommands', '-s', required = False, metavar = "string", help = "The path to the directory of api commands")
+  parser.add_argument('--attributesProject', '-a', required = False, metavar = "integer", help = "The Mosaic project id that contains public attributes")
   parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
   parser.add_argument('--template', '-m', required = True, metavar = "string", help = "The template to run")
 
   return parser.parse_args()
 
+# Parse the config file, if supplied
+def parseConfig(args):
+  global apiUrl
+  global token
+  global apiCommandsPath
+  global attributesProjectId
+
+  # Check that the config file exists
+  if not exists(args.config):
+    print("Config file does not exist")
+    exit(1)
+
+  # Parse the file and extract recognised fields
+  with open(args.config) as configFile:
+    for line in configFile:
+      if "=" in line:
+        argument = line.rstrip().replace(" ","").split("=")
+
+        # Set the recognized values
+        if argument[0] == "MOSAIC_TOKEN": token = argument[1]
+        if argument[0] == "MOSAIC_URL": apiUrl = argument[1]
+        if argument[0] == "MOSAIC_API_COMMANDS_PATH": apiCommandsPath = argument[1]
+        if argument[0] == "MOSAIC_ATTRIBUTES_PROJECT_ID": attributesProjectId = argument[1]
+
+# Check that the token, url, and api commands directory are set
+def checkCommands(args):
+  global apiUrl
+  global token
+  global apiCommandsPath
+  global attributesProjectId
+
+  # Explicitly set attributes will overwrite the config file
+  if args.token:
+    if token:
+      print("The token can only be defined once - either in the config file, or on the command line")
+      exit(1)
+    else: token = args.token
+  if args.url:
+    if apiUrl:
+      print("The url can only be defined once - either in the config file, or on the command line")
+      exit(1)
+    else: apiUrl = args.url
+  if args.apiCommands:
+    if apiCommandsPath:
+      print("The path to the api commands can only be defined once - either in the config file, or on the command line")
+      exit(1)
+    else: apiCommandsPath = args.apiCommands
+  if args.attributesProject:
+    if attributesProjectId:
+      print("The attributes project id can only be defined once - either in the config file, or on the command line")
+      exit(1)
+    else: attributesProjectId = args.attributesProject
+
+  # Check that all required values are set
+  if not token:
+    print("An access token is required. You can either supply a token with '--token (-t)' or")
+    print("supply a config file '--config (-c)' which includes the line:")
+    print("  MOSAIC_TOKEN = <TOKEN>")
+    exit(1)
+  if not apiUrl:
+    print("The api url is required. You can either supply the url with '--url (-u)' or")
+    print("supply a config file '--config (-c)' which includes the line:")
+    print("  MOSAIC_URL = <URL>")
+    exit(1)
+  if not apiCommandsPath:
+    print("The path to the directory containing api commands is required. You can either supply the path with '--apiCommands (-s)' or")
+    print("supply a config file '--config (-c)' which includes the line:")
+    print("  MOSAIC_API_COMMANDS_PATH = <PATH>")
+    exit(1)
+  if not attributesProjectId:
+    print("The project id for the attributes project is required. You can either supply the id with '--attributesProject (-a)' or")
+    print("supply a config file '--config (-c)' which includes the line:")
+    print("  MOSAIC_ATTRIBUTES_PROJECT_ID = <ID>")
+    exit(1)
+
 # Check the api directory is correct
 def checkApi(args):
+  global apiCommandsPath
 
   # Check that all the api commands used in this script exist.
   apiCommands = {}
@@ -65,7 +148,7 @@ def checkApi(args):
 
   isMissing = False
   for command in apiCommands:
-    if not exists(args.apiCommands + "/" + command):
+    if not exists(apiCommandsPath + "/" + command):
       isMissing = True
       apiCommands[command] = False
 
@@ -73,7 +156,7 @@ def checkApi(args):
   if isMissing:
     print("The following api commands were not found. Please check the supplied path, and that the public-utils repo is up to date.")
     for command in apiCommands:
-      if not apiCommands[command]: print("  ", args.apiCommands + "/" + command)
+      if not apiCommands[command]: print("  ", apiCommandsPath + "/" + command)
     print()
     fail("Terminated as a result of missing api commands")
 
@@ -81,13 +164,17 @@ def checkApi(args):
 # those that begin with "Template". The value associated with these attributes is the mosaic project
 # id for the template to emulate.
 def getAvailableTemplates(args):
+  global token
+  global apiUrl
+  global apiCommandsPath
+  global attributesProjectId
   global availableTemplates
   global templateAttributes
   global templateProjects
   global templateOrder
 
   # Get all the project attributes
-  command  = args.apiCommands + "/get_project_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(args.attributesProject)
+  command  = apiCommandsPath + "/get_project_attributes.sh " + str(token) + " " + str(apiUrl) + " " + str(attributesProjectId)
   jsonData = json.loads(os.popen(command).read())
 
   # Loop over all the attributes and identify the templates
@@ -98,13 +185,13 @@ def getAvailableTemplates(args):
 
       # Loop over the values for the attribute for the different projects it is in
       for project in attribute["values"]:
-        if int(project["project_id"]) == int(args.attributesProject):
+        if int(project["project_id"]) == int(attributesProjectId):
           availableTemplates[templateName]    = {"projectId": project["value"], "attributeId": attribute["id"], "contains_templates": []}
           templateAttributes[attribute["id"]] = templateName
           templateProjects[project["value"]]  = templateName
 
   # Get the values for the template attributes across all projects
-  command  = args.apiCommands + "/get_user_project_attributes.sh " + str(args.token) + " " + str(args.url)
+  command  = apiCommandsPath + "/get_user_project_attributes.sh " + str(token) + " " + str(apiUrl)
   jsonData = json.loads(os.popen(command).read())
   for attribute in jsonData:
 
@@ -118,7 +205,7 @@ def getAvailableTemplates(args):
 
         # Ignore this entry if the project_id is that of the public attributes project. All template attributes
         # are in the public attributes project by design
-        if int(project["project_id"]) != int(args.attributesProject):
+        if int(project["project_id"]) != int(attributesProjectId):
 
           # Get the name of the template this template attribute appears in, then store this template along with the order it
           # should be processed in with this template
@@ -193,10 +280,13 @@ def processNestedTemplates(template):
 # Get all the proect attributes in the working project prior to running the template. If the template is run on an
 # existing project, existing attributes will not be overwritten
 def getStartingAttributes(args):
+  global token
+  global apiUrl
+  global apiCommandsPath
   global startingAttributes
 
   # Get all the project attributes
-  command  = args.apiCommands + "/get_project_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(args.project)
+  command  = apiCommandsPath + "/get_project_attributes.sh " + str(token) + " " + str(apiUrl) + " " + str(args.project)
   jsonData = json.loads(os.popen(command).read())
 
   # Loop over the attributes
@@ -204,10 +294,13 @@ def getStartingAttributes(args):
 
 # Get a list of users for the project
 def getProjectUserIds(args):
+  global token
+  global apiUrl
+  global apiCommandsPath
   global projectUserIds
 
   # Get the number of users attached to the project
-  command = args.apiCommands + "/get_project_roles.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) + " 1 1"
+  command = apiCommandsPath + "/get_project_roles.sh " + str(token) + " \"" + str(apiUrl) + "\" " + str(args.project) + " 1 1"
   data    = json.loads(os.popen(command).read())
 
   # This action will have failed in the user has insufficient role
@@ -218,7 +311,7 @@ def getProjectUserIds(args):
 
   # Loop over all necessary pages
   for i in range(0, noPages):
-    command = args.apiCommands + "/get_project_roles.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) + " 100 " + str(i + 1)
+    command = apiCommandsPath + "/get_project_roles.sh " + str(token) + " \"" + str(apiUrl) + "\" " + str(args.project) + " 100 " + str(i + 1)
     data    = json.loads(os.popen(command).read())
 
     # Loop over the users and get the ids
@@ -246,12 +339,15 @@ def processTemplateProject(args, template):
 
 # Take the public project attributes from a template and make available in the working project
 def processProjectAttributes(args, template, projectId, pinnedAttributes):
+  global token
+  global apiUrl
+  global apiCommandsPath
   global templateAttributes
   global projectAttributes
   global startingAttributes
 
   # Begin by getting all the public attributes from the project
-  command = args.apiCommands + "/get_project_attributes.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(projectId)
+  command = apiCommandsPath + "/get_project_attributes.sh " + str(token) + " \"" + str(apiUrl) + "\" " + str(projectId)
   data    = json.loads(os.popen(command).read())
 
   # If the same object is pinned to the dashboard multiple times, it will appear on the dashboard multiple times. Get
@@ -272,14 +368,14 @@ def processProjectAttributes(args, template, projectId, pinnedAttributes):
       # ordered so that the values assigned to the last template to be processed should be used. Updating values
       # only occurs for nested templates - if the project already had the attribute, it is not updated.
       if attributeId in projectAttributes:
-        command    = str(args.apiCommands) + "/put_project_attribute_value.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project)
+        command    = str(apiCommandsPath) + "/put_project_attribute_value.sh " + str(token) + " \"" + str(apiUrl) + "\" " + str(args.project)
         command   += " " + str(attributeId) + " \"" + str(attributeValue) + "\""
         updateData = json.loads(os.popen(command).read())
 
       # If the attribute has not yet been seen, and is a public attribute import it.
       elif isPublic:
         projectAttributes.append(attributeId)
-        command    = str(args.apiCommands) + "/import_project_attribute.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) 
+        command    = str(apiCommandsPath) + "/import_project_attribute.sh " + str(token) + " \"" + str(apiUrl) + "\" " + str(args.project) 
         command   += " " + str(attributeId) + " \"" + str(attributeValue) + "\""
         importData = json.loads(os.popen(command).read())
 
@@ -288,16 +384,19 @@ def processProjectAttributes(args, template, projectId, pinnedAttributes):
 
       # If the attribute needs to be pinned to the dashboard, pin in
       if attributeId in pinnedAttributes and attributeId not in pinnedProjectAttributes:
-        command = str(args.apiCommands) + "/pin_attribute.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) + " " + str(attributeId)
+        command = str(apiCommandsPath) + "/pin_attribute.sh " + str(token) + " \"" + str(apiUrl) + "\" " + str(args.project) + " " + str(attributeId)
         pinData = json.loads(os.popen(command).read())
   
 # Determine the status of objects on the dashboard in the template project and replicate in the working project
 def processDashboard(args, template, projectId):
+  global token
+  global apiUrl
+  global apiCommandsPath
   pinnedAttributes    = []
   pinnedConversations = []
 
   # Get the dashboard information
-  command = str(args.apiCommands) + "/get_dashboard.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(projectId) 
+  command = str(apiCommandsPath) + "/get_dashboard.sh " + str(token) + " \"" + str(apiUrl) + "\" " + str(projectId) 
   data    = json.loads(os.popen(command).read())
 
   for dashboardObject in data:
@@ -314,6 +413,9 @@ def processDashboard(args, template, projectId):
 
 # Take the conversations from a template and make available in the working project
 def processProjectConversations(args, template, projectId, pinnedConversations):
+  global token
+  global apiUrl
+  global apiCommandsPath
   global templateAttributes
   global projectConversations
   global projectUserIds
@@ -342,19 +444,19 @@ def processProjectConversations(args, template, projectId, pinnedConversations):
 
     # Build the command to create the conversation if a conversation of the same title doesn't already exist
     if title not in existingConvs:
-      command   = args.apiCommands + "/post_conversation.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project)
+      command   = apiCommandsPath + "/post_conversation.sh " + str(token) + " \"" + str(apiUrl) + "\" " + str(args.project)
       command  += " \"" + str(title) + "\" \"" + str(description) + "\""
       postData  = json.loads(os.popen(command).read())
       createdId = postData["id"]
 
       # Pin the conversation to the dashboard if requested
       if conversationId in pinnedConversations:
-        command = str(args.apiCommands) + "/pin_conversation.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) + " " + str(createdId)
+        command = str(apiCommandsPath) + "/pin_conversation.sh " + str(token) + " \"" + str(apiUrl) + "\" " + str(args.project) + " " + str(createdId)
         pinData = json.loads(os.popen(command).read())
 
       # If the conversation is listed as a watcher, add all users in the project as watchers
       if isWatcher:
-        command  = str(args.apiCommands) + "/post_conversation_watchers.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(args.project) + " \""
+        command  = str(apiCommandsPath) + "/post_conversation_watchers.sh " + str(token) + " \"" + str(apiUrl) + "\" " + str(args.project) + " \""
         command += str(conversationId) + "\" \"" + str(projectUserIds) + "\"" 
         data     = json.loads(os.popen(command).read())
 
@@ -378,10 +480,13 @@ def getWatchers(args, projectId):
 
 # Return all conversations in a project
 def getConversations(args, projectId):
+  global token
+  global apiUrl
+  global apiCommandsPath
 
   # Begin by getting all the conversations from the project. The resulting object is paginated, so determine the number of conversations
   # and consequently the number of pages of conversations that need to be returned
-  command = args.apiCommands + "/get_project_conversations.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(projectId) + " 1"
+  command = apiCommandsPath + "/get_project_conversations.sh " + str(token) + " \"" + str(apiUrl) + "\" " + str(projectId) + " 1"
   data    = json.loads(os.popen(command).read())
 
   # Determine the number of pages
@@ -390,7 +495,7 @@ def getConversations(args, projectId):
   # Loop over all necessary pages
   conversations = []
   for i in range(0, noPages):
-    command = args.apiCommands + "/get_project_conversations.sh " + str(args.token) + " \"" + str(args.url) + "\" " + str(projectId) + " " + str(i + 1)
+    command = apiCommandsPath + "/get_project_conversations.sh " + str(token) + " \"" + str(apiUrl) + "\" " + str(projectId) + " " + str(i + 1)
     data    = json.loads(os.popen(command).read())
 
     # Loop over the conversations from all the templates and create then
@@ -405,6 +510,12 @@ def fail(text):
   exit(1)
 
 # Initialise global variables
+
+# Attributes from the config file
+apiUrl              = False
+token               = False
+apiCommandsPath     = False
+attributesProjectId = False
 
 # Store the ids of the project attributes present on the dashboard prior to running the template
 startingAttributes = []
