@@ -48,7 +48,7 @@ def parseCommandLine():
   parser = argparse.ArgumentParser(description='Process the command line')
   parser.add_argument('--config', '-c', required = False, metavar = "string", help = "A config file containing token / url information")
   parser.add_argument('--token', '-t', required = False, metavar = "string", help = "The Mosaic authorization token")
-  parser.add_argument('--url', '-u', required = False, metavar = "string", help = "The base url for Mosaic curl commands, up to an including \"api\". Do NOT include a trailing /")
+  parser.add_argument('--url', '-u', required = False, metavar = "string", help = "The base url for Mosaic")
   parser.add_argument('--apiCommands', '-s', required = False, metavar = "string", help = "The path to the directory of api commands")
   parser.add_argument('--attributesProject', '-a', required = False, metavar = "integer", help = "The Mosaic project id that contains public attributes")
   parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
@@ -72,11 +72,13 @@ def parseConfig(args):
   with open(args.config) as configFile:
     for line in configFile:
       if "=" in line:
-        argument = line.rstrip().replace(" ","").split("=")
+        argument = line.rstrip().split("=")
 
         # Set the recognized values
         if argument[0] == "MOSAIC_TOKEN": token = argument[1]
-        if argument[0] == "MOSAIC_URL": apiUrl = argument[1]
+        if argument[0] == "MOSAIC_URL":
+          if argument[1].endswith("/"): apiUrl = argument[1] + "api"
+          else: apiUrl = argument[1] + "/api"
         if argument[0] == "MOSAIC_API_COMMANDS_PATH": apiCommandsPath = argument[1]
         if argument[0] == "MOSAIC_ATTRIBUTES_PROJECT_ID": attributesProjectId = argument[1]
 
@@ -97,7 +99,14 @@ def checkCommands(args):
     if apiUrl:
       print("The url can only be defined once - either in the config file, or on the command line")
       exit(1)
-    else: apiUrl = args.url
+    else:
+
+      # If the url was specified on the command line, make sure it ends with "/api"
+      if not args.url.endswith("/api"):
+        print("The url must end with \"\\api\"")
+        exit(1)
+      apiUrl = args.url
+
   if args.apiCommands:
     if apiCommandsPath:
       print("The path to the api commands can only be defined once - either in the config file, or on the command line")
