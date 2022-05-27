@@ -74,6 +74,10 @@ def parseConfig(args):
       if "=" in line:
         argument = line.rstrip().split("=")
 
+        # Strip any whitespace from the arguments
+        argument[0] = argument[0].strip()
+        argument[1] = argument[1].strip()
+
         # Set the recognized values
         if argument[0] == "MOSAIC_TOKEN": token = argument[1]
         if argument[0] == "MOSAIC_URL":

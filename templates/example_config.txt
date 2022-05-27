@@ -1,0 +1,4 @@
+MOSAIC_URL=https://mosaic.frameshift.io/
+MOSAIC_TOKEN=****************************************
+MOSAIC_API_COMMANDS_PATH=/path_to/public-utils/api_commands
+MOSAIC_ATTRIBUTES_PROJECT_ID=1
