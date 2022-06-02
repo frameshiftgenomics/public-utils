@@ -53,6 +53,7 @@ def parseCommandLine():
   parser.add_argument('--attributesProject', '-a', required = False, metavar = "integer", help = "The Mosaic project id that contains public attributes")
   parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
   parser.add_argument('--template', '-m', required = True, metavar = "string", help = "The template to run")
+  parser.add_argument('--version', '-v', action="version", version='%(prog)s 0.10')
 
   return parser.parse_args()
 
