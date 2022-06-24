@@ -200,7 +200,8 @@ def createAttributes(args):
 
   # Create all the project attributes required for Peddy integration
   for attribute in projectAttributes:
-    command  = api_pa.postProjectAttribute(mosaicConfig, str(attribute), attType, "Null", True, peddyProjectId)
+    attType  = projectAttributes[attribute]["type"]
+    command  = api_pa.postProjectAttribute(mosaicConfig, attribute, attType, "Null", True, peddyProjectId)
     jsonData = json.loads(os.popen(command).read())
 
   # Create all the sample attributes required for Peddy integration
@@ -209,7 +210,7 @@ def createAttributes(args):
     xlabel   = sampleAttributes[attribute]["xlabel"]
     ylabel   = sampleAttributes[attribute]["ylabel"]
     command  = api_sa.postSampleAttribute(mosaicConfig, attribute, attType, xlabel, ylabel, "Null", True, peddyProjectId)
-    jsonData = json.loads(os.popen(command + body).read())
+    jsonData = json.loads(os.popen(command).read())
 
 # Get the attributes to be imported into the current project
 def getAttributeIds(args):
@@ -438,8 +439,8 @@ def importAttributes(args):
       # Only import the attribute if it wasn't already in the project
       if not sampleAttributes[attribute]["present"]:
         attributeId = sampleAttributes[attribute]["id"]
-        command  = api_sa.importProjectAttribute(mosaicConfig, attributeId, args.project)
-        jsonData = json.loads(os.popen(command).read())
+        command     = api_sa.importSampleAttribute(mosaicConfig, attributeId, args.project)
+        jsonData    = json.loads(os.popen(command).read())
   
     # Upload the sample attribute values tsv
     command = api_sa.uploadSampleAttribute(mosaicConfig, args.output, args.project)
@@ -561,12 +562,6 @@ def removeFiles(args):
   # Remove the tsv file
   os.remove(args.output)
 
-###############
-###############
-############### Add errors to a conversation / health?
-############### Integration status value needs to be sent to the project attribute
-###############
-###############
 # Output all the errors seen while processing
 def outputErrors(errorCode):
   global errors

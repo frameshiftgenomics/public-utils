@@ -2,24 +2,41 @@
 
 from __future__ import print_function
 
+import sys
 import os
 import math
 import argparse
 import json
 from random import random
 
+# Add the path of the common functions and import them
+from sys import path
+path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-2]) + "/common_components")
+path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-2]) + "/api_commands")
+import mosaic_config
+import api_dashboards as api_d
+import api_samples as api_s
+import api_projects as api_p
+import api_project_attributes as api_pa
+import api_sample_attributes as api_sa
+
 def main():
   global alignstatsProjectId
   global hasSampleAttributes
+  global mosaicConfig
 
   # Parse the command line
   args = parseCommandLine()
 
-  # Get the attributes names to be populated
-  parseAttributes(args)
+  # Parse the mosaic configuration file
+  mosaicRequired = {"token": True, "url": True, "attributeProjectId": True}
+  mosaicConfig   = mosaic_config.parseConfig(args, mosaicRequired)
 
   # Check the integration status, e.g. if the required attributes exist or need to be created
   checkStatus(args)
+
+  # Get the attributes names to be populated
+  parseAttributes(args)
 
   # If the alignstatsProjectId is False, the project needs to be created along with all the Alignstats attributes
   if not alignstatsProjectId:
@@ -54,6 +71,9 @@ def main():
   # Create an attribute set
   createAttributeSet(args)
 
+  # Remove the created files
+  removeFiles(args)
+
   exit(0)
 
   # Output the observed errors.
@@ -63,19 +83,20 @@ def main():
 def parseCommandLine():
   parser = argparse.ArgumentParser(description='Process the command line arguments')
 
-  # Typically unchanged parameters for a Mosaic instance
-  parser.add_argument('--token', '-t', required = True, metavar = "string", help = "The Mosaic authorization token")
-  parser.add_argument('--url', '-u', required = True, metavar = "string", help = "The base url for Mosaic curl commands, up to an including \"api\". Do NOT include a trailing /")
-  parser.add_argument('--apiCommands', '-c', required = True, metavar = "string", help = "The path to the directory of api commands")
-  parser.add_argument('--attributesFile', '-f', required = True, metavar = "file", help = "The input file listing the Alignstats attributes")
-  parser.add_argument('--attributesProject', '-a', required = True, metavar = "integer", help = "The Mosaic project id that contains public attributes")
-
-  # Dynamic parameters
-  parser.add_argument('--reference', '-r', required = True, metavar = "string", help = "The genome reference for the project")
-  parser.add_argument('--input', '-i', required = True, metavar = "file", help = "The input file listing samples and json files")
-  parser.add_argument('--path', '-d', required = True, metavar = "string", help = "The path where the tsv will be generated")
-  parser.add_argument('--output', '-o', required = True, metavar = "file", help = "The output file containing the values to upload. Extension must be tsv")
+# Required arguments
+  parser.add_argument('--reference', '-r', required = True, metavar = "string", help = "The reference genome to use. Allowed values: '37', '38'")
+  parser.add_argument('--input_files', '-i', required = True, metavar = "file", action = "append", help = "The input json files (this can be set multiple times - once file per sample")
   parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
+
+  # Optional pipeline arguments
+  parser.add_argument('--attributes_file', '-f', required = False, metavar = "file", help = "The input file listing the Peddy attributes")
+  parser.add_argument('--output', '-o', required = False, metavar = "file", help = "The output file containing the values to upload")
+
+  # Optional mosaic arguments
+  parser.add_argument('--config', '-c', required = False, metavar = "string", help = "The config file for Mosaic")
+  parser.add_argument('--token', '-t', required = False, metavar = "string", help = "The Mosaic authorization token")
+  parser.add_argument('--url', '-u', required = False, metavar = "string", help = "The base url for Mosaic")
+  parser.add_argument('--attributes_project', '-a', required = False, metavar = "integer", help = "The Mosaic project id that contains public attributes")
 
   return parser.parse_args()
 
@@ -85,7 +106,7 @@ def checkStatus(args):
 
   # Check the public attributes project for the project attribute indicating that the alignstats integration
   # has been run before
-  command = args.apiCommands + "/get_project_attributes.sh " + args.token + " \"" + args.url + "\" " + args.attributesProject
+  command = api_pa.getProjectAttributes(mosaicConfig, mosaicConfig["attributesProjectId"])
   data    = json.loads(os.popen(command).read())
 
   # Loop over all the project attributes and look for attribute "Alignstats Integration xa545Ihs"
@@ -105,13 +126,16 @@ def parseAttributes(args):
   global projectAttributes
   global integrationStatus
 
+  # If the attributes file was not specified on the command line, use the default version
+  if not args.attributes_file: args.attributes_file = os.path.dirname(os.path.abspath(__file__)) + "/mosaic.atts.alignstats.tsv"
+
   # Get all the attributes to be added
-  try: attributesInput = open(args.attributesFile, "r")
+  try: attributesInput = open(args.attributes_file, "r")
 
   # If there is no attributes file, no data can be processed.
   except:
     integrationStatus= "Fail"
-    errors.append("File: " + args.attributesFile + " does not exist")
+    errors.append("File: " + args.attributes_file + " does not exist")
     return False
 
   lineNo = 0
@@ -140,15 +164,15 @@ def parseAttributes(args):
 # Create a project to hold all the Alignstats attributes
 def createProject(args):
   global alignstatsProjectId
+  global mosaicConfig
 
   # Define the curl command
-  command  = args.apiCommands + "/create_project.sh " + args.token + " \"" + args.url + "\" \"Alignstats Attributes\" \"" + args.reference + "\""
+  command  = api_p.postProject(mosaicConfig, "Alignstats Attributes", args.reference)
   jsonData = json.loads(os.popen(command).read())
   alignstatsProjectId = jsonData["id"]
 
   # Add a project attribute to the Public attributes project with this id as the value
-  command  = args.apiCommands + "/create_project_attribute.sh " + args.token + " \"" + args.url + "\" "
-  command += args.attributesProject + " \"Alignstats Integration xa545Ihs\" float " + str(alignstatsProjectId) + " false"
+  command  = api_pa.postProjectAttribute(mosaicConfig, "Alignstats Integration xa545Ihs", "float", str(alignstatsProjectId), False, mosaicConfig["attributesProjectId"])
   jsonData = json.loads(os.popen(command).read())
 
 # If the Alignstats attributes project was created, create all the required attributes                                                                                         
@@ -156,22 +180,21 @@ def createAttributes(args):
   global alignstatsProjectId
   global projectAttributes
   global sampleAttributes
+  global mosaicConfig
 
   # Create all the project attributes required for Alignstats integration
-  command = args.apiCommands + "/create_project_attribute.sh " + args.token + " \"" + args.url + "\" " + str(alignstatsProjectId)
   for attribute in projectAttributes:
     attType  = projectAttributes[attribute]["type"]
-    body     = " \"" + str(attribute) + "\" \"" + str(attType) + "\" Null true"
-    jsonData = json.loads(os.popen(command + body).read())
+    command  = api_pa.postProjectAttribute(mosaicConfig, attribute, attType, "Null", True, alignstatsProjectId)
+    jsonData = json.loads(os.popen(command).read())
                   
   # Create all the sample attributes required for Alignstats integration
-  command = args.apiCommands + "/create_sample_attribute.sh " + args.token + " \"" + args.url + "\" " + str(alignstatsProjectId)
   for attribute in sampleAttributes:
     attType  = sampleAttributes[attribute]["type"]
     xlabel   = sampleAttributes[attribute]["xlabel"]
     ylabel   = sampleAttributes[attribute]["ylabel"]
-    body     = " \"" + str(attribute) + "\" \"" + str(attType) + "\" \"" + str(xlabel) + "\" \"" + str(ylabel) + "\" Null true"
-    jsonData = json.loads(os.popen(command + body).read())
+    command  = api_sa.postSampleAttribute(mosaicConfig, attribute, attType, xlabel, ylabel, "Null", True, alignstatsProjectId)
+    jsonData = json.loads(os.popen(command).read())
 
 # Import the attributes into the current project
 def getAttributeIds(args):
@@ -179,9 +202,10 @@ def getAttributeIds(args):
   global alignstatsProjectId
   global projectAttributes
   global sampleAttributes
+  global mosaicConfig
 
   # First, get all the project attribute ids from the Alignstats Attributes project
-  command  = args.apiCommands + "/get_project_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(alignstatsProjectId)
+  command  = api_pa.getProjectAttributes(mosaicConfig, alignstatsProjectId)
   jsonData = json.loads(os.popen(command).read())
 
   # Loop over the project attributes and store the ids                                                 
@@ -190,7 +214,7 @@ def getAttributeIds(args):
     projectAttributes[str(attribute["name"])]["uid"] = attribute["uid"]
 
   # Get all the sample attribute ids from the Alignstats Attributes project
-  command  = args.apiCommands + "/get_sample_attributes.sh " + args.token + " \"" + args.url + "\" " + str(alignstatsProjectId)
+  command  = api_sa.getSampleAttributes(mosaicConfig, alignstatsProjectId)
   jsonData = json.loads(os.popen(command).read())
 
   # Loop over the sample attributes and store the ids                                                
@@ -216,12 +240,11 @@ def getAttributeIds(args):
   # the Mosaic Alignstats Attributes project and it needs to be created
   for attribute in sampleAttributes:
     if not sampleAttributes[attribute]["processed"]:
-      command  = args.apiCommands + "/create_sample_attribute.sh " + args.token + " \"" + args.url + "\" " + str(alignstatsProjectId)
       attType  = sampleAttributes[attribute]["type"]
       xlabel   = sampleAttributes[attribute]["xlabel"]
       ylabel   = sampleAttributes[attribute]["ylabel"]
-      body     = " \"" + str(attribute) + "\" \"" + str(attType) + "\" \"" + str(xlabel) + "\" \"" + str(ylabel) + "\" Null true"
-      jsonData = json.loads(os.popen(command + body).read())
+      command  = api_sa.postSampleAttribute(mosaicConfig, attribute, attType, xlabel, ylabel, "Null", True, alignstatsProjectId)
+      jsonData = json.loads(os.popen(command).read())
       sampleAttributes[str(jsonData["name"])]["id"]        = jsonData["id"]
       sampleAttributes[str(jsonData["name"])]["uid"]       = jsonData["uid"]
       sampleAttributes[str(jsonData["name"])]["processed"] = True
@@ -232,18 +255,19 @@ def checkAttributesExist(args):
   global sampleAttributes
   global projectAttributes
   global hasRun
+  global mosaicConfig
 
   for attribute in projectAttributes:
     if attribute == "Alignstats Data": alignstatsId = projectAttributes[attribute]["id"]
 
   # Get all the project attributes in the target project
-  command  = args.apiCommands + "/get_project_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(args.project)
+  command  = api_pa.getProjectAttributes(mosaicConfig, args.project)
   jsonData = json.loads(os.popen(command).read())
   for attribute in jsonData:
     if attribute["name"] == "Alignstats Data" and attribute["id"] == alignstatsId: hasRun = True
 
   # Get all the sample attributes in the target project
-  command  = args.apiCommands + "/get_sample_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(args.project)
+  command  = api_sa.getSampleAttributes(mosaicConfig, args.project)
   jsonData = json.loads(os.popen(command).read())
   projectSampleAttributes = []
   for attribute in jsonData: projectSampleAttributes.append(attribute["id"])
@@ -258,22 +282,47 @@ def getSampleFiles(args):
   global errors
   global samples
 
-  # Get the samples and the json files
-  try: inputFile = open(args.input, "r")
-  except:
-    integrationStatus= "Fail"
-    errors.append("File: " + args.input + " does not exist")
-    return False
+  # Get all of the samples in the project
+  command  = api_s.getSamples(mosaicConfig, args.project)
+  jsonData = json.loads(os.popen(command).read())
+  for record in jsonData: samples[record["name"]] = True
 
-  # Read each line and get the file names
-  for line in inputFile.readlines():
-    line = line.rstrip()
-    samples[line.split("\t")[0]] = line.split("\t")[1]
+  # Loop over the provided input files - there should be one file per sample - and check the files exist
+  isSuccess  = True
+  for index, filename in enumerate(args.input_files):
 
-  # Close the input file
-  inputFile.close()
+    # The file may include the entire path, so extract just the filename
+    fileNoPath = filename.split("/")[-1] if "/" in filename else filename
 
-  return True
+    # See if one, and only one, of the project samples are embedded in the filename
+    hasMatch      = False
+    matchedSample = False
+    for sample in samples:
+      if sample in fileNoPath:
+        if hasMatch:
+          errors.append("File: " + fileNoPath + " contains the names of multiple project samples, so it cannot be determined which samples this file belongs to")
+          integrationStatus = "Fail"
+          isSuccess         = False
+          break
+        else:
+          hasMatch      = True
+          matchedSample = sample
+
+    # If the filename does not contain the name of a sample, it cannot be determined which sample the file belongs to
+    if not hasMatch:
+      errors.append("File: " + fileNoPath + " does not contain the name of any project samples, so it cannot be determined which samples this file belongs to")
+      integrationStatus = "Fail"
+      break
+
+    # Otherwise associate this file with the sample, and check it exists
+    else:
+      try: samples[matchedSample] = {"file": filename, "handle": open(filename, "r")}
+      except:
+        errors.append("File: " + filename + " could not be opened")
+        integrationStatus = "Fail"
+        isSuccess = False
+
+  return isSuccess
 
 # Read through the Alignstats json files for each sample and store the information
 def readJsonFiles(args):
@@ -285,17 +334,12 @@ def readJsonFiles(args):
 
   # Loop over the samples, and open and read the associated json files
   for sample in samples:
-    try: sampleFile = open(samples[sample], 'r')
-    except:
-      integrationStatus= "Fail"
-      errors.append("File: " + args.input + " does not exist")
-      return False
 
     # Read through the alignstats file
-    try: sampleData = json.loads(sampleFile.read())
+    try: sampleData = json.loads(samples[sample]["handle"].read())
     except:
       integrationStatus= "Fail"
-      errors.append("File: " + args.input + " is not a well formed json")
+      errors.append("File: " + samples[sample]["file"] + " is not a well formed json")
       return False
 
     # Loop over all the attributes in the
@@ -319,7 +363,7 @@ def readJsonFiles(args):
         continue
 
     # Close the sample file
-    sampleFile.close()
+    samples[sample]["handle"].close()
 
   # If the files were successfully processed, return True
   return True
@@ -330,6 +374,7 @@ def outputToMosaic(args):
   global sampleAttributes
 
   # Open the output file
+  if not args.output: args.output = "alignstats_mosaic_upload.tsv"
   outFile = open(args.output, "w")
 
   # Output the header line
@@ -356,38 +401,37 @@ def importAttributes(args):
   global projectAttributes
   global sampleAttributes
   global hasSampleAttributes
+  global mosaicConfig
 
   # Set the Alignstats Data project attribute value to the value stored in integrationStatus
   projectAttributes["Alignstats Data"]["values"] = integrationStatus
 
   # Begin with the import and setting of project attributes
-  command = args.apiCommands + "/import_project_attribute.sh " + args.token + " \"" + args.url + "\" \"" + str(args.project) + "\" "
   for attribute in projectAttributes:                                                                           
     attributeId = projectAttributes[attribute]["id"]                                                            
     value       = projectAttributes[attribute]["values"]                                                        
-    body        = "\"" + str(attributeId) + "\" \"" + str(value) + "\""
-    jsonData    = json.loads(os.popen(command + body).read())
+    command     = api_pa.importProjectAttribute(mosaicConfig, attributeId, value, args.project)
+    jsonData    = json.loads(os.popen(command).read())
 
   # Loop over all the defined sample attributes and import them, but only if the parsing of the peddy           
   # html was successful     
   if hasSampleAttributes:   
-    command = args.apiCommands + "/import_sample_attribute.sh " + args.token + " \"" + args.url + "\" \"" + str(args.project) + "\" "
     for attribute in sampleAttributes:
       attributeId = sampleAttributes[attribute]["id"]
-      body        = "\"" + str(attributeId) + "\""
-      jsonData    = json.loads(os.popen(command + body).read())
+      command     = api_sa.importSampleAttribute(mosaicConfig, attributeId, args.project)
+      jsonData    = json.loads(os.popen(command).read())
   
     # Upload the sample attribute values tsv
-    command  = args.apiCommands + "/upload_sample_attribute_tsv.sh " + args.token + " \"" + args.url + "\" \"" + str(args.project) + "\" \""
-    command += str(args.path) + "/" + str(args.output) + "\""
+    command = api_sa.uploadSampleAttribute(mosaicConfig, args.output, args.project)
     data     = os.popen(command)
 
 # Create an attribute set
 def createAttributeSet(args):
   global sampleAttributes
+  global mosaicConfig
 
   # Get any existing attribute sets
-  command = args.apiCommands + "/get_attribute_sets.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\""
+  command = api_pa.getProjectAttributeSets(mosaicConfig, args.project)
   data    = json.loads(os.popen(command).read())
 
   # Loop over the existing attribute sets and see if the Alignstats set already exists
@@ -415,26 +459,32 @@ def createAttributeSet(args):
 
   # Delete the existing set if necessary
   if deleteSet:
-    command  = args.apiCommands + "/delete_attribute_set.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
-    command += "\"" + str(setId) + "\""
+    command = api_pa.deleteProjectAttributeSet(mosaicConfig, args.project, setId)
     try: data = os.popen(command).read()
     except: print("Failed to delete attribute set with id:", setId, sep = "")
 
   # Create the attribute set from these ids
   if createSet:
-    command  = args.apiCommands + "/post_attribute_set.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
-    command += "\"Alignstats\" \"Imported Alignstats attributes\" true \"" + str(attributeIds) + "\" \"sample\""
-
+    command = api_pa.postProjectAttributeSet(mosaicConfig, "Alignstats", "Imported Alignstats attributes", True, attributeIds, args.project)
     try: data = json.loads(os.popen(command).read())
     except:
       print("Failed to create attribute set")
       exit(1)
+
+# Remove the created files
+def removeFiles(args):
+
+  # Remove the tsv file
+  os.remove(args.output)
 
 # Output errors
 def outputErrors(errorCode):
   global errors
 
 # Initialise global variables
+
+# Store mosaic info, e.g. the token, url etc.
+mosaicConfig = {}
 
 # The id of the project holding alignstats attributes
 alignstatsProjectId = False
