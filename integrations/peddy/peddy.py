@@ -2,18 +2,34 @@
 
 from __future__ import print_function
 
+import sys
 import os
 import math
 import argparse
 import json
 from random import random
 
+# Add the path of the common functions and import them
+from sys import path
+path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-2]) + "/common_components")
+path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-2]) + "/api_commands")
+import mosaic_config
+import api_dashboards as api_d
+import api_projects as api_p
+import api_project_attributes as api_pa
+import api_sample_attributes as api_sa
+
 def main():
   global peddyProjectId
   global hasSampleAttributes
+  global mosaicConfig
 
   # Parse the command line
   args = parseCommandLine()
+
+  # Parse the mosaic configuration file
+  mosaicRequired = {"token": True, "url": True, "attributeProjectId": True}
+  mosaicConfig   = mosaic_config.parseConfig(args, mosaicRequired)
 
   # Check the integration status, e.g. if the required attributes exist or need to be created
   checkStatus(args)
@@ -34,6 +50,9 @@ def main():
 
   # Read through the Peddy file
   passed = readPeddyHtml(args)
+
+  # Set the output file if one wasn't specified
+  if not args.output: args.output = "peddy_mosaic_upload.tsv"
 
   # If this step failed, the peddy html could not be found. The project attribute "Peddy data" should still be
   # imported into the project and set to Fail. Otherwise the peddy data should be processed
@@ -56,23 +75,35 @@ def main():
   backgroundsId = postBackgrounds(args)
   buildChart(args, backgroundsId)
 
+  # Remove the created files
+  removeFiles(args)
+
   # Output the observed errors.
   outputErrors(0)
 
 # Input options
 def parseCommandLine():
+
   parser = argparse.ArgumentParser(description='Process the command line arguments')
-  parser.add_argument('--token', '-t', required = True, metavar = "string", help = "The Mosaic authorization token")
-  parser.add_argument('--url', '-u', required = True, metavar = "string", help = "The base url for Mosaic curl commands, up to an including \"api/\"")
-  parser.add_argument('--path', '-d', required = True, metavar = "string", help = "The path where the tsv will be generated")
-  parser.add_argument('--apiCommands', '-c', required = True, metavar = "string", help = "The path to the directory of api commands")
-  parser.add_argument('--attributesFile', '-f', required = True, metavar = "file", help = "The input file listing the Peddy attributes")
-  parser.add_argument('--attributesProject', '-a', required = True, metavar = "integer", help = "The Mosaic project id that contains public attributes")
-  parser.add_argument('--reference', '-r', required = True, metavar = "string", help = "The genome reference for the project")
-  parser.add_argument('--input', '-i', required = True, metavar = "file", help = "The html file output from Peddy")
-  parser.add_argument('--output', '-o', required = True, metavar = "file", help = "The output file containing the values to upload")
+
+  # Required arguments
+  parser.add_argument('--reference', '-r', required = True, metavar = "string", help = "The reference genome to use. Allowed values: '37', '38'")
+  parser.add_argument('--input_html', '-i', required = True, metavar = "file", help = "The html file output from Peddy")
   parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
-  parser.add_argument('--background', '-b', required = True, metavar = "file", help = "The output json containing background ancestry information")
+
+  # Optional pipeline arguments
+  parser.add_argument('--attributes_file', '-f', required = False, metavar = "file", help = "The input file listing the Peddy attributes")
+  parser.add_argument('--output', '-o', required = False, metavar = "file", help = "The output file containing the values to upload")
+  parser.add_argument('--background', '-b', required = False, metavar = "file", help = "The output json containing background ancestry information")
+
+  # Optional mosaic arguments
+  parser.add_argument('--config', '-c', required = False, metavar = "string", help = "The config file for Mosaic")
+  parser.add_argument('--token', '-t', required = False, metavar = "string", help = "The Mosaic authorization token")
+  parser.add_argument('--url', '-u', required = False, metavar = "string", help = "The base url for Mosaic")
+  parser.add_argument('--attributes_project', '-a', required = False, metavar = "integer", help = "The Mosaic project id that contains public attributes")
+
+  # Version
+  parser.add_argument('--version', '-v', action="version", version='Peddy integration version: ' + str(version))
 
   return parser.parse_args()
 
@@ -80,11 +111,12 @@ def parseCommandLine():
 def checkStatus(args):
   global errors
   global peddyProjectId
+  global mosaicConfig
 
   # Check the public attributes project for the project attribute indicating that the peddy integration
   # has been run before
-  command = args.apiCommands + "/get_project_attributes.sh " + args.token + " " + args.url + " " + args.attributesProject
-  data = json.loads(os.popen(command).read())
+  command = api_pa.getProjectAttributes(mosaicConfig, mosaicConfig["attributesProjectId"])
+  data    = json.loads(os.popen(command).read())
 
   # If the public attributse project doesn't exist, terminate
   if "message" in data:
@@ -107,13 +139,16 @@ def parseAttributes(args):
   global sampleAttributes
   global integrationStatus
 
+  # If the attributes file was not specified on the command line, use the default version
+  if not args.attributes_file: args.attributes_file = os.path.dirname(os.path.abspath(__file__)) + "/mosaic.atts.peddy.tsv"
+
   # Get all the attributes to be added
-  try: attributesInput = open(args.attributesFile, "r")
+  try: attributesInput = open(args.attributes_file, "r")
 
   # If there is no attributes file, no data can be processed.
   except:
     integrationStatus= "Fail"
-    errors.append("File: " + args.attributesFile + " does not exist")
+    errors.append("File: " + args.attributes_file + " does not exist")
     return False
 
   lineNo = 0
@@ -140,20 +175,20 @@ def parseAttributes(args):
     # If the attribute is not correctly defined, add the line to the errors
     else:
       integrationStatus = "Incomplete"
-      errors.append("Unknown attribute in line " + str(lineNo) + " of file " + args.attributes)
+      errors.append("Unknown attribute in line " + str(lineNo) + " of file " + args.attributes_file)
 
 # Create a project to hold all the Peddy attributes
 def createProject(args):
   global peddyProjectId
+  global mosaicConfig
 
   # Define the curl command
-  command  = args.apiCommands + "/create_project.sh " + args.token + " \"" + args.url + "\" \"Peddy Attributes\" \"" + args.reference + "\""
+  command  = api_p.postProject(mosaicConfig, "Peddy Attributes", args.reference)
   jsonData = json.loads(os.popen(command).read())
   peddyProjectId = jsonData["id"]
 
   # Add a project attribute to the Public attributes project with this id as the value
-  command  = args.apiCommands + "/create_project_attribute.sh " + args.token + " \"" + args.url + "\" "
-  command += args.attributesProject + " \"Peddy Integration xa545Ihs\" float " + str(peddyProjectId) + " false"
+  command  = api_pa.postProjectAttribute(mosaicConfig, "Peddy Integration xa545Ihs", "float", str(peddyProjectId), False, mosaicConfig["attributesProjectId"])
   jsonData = json.loads(os.popen(command).read())
 
 # If the Peddy attributes project was created, create all the required attributes
@@ -161,21 +196,19 @@ def createAttributes(args):
   global peddyProjectId
   global projectAttributes
   global sampleAttributes
+  global mosaicConfig
 
   # Create all the project attributes required for Peddy integration
-  command = args.apiCommands + "/create_project_attribute.sh " + args.token + " \"" + args.url + "\" " + str(peddyProjectId)
   for attribute in projectAttributes:
-    attType  = projectAttributes[attribute]["type"]
-    body     = " \"" + str(attribute) + "\" \"" + str(attType) + "\" Null true"
-    jsonData = json.loads(os.popen(command + body).read())
+    command  = api_pa.postProjectAttribute(mosaicConfig, str(attribute), attType, "Null", True, peddyProjectId)
+    jsonData = json.loads(os.popen(command).read())
 
   # Create all the sample attributes required for Peddy integration
-  command = args.apiCommands + "/create_sample_attribute.sh " + args.token + " \"" + args.url + "\" " + str(peddyProjectId)
   for attribute in sampleAttributes:
     attType  = sampleAttributes[attribute]["type"]
     xlabel   = sampleAttributes[attribute]["xlabel"]
     ylabel   = sampleAttributes[attribute]["ylabel"]
-    body     = " \"" + str(attribute) + "\" \"" + str(attType) + "\" \"" + xlabel + "\" \"" + ylabel + "\" Null true"
+    command  = api_sa.postSampleAttribute(mosaicConfig, attribute, attType, xlabel, ylabel, "Null", True, peddyProjectId)
     jsonData = json.loads(os.popen(command + body).read())
 
 # Get the attributes to be imported into the current project
@@ -183,9 +216,10 @@ def getAttributeIds(args):
   global peddyProjectId
   global projectAttributes
   global sampleAttributes
+  global mosaicConfig
 
   # First, get all the project attribute ids from the Peddy Attributes project
-  command  = args.apiCommands + "/get_project_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(peddyProjectId)
+  command  = api_pa.getProjectAttributes(mosaicConfig, peddyProjectId)
   jsonData = json.loads(os.popen(command).read())
 
   # Loop over the project attributes and store the ids
@@ -194,7 +228,7 @@ def getAttributeIds(args):
     projectAttributes[str(attribute["name"])]["uid"] = attribute["uid"]
 
   # Get all the sample attribute ids from the Peddy Attributes project
-  command  = args.apiCommands + "/get_sample_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(peddyProjectId)
+  command  = api_sa.getSampleAttributes(mosaicConfig, peddyProjectId)
   jsonData = json.loads(os.popen(command).read())
 
   # Loop over the sample attributes and store the ids
@@ -211,19 +245,20 @@ def getAttributeIds(args):
 def checkAttributesExist(args):
   global sampleAttributes
   global projectAttributes
+  global mosaicConfig
   global hasRun
 
   for attribute in projectAttributes:
     if attribute == "Peddy Data": peddyId = projectAttributes[attribute]["id"]
 
   # Get all the project attributes in the target project
-  command  = args.apiCommands + "/get_project_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(args.project)
+  command  = api_pa.getProjectAttributes(mosaicConfig, args.project)
   jsonData = json.loads(os.popen(command).read())
   for attribute in jsonData: 
     if attribute["name"] == "Peddy Data" and attribute["id"] == peddyId: hasRun = True
 
   # Get all the sample attributes in the target project
-  command  = args.apiCommands + "/get_sample_attributes.sh " + str(args.token) + " " + str(args.url) + " " + str(args.project)
+  command  = api_sa.getSampleAttributes(mosaicConfig, args.project)
   jsonData = json.loads(os.popen(command).read())
   projectSampleAttributes = []
   for attribute in jsonData: projectSampleAttributes.append(attribute["id"])
@@ -240,12 +275,12 @@ def readPeddyHtml(args):
   global projectAttributes
 
   # Open the file
-  try: peddyHtml = open(args.input, "r")
+  try: peddyHtml = open(args.input_html, "r")
 
   # If the file cannot be found, fail
   except:
     integrationStatus = "Fail"
-    errors.append("File: " + args.input + " does not exist")
+    errors.append("File: " + args.input_html + " does not exist")
     return False
 
   # Loop over the file and extract the data
@@ -330,6 +365,7 @@ def readPeddyHtml(args):
       # Create a json object with the background name defined, and add the background data as the payload
       background = json.loads('{"name":"Ancestry Backgrounds","payload":[]}')
       background["payload"] = htmlBackground
+      if not args.background: args.background = "peddy_backgrounds.json"
       backgroundFile = open(args.background, "w")
       print(json.dumps(background), file = backgroundFile)
       backgroundFile.close()
@@ -382,41 +418,40 @@ def importAttributes(args):
   global projectAttributes
   global sampleAttributes
   global hasSampleAttributes
+  global mosaicConfig
 
   # Set the Peddy Data project attribute value to the value stored in integrationStatus
   projectAttributes["Peddy Data"]["values"] = integrationStatus
 
   # Begin with the import and setting of project attributes
-  command = args.apiCommands + "/import_project_attribute.sh " + args.token + " \"" + args.url + "\" \"" + str(args.project) + "\" "
   for attribute in projectAttributes:
     attributeId = projectAttributes[attribute]["id"]
     value       = projectAttributes[attribute]["values"]
-    body        = "\"" + str(attributeId) + "\" \"" + str(value) + "\""
-    jsonData    = json.loads(os.popen(command + body).read())
+    command  = api_pa.importProjectAttribute(mosaicConfig, attributeId, value, args.project)
+    jsonData = json.loads(os.popen(command).read())
 
   # Loop over all the defined sample attributes and import them, but only if the parsing of the peddy
   # html was successful
   if hasSampleAttributes:
-    command = args.apiCommands + "/import_sample_attribute.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
     for attribute in sampleAttributes:
 
       # Only import the attribute if it wasn't already in the project
       if not sampleAttributes[attribute]["present"]:
         attributeId = sampleAttributes[attribute]["id"]
-        body        = "\"" + str(attributeId) + "\""
-        jsonData    = json.loads(os.popen(command + body).read())
+        command  = api_sa.importProjectAttribute(mosaicConfig, attributeId, args.project)
+        jsonData = json.loads(os.popen(command).read())
   
     # Upload the sample attribute values tsv
-    command  = args.apiCommands + "/upload_sample_attribute_tsv.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" \""
-    command += str(args.path) + "/" + str(args.output) + "\""
-    data     = os.popen(command)
+    command = api_sa.uploadSampleAttribute(mosaicConfig, args.output, args.project)
+    data    = os.popen(command)
 
 # Create an attribute set
 def createAttributeSet(args):
   global sampleAttributes
+  global mosaicConfig
 
   # Get any existing attribute sets
-  command = args.apiCommands + "/get_attribute_sets.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\""
+  command = api_pa.getProjectAttributeSets(mosaicConfig, args.project)
   data    = json.loads(os.popen(command).read())
 
   # Loop over the existing attribute sets and see if the Peddy set already exists
@@ -444,16 +479,13 @@ def createAttributeSet(args):
 
   # Delete the existing set if necessary
   if deleteSet:
-    command  = args.apiCommands + "/delete_attribute_set.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
-    command += "\"" + str(setId) + "\""
+    command = api_pa.deleteProjectAttributeSet(mosaicConfig, args.project, setId)
     try: data = os.popen(command).read()
     except: print("Failed to delete attribute set with id:", setId, sep = "")
 
   # Create the attribute set from these ids
   if createSet:
-    command  = args.apiCommands + "/post_attribute_set.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
-    command += "\"Peddy\" \"Imported Peddy attributes\" true \"" + str(attributeIds) + "\" \"sample\""
-
+    command = api_pa.postProjectAttributeSet(mosaicConfig, "Peddy", "Imported Peddy attributes", True, attributeIds, args.project)
     try: data = json.loads(os.popen(command).read())
     except:
       print("Failed to create attribute set")
@@ -461,9 +493,10 @@ def createAttributeSet(args):
 
 # Post the background data
 def postBackgrounds(args):
+  global mosaicConfig
 
   # Build the command to POST
-  command  = args.apiCommands + "/post_backgrounds.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" " + str(args.background)
+  command = api_p.postBackgrounds(mosaicConfig, args.background, args.project)
   try: data = json.loads(os.popen(command).read())
   except:
     print("Failed to post backgrounds")
@@ -478,10 +511,11 @@ def postBackgrounds(args):
 # Build the ancestry chart
 def buildChart(args, backgroundsId):
   global sampleAttributes
+  global mosaicConfig
 
   # Loop over all the charts in the project and find any charts that use a background
-  command  = args.apiCommands + "/get_project_charts.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\""
-  data     = json.loads(os.popen(command).read())
+  command = api_p.getProjectCharts(mosaicConfig, args.project)
+  data    = json.loads(os.popen(command).read())
 
   # Store the ids of charts that use a background and have the name "Ancestry (Peddy)"
   chartsToRemove = []
@@ -489,9 +523,9 @@ def buildChart(args, backgroundsId):
     if chart["project_background_id"] != None and chart["name"] == "Ancestry (Peddy)": chartsToRemove.append(chart["id"])
 
   # Remove old ancestry charts before adding the new one
-  command = args.apiCommands + "/delete_chart.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
-  for chart in chartsToRemove:
-    data = os.popen(command + "\"" + str(chart) + "\"")
+  for chartId in chartsToRemove:
+    command = api_p.deleteProjectChart(mosaicConfig, args.project, chartId)
+    data    = os.popen(command)
 
   # Get the ids of the PC1 and PC2 attributes
   pc1     = sampleAttributes["Ancestry PC1 (Peddy)"]["id"]
@@ -499,10 +533,7 @@ def buildChart(args, backgroundsId):
   colorBy = sampleAttributes["Ancestry Prediction (Peddy)"]["id"]
 
   # Build the command to post a chart
-  command  = args.apiCommands + "/post_backgrounds_chart.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" "
-  command += "\"" + str(pc2) + "\" \"" + str(backgroundsId) + "\" \"Ancestry (Peddy)\" \"" + str(colorBy) + "\" \"" + str(pc1) + "\" "
-  command += "\"Ancestry PC2 (Peddy)\""
-
+  command = api_p.postProjectBackgroundChart(mosaicConfig, "Ancestry (Peddy)", "scatterplot", pc2, backgroundsId, "Ancestry PC2 (Peddy)", colorBy, pc1, args.project)
   try: data = json.loads(os.popen(command).read())
   except:
     print("Failed to post chart")
@@ -515,12 +546,20 @@ def buildChart(args, backgroundsId):
     exit(1)
 
   # Pin the chart to the dashboard
-  command = args.apiCommands + "/pin_chart.sh " + str(args.token) + " \"" + str(args.url) + "\" \"" + str(args.project) + "\" \"" + str(chartId) + "\""
-
+  command = api_d.pinChart(mosaicConfig, chartId, args.project)
   try: data = json.loads(os.popen(command).read())
   except:
     print("Failed to pin chart")
     exit(1)
+
+# Remove the created files
+def removeFiles(args):
+
+  # Remove the backgrounds json
+  os.remove(args.background)
+
+  # Remove the tsv file
+  os.remove(args.output)
 
 ###############
 ###############
@@ -535,11 +574,10 @@ def outputErrors(errorCode):
   for line in errors: print(line)
   exit(errorCode)
 
-
-
-
-
 # Initialise global variables
+
+# Store mosaic info, e.g. the token, url etc.
+mosaicConfig = {}
 
 # The id of the project holding Peddy attributes
 peddyProjectId = False
@@ -560,6 +598,9 @@ samples  = []
 
 # Record if sample attributes are successfully processed
 hasSampleAttributes = False
+
+# Store the version
+version = "0.1.1"
 
 if __name__ == "__main__":
   main()
