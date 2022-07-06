@@ -14,10 +14,12 @@ from sys import path
 path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-2]) + "/common_components")
 path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-2]) + "/api_commands")
 import mosaic_config
-import api_attributess as api_a
+import api_attributes as api_a
+import api_charts as api_c
 import api_dashboards as api_d
 import api_projects as api_p
 import api_project_attributes as api_pa
+import api_project_backgrounds as api_pb
 import api_sample_attributes as api_sa
 
 def main():
@@ -430,7 +432,7 @@ def importAttributes(args):
   for attribute in projectAttributes:
     attributeId = projectAttributes[attribute]["id"]
     value       = projectAttributes[attribute]["values"]
-    command  = api_pa.importProjectAttribute(mosaicConfig, attributeId, value, args.project)
+    command  = api_pa.postImportProjectAttribute(mosaicConfig, attributeId, value, args.project)
     jsonData = json.loads(os.popen(command).read())
 
   # Loop over all the defined sample attributes and import them, but only if the parsing of the peddy
@@ -441,11 +443,11 @@ def importAttributes(args):
       # Only import the attribute if it wasn't already in the project
       if not sampleAttributes[attribute]["present"]:
         attributeId = sampleAttributes[attribute]["id"]
-        command     = api_sa.importSampleAttribute(mosaicConfig, attributeId, args.project)
+        command     = api_sa.postImportSampleAttribute(mosaicConfig, attributeId, args.project)
         jsonData    = json.loads(os.popen(command).read())
   
     # Upload the sample attribute values tsv
-    command = api_sa.uploadSampleAttribute(mosaicConfig, args.output, args.project)
+    command = api_sa.postUploadSampleAttribute(mosaicConfig, args.output, args.project)
     data    = os.popen(command)
 
 # Create an attribute set
@@ -488,7 +490,7 @@ def createAttributeSet(args):
 
   # Create the attribute set from these ids
   if createSet:
-    command = api_a.postProjectAttributeSet(mosaicConfig, "Peddy", "Imported Peddy attributes", True, attributeIds, args.project)
+    command = api_a.postProjectAttributeSet(mosaicConfig, "Peddy", "Imported Peddy attributes", True, attributeIds, "sample", args.project)
     try: data = json.loads(os.popen(command).read())
     except:
       print("Failed to create attribute set")
@@ -499,7 +501,7 @@ def postBackgrounds(args):
   global mosaicConfig
 
   # Build the command to POST
-  command = api_p.postBackgrounds(mosaicConfig, args.background, args.project)
+  command = api_pb.postBackgrounds(mosaicConfig, args.background, args.project)
   try: data = json.loads(os.popen(command).read())
   except:
     print("Failed to post backgrounds")
@@ -517,7 +519,7 @@ def buildChart(args, backgroundsId):
   global mosaicConfig
 
   # Loop over all the charts in the project and find any charts that use a background
-  command = api_p.getProjectCharts(mosaicConfig, args.project)
+  command = api_c.getProjectCharts(mosaicConfig, args.project)
   data    = json.loads(os.popen(command).read())
 
   # Store the ids of charts that use a background and have the name "Ancestry (Peddy)"
@@ -527,7 +529,7 @@ def buildChart(args, backgroundsId):
 
   # Remove old ancestry charts before adding the new one
   for chartId in chartsToRemove:
-    command = api_p.deleteProjectChart(mosaicConfig, args.project, chartId)
+    command = api_c.deleteSavedChart(mosaicConfig, args.project, chartId)
     data    = os.popen(command)
 
   # Get the ids of the PC1 and PC2 attributes
@@ -536,7 +538,7 @@ def buildChart(args, backgroundsId):
   colorBy = sampleAttributes["Ancestry Prediction (Peddy)"]["id"]
 
   # Build the command to post a chart
-  command = api_p.postProjectBackgroundChart(mosaicConfig, "Ancestry (Peddy)", "scatterplot", pc2, backgroundsId, "Ancestry PC2 (Peddy)", colorBy, pc1, args.project)
+  command = api_pb.postBackgroundChart(mosaicConfig, "Ancestry (Peddy)", "scatterplot", pc2, backgroundsId, "Ancestry PCS (Peddy)", colorBy, pc1, args.project)
   try: data = json.loads(os.popen(command).read())
   except:
     print("Failed to post chart")
@@ -549,7 +551,7 @@ def buildChart(args, backgroundsId):
     exit(1)
 
   # Pin the chart to the dashboard
-  command = api_d.pinChart(mosaicConfig, chartId, args.project)
+  command = api_d.postPinChart(mosaicConfig, chartId, args.project)
   try: data = json.loads(os.popen(command).read())
   except:
     print("Failed to pin chart")

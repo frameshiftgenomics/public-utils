@@ -413,7 +413,7 @@ def importAttributes(args):
   for attribute in projectAttributes:                                                                           
     attributeId = projectAttributes[attribute]["id"]                                                            
     value       = projectAttributes[attribute]["values"]                                                        
-    command     = api_pa.importProjectAttribute(mosaicConfig, attributeId, value, args.project)
+    command     = api_pa.postImportProjectAttribute(mosaicConfig, attributeId, value, args.project)
     jsonData    = json.loads(os.popen(command).read())
 
   # Loop over all the defined sample attributes and import them, but only if the parsing of the peddy           
@@ -421,11 +421,11 @@ def importAttributes(args):
   if hasSampleAttributes:   
     for attribute in sampleAttributes:
       attributeId = sampleAttributes[attribute]["id"]
-      command     = api_sa.importSampleAttribute(mosaicConfig, attributeId, args.project)
+      command     = api_sa.postImportSampleAttribute(mosaicConfig, attributeId, args.project)
       jsonData    = json.loads(os.popen(command).read())
   
     # Upload the sample attribute values tsv
-    command = api_sa.uploadSampleAttribute(mosaicConfig, args.output, args.project)
+    command = api_sa.postUploadSampleAttribute(mosaicConfig, args.output, args.project)
     data     = os.popen(command)
 
 # Create an attribute set
@@ -468,7 +468,7 @@ def createAttributeSet(args):
 
   # Create the attribute set from these ids
   if createSet:
-    command = api_a.postProjectAttributeSet(mosaicConfig, "Alignstats", "Imported Alignstats attributes", True, attributeIds, args.project)
+    command = api_a.postProjectAttributeSet(mosaicConfig, "Alignstats", "Imported Alignstats attributes", True, attributeIds, "scatterplot", args.project)
     try: data = json.loads(os.popen(command).read())
     except:
       print("Failed to create attribute set")

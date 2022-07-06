@@ -10,8 +10,8 @@ import math
 
 # Add the path of the common functions and import them
 from sys import path
-path.append("./common_components")
-path.append("./api_commands")
+path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]) + "/common_components")
+path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]) + "/api_commands")
 import mosaic_config
 import api_attributes as api_a
 import api_conversations as api_c
