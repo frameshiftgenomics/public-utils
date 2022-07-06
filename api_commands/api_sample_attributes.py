@@ -1,6 +1,12 @@
 #!/usr/bin/python
 
-# Create a new project attribute
+# This contains API routes for sample attributes (mirrors the API docs)
+
+######
+###### GET routes
+######
+
+# Get sample attributes in a project
 def getSampleAttributes(mosaicConfig, projectId):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
@@ -10,7 +16,11 @@ def getSampleAttributes(mosaicConfig, projectId):
 
   return command
 
-# Create a new project attribute
+######
+###### POST routes
+######
+
+# Create a new sample attribute
 def postSampleAttribute(mosaicConfig, name, valueType, value, isPublic, xLabel, yLabel, projectId):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
@@ -23,7 +33,7 @@ def postSampleAttribute(mosaicConfig, name, valueType, value, isPublic, xLabel, 
   return command
 
 # Import a sample attribute
-def importSampleAttribute(mosaicConfig, attributeId, projectId):
+def postImportSampleAttribute(mosaicConfig, attributeId, projectId):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
 
@@ -34,7 +44,7 @@ def importSampleAttribute(mosaicConfig, attributeId, projectId):
   return command
 
 # Upload a sample attribute
-def uploadSampleAttribute(mosaicConfig, filename, projectId):
+def postUploadSampleAttribute(mosaicConfig, filename, projectId):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
 
@@ -43,3 +53,11 @@ def uploadSampleAttribute(mosaicConfig, filename, projectId):
   command += str(url) + 'api/v1/projects/' + str(projectId) + '/samples/attributes/upload'
 
   return command
+
+######
+###### PUT routes
+######
+
+######
+###### DELETE routes
+######

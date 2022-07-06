@@ -14,6 +14,7 @@ from sys import path
 path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-2]) + "/common_components")
 path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-2]) + "/api_commands")
 import mosaic_config
+import api_attributess as api_a
 import api_dashboards as api_d
 import api_projects as api_p
 import api_project_attributes as api_pa
@@ -83,6 +84,7 @@ def main():
 
 # Input options
 def parseCommandLine():
+  global version
 
   parser = argparse.ArgumentParser(description='Process the command line arguments')
 
@@ -452,7 +454,7 @@ def createAttributeSet(args):
   global mosaicConfig
 
   # Get any existing attribute sets
-  command = api_pa.getProjectAttributeSets(mosaicConfig, args.project)
+  command = api_a.getProjectAttributeSets(mosaicConfig, args.project)
   data    = json.loads(os.popen(command).read())
 
   # Loop over the existing attribute sets and see if the Peddy set already exists
@@ -480,13 +482,13 @@ def createAttributeSet(args):
 
   # Delete the existing set if necessary
   if deleteSet:
-    command = api_pa.deleteProjectAttributeSet(mosaicConfig, args.project, setId)
+    command = api_a.deleteProjectAttributeSet(mosaicConfig, args.project, setId)
     try: data = os.popen(command).read()
     except: print("Failed to delete attribute set with id:", setId, sep = "")
 
   # Create the attribute set from these ids
   if createSet:
-    command = api_pa.postProjectAttributeSet(mosaicConfig, "Peddy", "Imported Peddy attributes", True, attributeIds, args.project)
+    command = api_a.postProjectAttributeSet(mosaicConfig, "Peddy", "Imported Peddy attributes", True, attributeIds, args.project)
     try: data = json.loads(os.popen(command).read())
     except:
       print("Failed to create attribute set")

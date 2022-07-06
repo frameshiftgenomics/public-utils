@@ -1,6 +1,12 @@
 #!/usr/bin/python
 
-# Get the project attribtes for the defined project
+# This contains API routes for project attributes (mirrors the API docs)
+
+######
+###### GET routes
+######
+
+# Get the project attributes for the defined project
 def getProjectAttributes(mosaicConfig, projectId):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
@@ -8,6 +14,29 @@ def getProjectAttributes(mosaicConfig, projectId):
   command = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" ' + str(url) + "api/v1/projects/" + str(projectId) + "/attributes"
 
   return command
+
+# Get all public project attributes
+def getPublicProjectAttributes(mosaicConfig, limit, page):
+  token = mosaicConfig["token"]
+  url   = mosaicConfig["url"]
+
+  command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
+  command += str(url) + 'api/v1/projects/attributes?limit=' + str(limit) + '&page=' + str(page)
+
+  return command
+
+# Get the project attributes for the all projects the user has access to
+def getUserProjectAttributes(mosaicConfig):
+  token = mosaicConfig["token"]
+  url   = mosaicConfig["url"]
+
+  command = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" ' + str(url) + "api/v1/user/projects//attributes"
+
+  return command
+
+######
+###### POST routes
+######
 
 # Create a new project attribute
 def postProjectAttribute(mosaicConfig, name, valueType, value, isPublic, projectId):
@@ -21,7 +50,7 @@ def postProjectAttribute(mosaicConfig, name, valueType, value, isPublic, project
   return command
 
 # Import a project attribute
-def importProjectAttribute(mosaicConfig, attributeId, value, projectId):
+def postImportProjectAttribute(mosaicConfig, attributeId, value, projectId):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
 
@@ -31,34 +60,21 @@ def importProjectAttribute(mosaicConfig, attributeId, value, projectId):
 
   return command
 
-# Get all available attribute sets
-def getProjectAttributeSets(mosaicConfig, projectId):
+######
+###### PUT routes
+######
+
+# Update the value of a project attribute
+def putProjectAttribute(mosaicConfig, value, projectId, attributeId):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
 
-  command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
-  command += str(url) + 'api/v1/projects/' + str(projectId) + '/attributes/sets'
+  command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"value": "' + str(value) + '"}\' '
+  command += str(url) + 'api/v1/projects/' + str(projectId) + '/attributes/' + str(attributeId)
 
   return command
 
-# Delete an attribute set
-def postProjectAttributeSet(mosaicConfig, name, description, isPublic, attributeIds, projectId):
-  token = mosaicConfig["token"]
-  url   = mosaicConfig["url"]
-
-  command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
-  command += '-d \'{"name": "' + str(name) + '", "description": "' + str(description) + '", "is_public_to_project": "' + str(isPublic)
-  command += '", "attribute_ids": "' + str(attributeIds) + '", "type": "' + str(valueType) + '"}\' '
-  command += str(url) + 'api/v1/projects/' + str(projectId) + '/attributes/sets'
-
-  return command
-
-# Delete an attribute set
-def deleteProjectAttributeSet(mosaicConfig, projectId, setId):
-  token = mosaicConfig["token"]
-  url   = mosaicConfig["url"]
-
-  command  = 'curl -S -s -X DELETE -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
-  command += url + 'api/v1/projects/' + str(projectId) + '/attributes/sets/' + str(setId)
-
-  return command
+######
+###### DELETE routes
+######
