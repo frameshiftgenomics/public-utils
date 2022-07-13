@@ -304,7 +304,7 @@ def processDashboard(args, template, projectId):
   pinnedConversations = []
 
   # Get the dashboard information
-  command = api_d.getDashboard(mosaicConfig, args.project)
+  command = api_d.getDashboard(mosaicConfig, projectId)
   data    = json.loads(os.popen(command).read())
 
   for dashboardObject in data:
@@ -358,7 +358,7 @@ def processProjectConversations(args, template, projectId, pinnedConversations):
 
       # Pin the conversation to the dashboard if requested
       if conversationId in pinnedConversations:
-        command = api_d.postPinConversation(mosaicConfig, createId, args.project)
+        command = api_d.postPinConversation(mosaicConfig, createdId, args.project)
         pinData = json.loads(os.popen(command).read())
 
       # If the conversation is listed as a watcher, add all users in the project as watchers
