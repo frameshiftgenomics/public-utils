@@ -1,0 +1,2 @@
+project	Somalier Data	string
+sample	Mean depth of genotyped sites (Somalier)	float	gt_depth_mean	Depth	Sample Count

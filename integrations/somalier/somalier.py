@@ -23,9 +23,9 @@ import api_project_backgrounds as api_pb
 import api_sample_attributes as api_sa
 
 def main():
-  global peddyProjectId
-  global hasSampleAttributes
   global mosaicConfig
+  global somalierProjectId
+  global hasSampleAttributes
 
   # Parse the command line
   args = parseCommandLine()
@@ -40,30 +40,27 @@ def main():
   # Get the attributes names and where they are found in the Peddy html file.
   parseAttributes(args)
 
-  # If the peddyProjectId is False, the project needs to be created along with all the Peddy attributes
-  if not peddyProjectId:
+  # If the somalierProjectId is False, the project needs to be created along with all the Peddy attributes
+  if not somalierProjectId:
     createProject(args)
     createAttributes(args)
 
-  # Import the attributes into the project with Peddy data
+  # Import the attributes into the project with Somalier data
   getAttributeIds(args)
 
   # Check if the attributes already exist in the target project
   checkAttributesExist(args)
 
-  # Read through the Peddy file
-  passed = readPeddyHtml(args)
-
   # Set the output file if one wasn't specified
-  if not args.output: args.output = "peddy_mosaic_upload.tsv"
+  if not args.output: args.output = "somalier_mosaic_upload.tsv"
 
-  # If this step failed, the peddy html could not be found. The project attribute "Peddy data" should still be
-  # imported into the project and set to Fail. Otherwise the peddy data should be processed
+  # Read through the Somalier relatedness samples file, if provided
+  passed = readSomalierRelatednessSamples(args)
+
+  # If this step failed, the Somalier files could not be found. The project attribute "Somalier data" should still be
+  # imported into the project and set to Fail. Otherwise the Somalier data should be processed
   if passed:
     hasSampleAttributes = True
-
-    # Build additional attributes
-    buildAttributes()
 
     # Generate a file to output to Mosaic
     outputToMosaic(args)
@@ -72,14 +69,14 @@ def main():
   importAttributes(args)
 
   # Create an attribute set
-  createAttributeSet(args)
+  #createAttributeSet(args)
 
   # In order to build the ancestry chart, the background data needs to be posted to the project
-  backgroundsId = postBackgrounds(args)
-  buildChart(args, backgroundsId)
+  #backgroundsId = postBackgrounds(args)
+  #buildChart(args, backgroundsId)
 
   # Remove the created files
-  removeFiles(args)
+  #removeFiles(args)
 
   # Output the observed errors.
   outputErrors(0)
@@ -92,13 +89,13 @@ def parseCommandLine():
 
   # Required arguments
   parser.add_argument('--reference', '-r', required = True, metavar = "string", help = "The reference genome to use. Allowed values: '37', '38'")
-  parser.add_argument('--input_html', '-i', required = True, metavar = "file", help = "The html file output from Peddy")
+  parser.add_argument('--relatedness_samples', '-s', required = True, metavar = "file", help = "The Somalier tsv file containing information about each sample")
   parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
 
   # Optional pipeline arguments
   parser.add_argument('--attributes_file', '-f', required = False, metavar = "file", help = "The input file listing the Peddy attributes")
   parser.add_argument('--output', '-o', required = False, metavar = "file", help = "The output file containing the values to upload")
-  parser.add_argument('--background', '-b', required = False, metavar = "file", help = "The output json containing background ancestry information")
+  #parser.add_argument('--background', '-b', required = False, metavar = "file", help = "The output json containing background ancestry information")
 
   # Optional mosaic arguments
   parser.add_argument('--config', '-c', required = False, metavar = "string", help = "The config file for Mosaic")
@@ -107,14 +104,14 @@ def parseCommandLine():
   parser.add_argument('--attributes_project', '-a', required = False, metavar = "integer", help = "The Mosaic project id that contains public attributes")
 
   # Version
-  parser.add_argument('--version', '-v', action="version", version='Peddy integration version: ' + str(version))
+  parser.add_argument('--version', '-v', action="version", version='Somalier integration version: ' + str(version))
 
   return parser.parse_args()
 
 # Check if the Peddy attributes have already been created or if then need to be created
 def checkStatus(args):
   global errors
-  global peddyProjectId
+  global somalierProjectId
   global mosaicConfig
 
   # Check the public attributes project for the project attribute indicating that the peddy integration
@@ -126,13 +123,13 @@ def checkStatus(args):
     errors.append("Public attributes project (" + args.attributesProject + ") does not exist. Create a Public Attributes project before executing integrations")
     outputErrors(1)
 
-  # Loop over all the project attributes and look for attribute "Peddy Integration xa545Ihs"
-  peddyProjectId = False
+  # Loop over all the project attributes and look for attribute "Somalier Integration xa545Ihs"
+  somalierProjectId = False
   for attributeName in data:
-    if attributeName["name"] == "Peddy Integration xa545Ihs":
+    if attributeName["name"] == "Somalier Integration xa545Ihs":
 
       # There should be a value in the json object corresponding to the value in this project. Check this is the case
-      peddyProjectId = attributeName["values"][0]["value"]
+      somalierProjectId = attributeName["values"][0]["value"]
       break
 
 # Parse the tsv file containing the Mosaic attributes
@@ -143,7 +140,7 @@ def parseAttributes(args):
   global integrationStatus
 
   # If the attributes file was not specified on the command line, use the default version
-  if not args.attributes_file: args.attributes_file = os.path.dirname(os.path.abspath(__file__)) + "/mosaic.atts.peddy.tsv"
+  if not args.attributes_file: args.attributes_file = os.path.dirname(os.path.abspath(__file__)) + "/mosaic.atts.somalier.tsv"
 
   # Get all the attributes to be added
   try: attributesInput = open(args.attributes_file, "r")
@@ -157,24 +154,19 @@ def parseAttributes(args):
   lineNo = 0
   for line in attributesInput.readlines():
     lineNo += 1
-    line = line.rstrip()
-    attributes = line.split("\t")
+    attributes = line.rstrip().split("\t")
 
     # Put all project attributes into the projectAttributes dictionary. Set the Mosaic id and uid to
-    # False for now. These will be read from the Peddy Attributes project if it already exists, or will
-    # be assigned when the attributes are created, if this is the first running of the Peddy integration.
+    # False for now. These will be read from the Somalier Attributes project if it already exists, or will
+    # be assigned when the attributes are created, if this is the first running of the Somalier integration.
     # Get the value type (string or float) from the file
     if attributes[0] == "project": projectAttributes[attributes[1]] = {"id": False, "uid": False, "type":attributes[2], "values": False}
       
-    # With sample attributes, we need both the attribute id and uid which will be determined later, and where
-    # the value will be found in the Peddy html file. For, now set the id and uid to False, and read in the
-    # value type, and Peddy html location
+    # With sample attributes, we need both the attribute id and uid which will be determined later. For now,
+    # set the id and uid to False, and read in the value type.
     elif attributes[0] == "sample":
+      sampleAttributes[attributes[1]] = {"id": False, "uid": False, "type": attributes[2], "name": attributes[3], "xlabel": attributes[4], "ylabel": attributes[5], "values": {}, "column": False, "processed": False, "present": False}
 
-      # Put the attributes in the correct array.
-      location = str(attributes[4]) + "/" + str(attributes[5])
-      sampleAttributes[attributes[1]] = {"id": False, "uid": False, "type": attributes[2], "html": location, "xlabel": attributes[3], "ylabel": "", "values": {}, "present": False}
-  
     # If the attribute is not correctly defined, add the line to the errors
     else:
       integrationStatus = "Incomplete"
@@ -182,55 +174,55 @@ def parseAttributes(args):
 
 # Create a project to hold all the Peddy attributes
 def createProject(args):
-  global peddyProjectId
+  global somalierProjectId
   global mosaicConfig
 
   # Define the curl command
-  jsonData = json.loads(os.popen(api_p.postProject(mosaicConfig, "Peddy Attributes", args.reference)).read())
+  jsonData = json.loads(os.popen(api_p.postProject(mosaicConfig, "Somalier Attributes", args.reference)).read())
   if "message" in jsonData:
     print(jsonData["message"])
     exit(1)
-  peddyProjectId = jsonData["id"]
+  somalierProjectId = jsonData["id"]
 
   # Add a project attribute to the Public attributes project with this id as the value
-  jsonData = json.loads(os.popen(api_pa.postProjectAttribute(mosaicConfig, "Peddy Integration xa545Ihs", "float", str(peddyProjectId), "false", mosaicConfig["attributesProjectId"])).read())
+  jsonData = json.loads(os.popen(api_pa.postProjectAttribute(mosaicConfig, "Somalier Integration xa545Ihs", "float", str(somalierProjectId), "false", mosaicConfig["attributesProjectId"])).read())
 
-# If the Peddy attributes project was created, create all the required attributes
+# If the Somalier attributes project was created, create all the required attributes
 def createAttributes(args):
-  global peddyProjectId
+  global somalierProjectId
   global projectAttributes
   global sampleAttributes
   global mosaicConfig
 
-  # Create all the project attributes required for Peddy integration
+  # Create all the project attributes required for Somalier integration
   for attribute in projectAttributes:
     attType  = projectAttributes[attribute]["type"]
-    jsonData = json.loads(os.popen(api_pa.postProjectAttribute(mosaicConfig, attribute, attType, "Null", "true", peddyProjectId)).read())
+    jsonData = json.loads(os.popen(api_pa.postProjectAttribute(mosaicConfig, attribute, attType, "Null", "true", somalierProjectId)).read())
 
-  # Create all the sample attributes required for Peddy integration
+  # Create all the sample attributes required for Somalier integration
   for attribute in sampleAttributes:
     attType  = sampleAttributes[attribute]["type"]
     xlabel   = sampleAttributes[attribute]["xlabel"]
     ylabel   = sampleAttributes[attribute]["ylabel"]
-    jsonData = json.loads(os.popen(api_sa.postSampleAttribute(mosaicConfig, attribute, attType, "Null", "true", xlabel, ylabel, peddyProjectId)).read())
+    jsonData = json.loads(os.popen(api_sa.postSampleAttribute(mosaicConfig, attribute, attType, "Null", "true", xlabel, ylabel, somalierProjectId)).read())
 
 # Get the attributes to be imported into the current project
 def getAttributeIds(args):
-  global peddyProjectId
+  global somalierProjectId
   global projectAttributes
   global sampleAttributes
   global mosaicConfig
 
-  # First, get all the project attribute ids from the Peddy Attributes project
-  jsonData = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, peddyProjectId)).read())
+  # First, get all the project attribute ids from the Somalier Attributes project
+  jsonData = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, somalierProjectId)).read())
 
   # Loop over the project attributes and store the ids
   for attribute in jsonData:
     projectAttributes[str(attribute["name"])]["id"]  = attribute["id"]
     projectAttributes[str(attribute["name"])]["uid"] = attribute["uid"]
 
-  # Get all the sample attribute ids from the Peddy Attributes project
-  jsonData = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, peddyProjectId)).read())
+  # Get all the sample attribute ids from the SomalierPeddy Attributes project
+  jsonData = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, somalierProjectId)).read())
 
   # Loop over the sample attributes and store the ids
   for attribute in jsonData:
@@ -250,13 +242,12 @@ def checkAttributesExist(args):
   global hasRun
 
   for attribute in projectAttributes:
-    if attribute == "Peddy Data": peddyId = projectAttributes[attribute]["id"]
+    if attribute == "Somalier Data": somalierId = projectAttributes[attribute]["id"]
 
   # Get all the project attributes in the target project
-  command  = api_pa.getProjectAttributes(mosaicConfig, args.project)
-  jsonData = json.loads(os.popen(command).read())
+  jsonData = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, args.project)).read())
   for attribute in jsonData: 
-    if attribute["name"] == "Peddy Data" and attribute["id"] == peddyId: hasRun = True
+    if attribute["name"] == "Somalier Data" and attribute["id"] == somalierId: hasRun = True
 
   # Get all the sample attributes in the target project
   jsonData = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, args.project)).read())
@@ -268,127 +259,58 @@ def checkAttributesExist(args):
     if sampleAttributes[attribute]["id"] in projectSampleAttributes: sampleAttributes[attribute]["present"] = True
 
 # Read through the peddy html and pull out the data json
-def readPeddyHtml(args):
+def readSomalierRelatednessSamples(args):
   global samples
   global sampleAttributes
-  global errors
-  global integrationStatus
   global projectAttributes
+  global integrationStatus
+  global errors
 
   # Open the file
-  try: peddyHtml = open(args.input_html, "r")
+  try: inputFile = open(args.relatedness_samples, "r")
 
   # If the file cannot be found, fail
   except:
     integrationStatus = "Fail"
-    errors.append("File: " + args.input_html + " does not exist")
+    errors.append("File: " + args.relatedness_samples + " does not exist")
     return False
 
+  # Create a list of attributes included in the Mosaic attributes file
+  requiredAttributes = {}
+  for attribute in sampleAttributes: requiredAttributes[sampleAttributes[attribute]["name"]] = attribute
+
   # Loop over the file and extract the data
-  for line in peddyHtml.readlines():
+  for line in inputFile.readlines():
     line = line.rstrip()
 
-    # Get the data from the "het_data" variable.
-    if line.startswith("var het_data"):
-      hetData = json.loads(line.split("= ")[1])
-      for record in hetData:
-        sample = record["sample_id"]
-        if sample not in samples: samples.append(sample)
+    # Get the header line and determine the order of the attributes in the file
+    if line.startswith("#"):
+      fields = line.strip("#").split("\t")
+      for i, field in enumerate(fields):
+        if field in requiredAttributes: sampleAttributes[requiredAttributes[field]]["column"] = i
 
-        # Loop over all the Peddy het_data attributes
-        for attribute in record:
+    # Then read the values for all samples
+    else:
+      fields = line.strip("#").split("\t")
+      sample = fields[1]
 
-          # Find the attribute in sampleAttributes
-          if str(attribute) != "sample_id":
-            for sampleAttribute in sampleAttributes:
-              peddyVar  = sampleAttributes[sampleAttribute]["html"].split("/")[0]
-              peddyName = sampleAttributes[sampleAttribute]["html"].split("/")[1]
+      # Check for duplicate samples
+      if sample in samples:
+        integrationStatus = "Fail"
+        error.append("Sample: " + str(sample) + " appears twice in the file: " + str(args.relatedness_samples))
+        return False
+      samples.append(sample)
 
-              # Add the value for this sample into the sampleAttributes
-              if str(peddyVar) == "het_data" and str(peddyName) == str(attribute): sampleAttributes[sampleAttribute]["values"][sample] = record[attribute]
+      # Each row in the file corresponds to a sample. For each sample, get the attributes that
+      # were listed in the Mosaic attributes file and store them in sampleAttributes
+      for attribute in sampleAttributes:
+        column = sampleAttributes[attribute]["column"]
+        sampleAttributes[attribute]["values"][sample] = fields[column]
 
-    # Get "sex_data"
-    elif line.startswith("var sex_data"):
-      sexData = json.loads(line.split("= ")[1])
-      for record in sexData:
-        sample = record["sample_id"]
-
-        # Loop over all the Peddy sex_data attributes
-        for attribute in record:
-
-          # Find the attribute in sampleAttributes
-          if str(attribute) != "sample_id":
-            for sampleAttribute in sampleAttributes:
-              peddyVar  = sampleAttributes[sampleAttribute]["html"].split("/")[0]
-              peddyName = sampleAttributes[sampleAttribute]["html"].split("/")[1]
-
-              # Add the value for this sample into the sampleAttributes
-              if str(peddyVar) == "sex_data" and str(peddyName) == str(attribute): sampleAttributes[sampleAttribute]["values"][sample] = record[attribute]
-
-    # Get "pedigree" data
-    elif line.startswith("var pedigree"):
-      pedData = json.loads(line.split("= ")[1])
-      for record in pedData:
-        sample = record["sample_id"]
-
-        # Loop over all the Peddy sex_data attributes
-        for attribute in record:
-
-          # Find the attribute in sampleAttributes
-          if str(attribute) != "sample_id":
-            for sampleAttribute in sampleAttributes:
-              peddyVar  = sampleAttributes[sampleAttribute]["html"].split("/")[0]
-              peddyName = sampleAttributes[sampleAttribute]["html"].split("/")[1]
-
-              # Add the value for this sample into the sampleAttributes
-              if str(peddyVar) == "pedigree" and str(peddyName) == str(attribute): sampleAttributes[sampleAttribute]["values"][sample] = record[attribute]
-
-    # Get the background data
-    elif line.startswith("var background_pca"):
-      htmlBackground = json.loads(line.split("= ")[1])
-
-      # The background file contains information for some known attriubtes. Change the name of the
-      # attributes to the Mosaic uid.
-      pc1      = sampleAttributes["Ancestry PC1 (Peddy)"]["uid"]
-      pc2      = sampleAttributes["Ancestry PC2 (Peddy)"]["uid"]
-      pc3      = sampleAttributes["Ancestry PC3 (Peddy)"]["uid"]
-      pc4      = sampleAttributes["Ancestry PC4 (Peddy)"]["uid"]
-      ancestry = sampleAttributes["Ancestry Prediction (Peddy)"]["uid"]
-      for info in htmlBackground:
-        info[pc1]      = info.pop("PC1")
-        info[pc2]      = info.pop("PC2")
-        info[ancestry] = info.pop("ancestry")
-
-        # Remove the pc3 and pc4 info
-        info.pop("PC3")
-        info.pop("PC4")
-
-      # Create a json object with the background name defined, and add the background data as the payload
-      background = json.loads('{"name":"Ancestry Backgrounds","payload":[]}')
-      background["payload"] = htmlBackground
-      if not args.background: args.background = "peddy_backgrounds.json"
-      backgroundFile = open(args.background, "w")
-      print(json.dumps(background), file = backgroundFile)
-      backgroundFile.close()
-
-  # Close the Peddy file
-  peddyHtml.close()
+  # Close the input file
+  inputFile.close()
 
   return True
-
-# Construct some new attributes
-def buildAttributes():
-  global samples
-  global sampleAttributes
-
-  # Generate a sex attribute. Define a female as 0, and a male as 1. The attribute will
-  # be a random number between -0.25 < x < 0.25 for female and 0.75 < x < 1.25 for male
-  for sample in samples:
-    ran = float((random() - 0.5)/ 2)
-    sex = sampleAttributes["Sex (Peddy)"]["values"][sample]
-    if sex == "male": sampleAttributes["Sex Spread (Peddy)"]["values"][sample] = float ( 1 + ran)
-    elif sex == "female": sampleAttributes["Sex Spread (Peddy)"]["values"][sample] = ran
-    else: print("Unknown gender for sample ", sample, ": \"", sex, "\"", sep = ""); exit(1)
 
 # Print out data for import into Mosaic
 def outputToMosaic(args):
@@ -424,30 +346,27 @@ def importAttributes(args):
   global hasSampleAttributes
   global mosaicConfig
 
-  # Set the Peddy Data project attribute value to the value stored in integrationStatus
-  projectAttributes["Peddy Data"]["values"] = integrationStatus
+  # Set the Somalier Data project attribute value to the value stored in integrationStatus
+  projectAttributes["Somalier Data"]["values"] = integrationStatus
 
   # Begin with the import and setting of project attributes
   for attribute in projectAttributes:
     attributeId = projectAttributes[attribute]["id"]
     value       = projectAttributes[attribute]["values"]
-    command  = api_pa.postImportProjectAttribute(mosaicConfig, attributeId, value, args.project)
-    jsonData = json.loads(os.popen(command).read())
+    jsonData    = json.loads(os.popen(api_pa.postImportProjectAttribute(mosaicConfig, attributeId, value, args.project)).read())
 
-  # Loop over all the defined sample attributes and import them, but only if the parsing of the peddy
-  # html was successful
+  # Loop over all the defined sample attributes and import them, but only if the parsing of the Somalier
+  # files was successful
   if hasSampleAttributes:
     for attribute in sampleAttributes:
 
       # Only import the attribute if it wasn't already in the project
       if not sampleAttributes[attribute]["present"]:
         attributeId = sampleAttributes[attribute]["id"]
-        command     = api_sa.postImportSampleAttribute(mosaicConfig, attributeId, args.project)
-        jsonData    = json.loads(os.popen(command).read())
+        jsonData    = json.loads(os.popen(api_sa.postImportSampleAttribute(mosaicConfig, attributeId, args.project)).read())
   
     # Upload the sample attribute values tsv
-    command = api_sa.postUploadSampleAttribute(mosaicConfig, args.output, args.project)
-    data    = os.popen(command)
+    data = os.popen(api_sa.postUploadSampleAttribute(mosaicConfig, args.output, args.project))
 
 # Create an attribute set
 def createAttributeSet(args):
@@ -577,8 +496,8 @@ def outputErrors(errorCode):
 # Store mosaic info, e.g. the token, url etc.
 mosaicConfig = {}
 
-# The id of the project holding Peddy attributes
-peddyProjectId = False
+# The id of the project holding Somalier attributes
+somalierProjectId = False
 
 # Record if the Peddy integration has previously run
 hasRun = False
@@ -598,7 +517,7 @@ samples  = []
 hasSampleAttributes = False
 
 # Store the version
-version = "0.1.1"
+version = "0.0.1"
 
 if __name__ == "__main__":
   main()

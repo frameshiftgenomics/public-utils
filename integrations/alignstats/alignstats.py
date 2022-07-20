@@ -288,7 +288,7 @@ def getSampleFiles(args):
   # Get all of the samples in the project
   command  = api_s.getSamples(mosaicConfig, args.project)
   jsonData = json.loads(os.popen(command).read())
-  for record in jsonData: samples[record["name"]] = True
+  for record in jsonData: samples[record["name"]] = False
 
   # Loop over the provided input files - there should be one file per sample - and check the files exist
   isSuccess  = True
@@ -325,6 +325,14 @@ def getSampleFiles(args):
         integrationStatus = "Fail"
         isSuccess = False
 
+  # Only samples with associated files can be processed, so remove all samples without a file, and provide a warning
+  toRemove = []
+  for sample in samples:
+    if not samples[sample]: toRemove.append(sample)
+  if len(toRemove) > 0:
+    for sample in toRemove: samples.pop(sample)
+    print("WARNING: ", len(toRemove), " samples did not have alignstats files associated", sep = "")
+
   return isSuccess
 
 # Read through the Alignstats json files for each sample and store the information
@@ -345,7 +353,7 @@ def readJsonFiles(args):
       errors.append("File: " + samples[sample]["file"] + " is not a well formed json")
       return False
 
-    # Loop over all the attributes in the
+    # Loop over all the attributes in the json file
     for attribute in sampleData:
       try: attributeName = sampleNames[attribute]
       except:
