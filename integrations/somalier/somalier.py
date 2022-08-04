@@ -305,12 +305,64 @@ def readSomalierRelatednessSamples(args):
       # were listed in the Mosaic attributes file and store them in sampleAttributes
       for attribute in sampleAttributes:
         column = sampleAttributes[attribute]["column"]
-        sampleAttributes[attribute]["values"][sample] = fields[column]
+
+        # Some attributes need to be constructed. In this case, the attributes file should include instructions
+        # on how to construct the value, and so will not have appear in requiredAttributes as these instructions
+        # will not correspond to a column in the header. So, "column" should be False, and the instuctions should
+        # begin with "=". If this is not the case, fail.
+        if column: sampleAttributes[attribute]["values"][sample] = fields[column]
+        elif not column and sampleAttributes[attribute]["name"].startswith("="): sampleAttributes[attribute]["values"][sample] = constructAttribute(requiredAttributes, sample, attribute, fields)
+        else:
+          print("The Mosaic attributes file has a line that cannot be interpreted for: ", attribute, sep = "")
+          exit(1)
 
   # Close the input file
   inputFile.close()
 
   return True
+
+# Construct an attribute from other attributes
+def constructAttribute(requiredAttributes, sample, attribute, fields):
+  global sampleAttributes
+
+  # Get the instructions for constructing the attribute. Operators and attributes are separated by pipes, 
+  # so split on these
+  instructions = sampleAttributes[attribute]["name"].strip("=").split("|")
+  if len(instructions) > 3:
+    print("The attribute calculator is very basic and only deals with 1 operator for now:")
+    print("  ", sampleAttributes[attribute]["name"], sep = "")
+    exit(1)
+
+  # If the result is to be doubled, note it
+  factor = 1.
+  if instructions[0].startswith("2*"):
+    instructions[0] = instructions[0].strip("2*")
+    factor = 2.
+
+  # Loop over the fields and check they are all attributes or operators
+  operator = False
+  columns  = []
+  for field in instructions:
+    column = False
+    if field in requiredAttributes: columns.append(sampleAttributes[requiredAttributes[field]]["column"])
+    elif operator:
+      print("The attribute calculator is very basic and only deals with 1 operator for now:")
+      print("  ", sampleAttributes[attribute]["name"], sep = "")
+      exit(1)
+    else: operator = field
+
+  # If the operator is a division, generate the new value
+  if str(operator) == "/":
+
+    # If the numerator is zero, return zero
+    if float(fields[columns[0]]) == 0.: return float(0.)
+
+    # If the denominator is zero, return N/A
+    elif float(fields[columns[1]]) == 0.: return "N/A"
+    else: return float(factor) * float(fields[columns[0]]) / float(fields[columns[1]])
+  else:
+    print("Can't handle other operators yet.")
+    exit(1)
 
 # Print out data for import into Mosaic
 def outputToMosaic(args):

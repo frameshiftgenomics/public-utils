@@ -11,7 +11,7 @@ def getProjectAttributes(mosaicConfig, projectId):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
 
-  command = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" ' + str(url) + "api/v1/projects/" + str(projectId) + "/attributes"
+  command = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" ' + str(url) + 'api/v1/projects/' + str(projectId) + '/attributes'
 
   return command
 
@@ -30,7 +30,7 @@ def getUserProjectAttributes(mosaicConfig):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
 
-  command = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" ' + str(url) + "api/v1/user/projects//attributes"
+  command = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" ' + str(url) + 'api/v1/user/projects/attributes'
 
   return command
 

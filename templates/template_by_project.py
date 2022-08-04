@@ -53,6 +53,9 @@ def main():
   # Loop over the templates and pull in the relevant information
   for template in templateOrder: processTemplateProject(args, template)
 
+  # Import the "Assigned Template" project attribute and set the value to Template:version
+  assignTemplateAttribute(args)
+
 # Input options
 def parseCommandLine():
   global version
@@ -85,13 +88,13 @@ def parseCommandLine():
 def getAvailableTemplates(args):
   global mosaicConfig
   global availableTemplates
+  global allPublicAttributes
   global templateAttributes
   global templateProjects
   global templateOrder
 
   # Get all the project attributes
-  command  = api_pa.getProjectAttributes(mosaicConfig, mosaicConfig["attributesProjectId"])
-  jsonData = json.loads(os.popen(command).read())
+  jsonData = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, mosaicConfig["attributesProjectId"])).read())
 
   # Loop over all the attributes and identify the templates
   for attribute in jsonData:
@@ -106,9 +109,11 @@ def getAvailableTemplates(args):
           templateAttributes[attribute["id"]] = templateName
           templateProjects[project["value"]]  = templateName
 
+    # Store all the non-template attributes
+    else: allPublicAttributes[attribute['name']] = {"id": attribute["id"]}
+
   # Get the values for the template attributes across all projects
-  command  = api_pa.getUserProjectAttributes(mosaicConfig)
-  jsonData = json.loads(os.popen(command).read())
+  jsonData = json.loads(os.popen(api_pa.getUserProjectAttributes(mosaicConfig)).read())
   for attribute in jsonData:
 
     # Check if this attribute is a template attribute
@@ -223,8 +228,7 @@ def getProjectUserIds(args):
 
   # Loop over all necessary pages
   for i in range(0, noPages):
-    command = api_pr.getProjectRoles(mosaicConfig, args.project, 100, i + 1)
-    data    = json.loads(os.popen(command).read())
+    data = json.loads(os.popen(api_pr.getProjectRoles(mosaicConfig, args.project, 100, i + 1)).read())
 
     # Loop over the users and get the ids
     for user in data["data"]: projectUserIds.append(user["user_id"])
@@ -257,8 +261,7 @@ def processProjectAttributes(args, template, projectId, pinnedAttributes):
   global startingAttributes
 
   # Begin by getting all the public attributes from the project
-  command = api_pa.getProjectAttributes(mosaicConfig, projectId)
-  data    = json.loads(os.popen(command).read())
+  data = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, projectId)).read())
 
   # If the same object is pinned to the dashboard multiple times, it will appear on the dashboard multiple times. Get
   # the attributes that are pinned to the working project to make sure no double pinning takes place
@@ -278,29 +281,27 @@ def processProjectAttributes(args, template, projectId, pinnedAttributes):
       # ordered so that the values assigned to the last template to be processed should be used. Updating values
       # only occurs for nested templates - if the project already had the attribute, it is not updated.
       if attributeId in projectAttributes:
-        command    = api_pa.putProjectAttribute(mosaicConfig, attributeValue, args.project, attributeId)
-        updateData = json.loads(os.popen(command).read())
+        updateData = json.loads(os.popen(api_pa.putProjectAttribute(mosaicConfig, attributeValue, args.project, attributeId)).read())
 
       # If the attribute has not yet been seen, and is a public attribute import it.
       elif isPublic:
         projectAttributes.append(attributeId)
-        command    = api_pa.postImportProjectAttribute(mosaicConfig, attributeId, attributeValue, args.project)
-        importData = json.loads(os.popen(command).read())
+        importData = json.loads(os.popen(api_pa.postImportProjectAttribute(mosaicConfig, attributeId, attributeValue, args.project)).read())
 
       #  If this is a private attribute, store it. These attributes can be used to provide directions for the template
       elif not isPublic: privateProjectAttributes[attribute["name"]] = attribute
 
       # If the attribute needs to be pinned to the dashboard, pin in
-      if attributeId in pinnedAttributes and attributeId not in pinnedProjectAttributes:
-        command = api_d.postPinAttribute(mosaicConfig, attributeId, args.project)
-        pinData = json.loads(os.popen(command).read())
+      if attributeId in pinnedAttributes.keys() and attributeId not in pinnedProjectAttributes.keys():
+        showNameInBadge = "true" if pinnedAttributes[attributeId] else "false"
+        pinData = json.loads(os.popen(api_d.postPinAttribute(mosaicConfig, attributeId, showNameInBadge, args.project)).read())
   
 # Determine the status of objects on the dashboard in the template project and replicate in the working project
 def processDashboard(args, template, projectId):
   global token
   global apiUrl
   global apiCommandsPath
-  pinnedAttributes    = []
+  pinnedAttributes    = {}
   pinnedConversations = []
 
   # Get the dashboard information
@@ -314,7 +315,7 @@ def processDashboard(args, template, projectId):
 
       # Store the ids of the objects that should pinned to the dashboard. The only objects returned by GET dashboard are
       # the objects that are pinned, so no check is required for if they are pinned
-      if dashboardObject["type"] == "project_attribute": pinnedAttributes.append(dashboardObject["attribute_id"])
+      if dashboardObject["type"] == "project_attribute": pinnedAttributes[dashboardObject["attribute_id"]] = dashboardObject['should_show_name_in_badge']
       elif dashboardObject["type"] == "conversation": pinnedConversations.append(dashboardObject["project_conversation_id"])
 
   return pinnedAttributes, pinnedConversations
@@ -410,6 +411,29 @@ def getConversations(args, projectId):
   # Return the list of conversations in the project
   return conversations
 
+# Import the "Assigned Template" project attribute and set the value to Template:version
+def assignTemplateAttribute(args):
+  global version
+  global mosaicConfig
+  global allPublicAttributes
+
+  # Define the attribute value as Template:version
+  value = str(args.template) + ":" + str(version)
+
+  # Get the id of the "Assigned Template" attribute and import it.
+  for attribute in allPublicAttributes:
+    if str(attribute) == "Assigned Template": attributeId = allPublicAttributes[attribute]["id"]
+
+  # Get all the attributes in the project being updated
+  data = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, args.project)).read())
+  isImported = False
+  for attribute in data:
+    if int(attribute["id"]) == int(attributeId): isImported = True
+
+  # Import the attribute if it is not already present, otherwise update the value
+  if not isImported: data = json.loads(os.popen(api_pa.postImportProjectAttribute(mosaicConfig, attributeId, value, args.project)).read())
+  else: data = json.loads(os.popen(api_pa.putProjectAttribute(mosaicConfig, value, args.project, attributeId)).read())
+
 # If problems are found with the templates, fail
 def fail(text):
   print(text)
@@ -419,6 +443,9 @@ def fail(text):
 
 # Attributes from the config file
 mosaicConfig = {}
+
+# Store all of the attributes in the public attributes project
+allPublicAttributes = {}
 
 # Store the ids of the project attributes present on the dashboard prior to running the template
 startingAttributes = []
@@ -440,7 +467,7 @@ privateProjectAttributes = {}
 projectUserIds = []
 
 # Store the version
-version = "0.11"
+version = "0.12"
 
 if __name__ == "__main__":
   main()
