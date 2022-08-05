@@ -271,11 +271,11 @@ def processProjectAttributes(args, template, projectId, pinnedAttributes):
   for attribute in data:
     attributeId    = attribute["id"]
     attributeValue = attribute["values"][0]["value"]
+    isPublic       = attribute["is_public"]
 
     # Ignore template attributes and attributes that were already in the project. If the template is rerun on a project,
     # the values in the project should not be overwritten.
     if (attributeId not in templateAttributes) and (attributeId not in startingAttributes):
-      isPublic = attribute["is_public"]
 
       # If the project was imported from a nested template, then the value should be updated. Nested templates are
       # ordered so that the values assigned to the last template to be processed should be used. Updating values
@@ -291,10 +291,10 @@ def processProjectAttributes(args, template, projectId, pinnedAttributes):
       #  If this is a private attribute, store it. These attributes can be used to provide directions for the template
       elif not isPublic: privateProjectAttributes[attribute["name"]] = attribute
 
-      # If the attribute needs to be pinned to the dashboard, pin in
-      if attributeId in pinnedAttributes.keys() and attributeId not in pinnedProjectAttributes.keys():
-        showNameInBadge = "true" if pinnedAttributes[attributeId] else "false"
-        pinData = json.loads(os.popen(api_d.postPinAttribute(mosaicConfig, attributeId, showNameInBadge, args.project)).read())
+    # If the attribute needs to be pinned to the dashboard, pin in
+    if attributeId in pinnedAttributes.keys() and attributeId not in pinnedProjectAttributes.keys():
+      showNameInBadge = "true" if pinnedAttributes[attributeId] else "false"
+      pinData = json.loads(os.popen(api_d.postPinAttribute(mosaicConfig, attributeId, showNameInBadge, args.project)).read())
   
 # Determine the status of objects on the dashboard in the template project and replicate in the working project
 def processDashboard(args, template, projectId):
@@ -467,7 +467,7 @@ privateProjectAttributes = {}
 projectUserIds = []
 
 # Store the version
-version = "0.12"
+version = "0.13"
 
 if __name__ == "__main__":
   main()
