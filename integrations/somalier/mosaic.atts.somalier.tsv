@@ -1,2 +1,20 @@
 project	Somalier Data	string
-sample	Mean depth of genotyped sites (Somalier)	float	gt_depth_mean	Depth	Sample Count
+sample	Sex (Somalier)	string	sex	Sex	Sample Count
+sample	Mean depth of genotyped sites (Somalier)	float	gt_depth_mean	Depth	Sample count
+sample	Mean depth of genotyped sites, sd (Somalier)	float	gt_depth_sd	Standard deviation	Sample count
+sample	Mean depth of all sites (Somalier)	float	depth_mean	Depth	Sample count
+sample	Mean depth of all sites, sd (Somalier)	float	depth_sd	Standard deviation	Sample count
+sample	Mean allele balance (Somalier)	float	ab_mean	Mean allele balance	Sample count
+sample	Mean allele balance, sd (Somalier)	float	ab_std	Standard deviation	Sample count
+sample	Number of 0/0 sites (Somalier)	float	n_hom_ref	Number of sites	Sample count
+sample	Number of 0/1 sites (Somalier)	float	n_het	Number of sites	Sample count
+sample	Number of 1/1 sites (Somalier)	float	n_hom_alt	Number of sites	Sample count
+sample	Number of unknown sites (Somalier)	float	n_unknown	Number of sites	Sample count
+sample	Proportion of sites with AB < 0.1 or AB > 0.9 (Somalier)	float	p_middling_ab	Proportion of sites	Sample count
+sample	Mean depth on X (Somalier)	float	X_depth_mean	Depth	Sample count
+sample	Scaled mean depth on X (Somalier)	float	=2*X_depth_mean|/|gt_depth_mean	Scaled mean depth	Sample count
+sample	Number of 0/0 sites on X (Somalier)	float	X_hom_ref	Number of sites	Sample count
+sample	Number of 0/1 sites on X (Somalier)	float	X_het	Number of sites	Sample count
+sample	Number of 1/1 sites on X (Somalier)	float	X_hom_alt	Number of sites	Sample count
+sample	Mean depth on Y (Somalier)	float	Y_depth_mean	Depth	Sample count
+sample	Scaled mean depth on Y (Somalier)	float	=2*Y_depth_mean|/|gt_depth_mean	Scaled mean depth	Sample count

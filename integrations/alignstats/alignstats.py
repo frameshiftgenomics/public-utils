@@ -75,8 +75,6 @@ def main():
   # Remove the created files
   removeFiles(args)
 
-  exit(0)
-
   # Output the observed errors.
   outputErrors(0)
 
@@ -355,6 +353,7 @@ def readJsonFiles(args):
 
     # Loop over all the attributes in the json file
     for attribute in sampleData:
+      print("  ", attribute)
       try: attributeName = sampleNames[attribute]
       except:
         errors.append("Attribute \"" +  attribute + "\" not present for sample \"" + sample + "\"")
@@ -486,11 +485,13 @@ def createAttributeSet(args):
 def removeFiles(args):
 
   # Remove the tsv file
-  os.remove(args.output)
+  if args.output: os.remove(args.output)
 
 # Output errors
 def outputErrors(errorCode):
   global errors
+
+  for error in errors: print(error)
 
 # Initialise global variables
 
