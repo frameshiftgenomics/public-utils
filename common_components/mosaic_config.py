@@ -4,9 +4,8 @@ from os.path import exists
 
 # Parse the config file and get the Mosaic token and url
 def parseConfig(args, required):
-  token     = False
-  url       = False
-  projectId = False
+  token = False
+  url   = False
 
   # Check the config file exists, if it was defined
   if args.config:
@@ -22,9 +21,15 @@ def parseConfig(args, required):
       elif fields[0].startswith("MOSAIC_ATTRIBUTES_PROJECT_ID"): projectId = fields[1]
 
   # Explicitly set attributes will overwrite the config file
-  if args.token: token = args.token
-  if args.url: url = args.url
-  if args.attributes_project: projectId = args.attributes_project
+  try: 
+    if args.token: token = args.token
+  except: token = False
+  try:
+    if args.url: url = args.url
+  except: url = False
+  try:
+    if args.attributes_project: projectId = args.attributes_project
+  except: projectId = False
 
   # Check that all required values are set
   if required["token"] and not token:
@@ -37,7 +42,7 @@ def parseConfig(args, required):
     print("supply a config file '--config (-c)' which includes the line:")
     print("  MOSAIC_URL = <URL>")
     exit(1)
-  if required["attributeProjectId"] and not projectId:
+  if required["attributesProjectId"] and not projectId:
     print("The project id for the attributes project is required. You can either supply the id with '--attributesProject (-a)' or")
     print("supply a config file '--config (-c)' which includes the line:")
     print("  MOSAIC_ATTRIBUTES_PROJECT_ID = <ID>")

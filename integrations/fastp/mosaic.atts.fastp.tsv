@@ -1,0 +1,2 @@
+project	Fastp Data	string
+sample	Duplication Rate (Fastp)	float	duplication|rate	Rate	Sample Count

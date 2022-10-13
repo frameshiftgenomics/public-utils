@@ -23,9 +23,10 @@ import api_project_attributes as api_pa
 import api_sample_attributes as api_sa
 
 def main():
-  global alignstatsProjectId
+  global fastpProjectId
   global hasSampleAttributes
   global mosaicConfig
+  global samples
 
   # Parse the command line
   args = parseCommandLine()
@@ -40,29 +41,24 @@ def main():
   # Get the attributes names to be populated
   parseAttributes(args)
 
-  # Get any alignstats files attached to the project samples
-  test = get_mosaic_data.getSampleFiles(mosaicConfig, args.project, "alignstats.json")
-
-  # If the alignstatsProjectId is False, the project needs to be created along with all the Alignstats attributes
-  if not alignstatsProjectId:
-    createProject(args)
-    createAttributes(args)
+  # If the fastpProjectId is False, the project needs to be created along with all the Fastp attributes
+  if not fastpProjectId: createProject(args)
+  createAttributes(args)
 
   # Import the attributes into the project with Alignstats data
   getAttributeIds(args)
 
+  # Get all the samples in the project
+  #samples = get_mosaic_data.getSamples(mosaicConfig, args.project)
+
   # Check if the attributes already exist in the target project
   checkAttributesExist(args)
 
-  ###### MAKE SURE ERROR REPORTING IS DONE. PROJECT VARIABLE SHOULD BE SET TO PASS / FAIL WHERE POSSIBLE
-  # Each sample has a separate json file. Get the names of all the files and the sample names
-  if not getSampleFiles(args): outputErrors(1)
+  # Read the json file and store the attributes
+  passed = readJsonFile(args)
 
-  # Read the json files for each sample and store the attributes
-  passed = readJsonFiles(args)
-
-  # If this step failed, the alignstats json files were not successfully processed. The project attribute 
-  # "Alignstats Data" should still be imported into the project and set to Fail. Otherwise the alignstats
+  # If this step failed, the fastp json file was not successfully processed. The project attribute 
+  # "Fastp Data" should still be imported into the project and set to Fail. Otherwise the fastp
   # data should be processed
   if passed:
     hasSampleAttributes = True
@@ -80,7 +76,7 @@ def main():
   removeFiles(args)
 
   # Output the observed errors.
-  #outputErrors(0)
+  outputErrors(0)
 
 # Input options
 def parseCommandLine():
@@ -89,8 +85,7 @@ def parseCommandLine():
   parser = argparse.ArgumentParser(description='Process the command line arguments')
 
 # Required arguments
-  parser.add_argument('--reference', '-r', required = True, metavar = "string", help = "The reference genome to use. Allowed values: '37', '38'")
-  parser.add_argument('--input_files', '-i', required = True, metavar = "file", action = "append", help = "The input json files (this can be set multiple times - once file per sample")
+  parser.add_argument('--input', '-i', required = True, metavar = "file", help = "The input json file")
   parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
 
   # Optional pipeline arguments
@@ -105,21 +100,22 @@ def parseCommandLine():
 
   return parser.parse_args()
 
-# Check if the Alignstats attributes have already been created or if then need to be created
+# Check if the Fastp attributes have already been created or if then need to be created
 def checkStatus(args):
-  global alignstatsProjectId
+  global fastpProjectId
 
-  # Check the public attributes project for the project attribute indicating that the alignstats integration
+  # Check the public attributes project for the project attribute indicating that the fastp integration
   # has been run before
-  data = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, mosaicConfig["attributesProjectId"])).read())
+  try: data = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, mosaicConfig["attributesProjectId"])).read())
+  except: fail("Failed to get public attributes. API message: " + os.popen(api_pa.getProjectAttributes(mosaicConfig, mosaicConfig["attributesProjectId"])).read())
 
-  # Loop over all the project attributes and look for attribute "Alignstats Integration xa545Ihs"
-  alignstatsProjectId = False
+  # Loop over all the project attributes and look for attribute "Fastp Integration xa545Ihs"
+  fastpProjectId = False
   for attributeName in data:
-    if attributeName["name"] == "Alignstats Integration xa545Ihs":
+    if attributeName["name"] == "Fastp Integration xa545Ihs":
 
       # There should be a value in the json object corresponding to the value in this project. Check this is the case
-      alignstatsProjectId = attributeName["values"][0]["value"]
+      fastpProjectId = attributeName["values"][0]["value"]
       break
 
 # Parse the tsv file containing the Mosaic attributes
@@ -131,7 +127,7 @@ def parseAttributes(args):
   global integrationStatus
 
   # If the attributes file was not specified on the command line, use the default version
-  if not args.attributes_file: args.attributes_file = os.path.dirname(os.path.abspath(__file__)) + "/mosaic.atts.alignstats.tsv"
+  if not args.attributes_file: args.attributes_file = os.path.dirname(os.path.abspath(__file__)) + "/mosaic.atts.fastp.tsv"
 
   # Get all the attributes to be added
   try: attributesInput = open(args.attributes_file, "r")
@@ -149,15 +145,15 @@ def parseAttributes(args):
     attributes = line.split("\t")
 
     # Put all project attributes into the projectAttributes dictionary. Set the Mosaic id and uid to
-    # False for now. These will be read from the Alignstats Attributes project if it already exists, or will
-    # be assigned when the attributes are created, if this is the first running of the Alignstats integration.
+    # False for now. These will be read from the Fastp Attributes project if it already exists, or will
+    # be assigned when the attributes are created, if this is the first running of the Fastp integration.
     # Get the value type (string or float) from the file
     if attributes[0] == "project": projectAttributes[attributes[1]] = {"id": False, "uid": False, "type": attributes[2], "values": False}
 
     # With sample attributes, we need both the attribute id and uid which will be determined later. For now,
     # set the id and uid to False, and read in the value type
     elif attributes[0] == "sample":
-      sampleAttributes[attributes[1]] = {"id": False, "uid": False, "type": attributes[2], "name": attributes[3], "xlabel": attributes[4], "ylabel": attributes[5], "values": {}, "processed": False, "present": False}
+      sampleAttributes[attributes[1]] = {"id": False, "uid": False, "type": attributes[2], "name": attributes[3], "xlabel": attributes[4], "ylabel": attributes[5], "value": False, "processed": False, "present": False}
       sampleNames[attributes[3]]      = attributes[1]
 
     # If the attribute is not correctly defined, add the line to the errors
@@ -165,60 +161,76 @@ def parseAttributes(args):
       integrationStatus = "Incomplete"
       errors.append("Unknown attribute in line " + str(lineNo) + " of file " + args.attributes)
 
-# Create a project to hold all the Alignstats attributes
+# Create a project to hold all the Fastp attributes
 def createProject(args):
-  global alignstatsProjectId
+  global fastpProjectId
   global mosaicConfig
 
-  # Define the curl command
-  command  = api_p.postProject(mosaicConfig, "Alignstats Attributes", args.reference)
-  jsonData = json.loads(os.popen(command).read())
-  alignstatsProjectId = jsonData["id"]
+  # Create the project
+  try: jsonData = json.loads(os.popen(api_p.postProject(mosaicConfig, "Fastp Attributes", args.reference)).read())
+  except: fail("Unable to create Fastp Attributes project")
+  fastpProjectId = jsonData["id"]
 
   # Add a project attribute to the Public attributes project with this id as the value
-  command  = api_pa.postProjectAttribute(mosaicConfig, "Alignstats Integration xa545Ihs", "float", str(alignstatsProjectId), "false", mosaicConfig["attributesProjectId"])
-  jsonData = json.loads(os.popen(command).read())
+  try: jsonData = json.loads(os.popen(api_pa.postProjectAttribute(mosaicConfig, "Fastp Integration xa545Ihs", "float", str(fastpProjectId), "false", mosaicConfig["attributesProjectId"])).read())
+  except: fail("Unable to add project attribute to Fastp attribute project")
 
-# If the Alignstats attributes project was created, create all the required attributes                                                                                         
+# If the Fastp attributes project was created, create all the required attributes                                                                                         
 def createAttributes(args):                                                                                                                                               
-  global alignstatsProjectId
+  global fastpProjectId
   global projectAttributes
   global sampleAttributes
   global mosaicConfig
 
-  # Create all the project attributes required for Alignstats integration
+  # Create all the project attributes required for Fastp integration
   for attribute in projectAttributes:
-    attType  = projectAttributes[attribute]["type"]
-    command  = api_pa.postProjectAttribute(mosaicConfig, attribute, attType, "Null", "true", alignstatsProjectId)
-    jsonData = json.loads(os.popen(command).read())
+
+    # Check if an attribute of this name already exists. If the GET command fails, there are no attributes in
+    # the project, so proceed to add the attribute
+    addAttribute = True
+    for existingAttribute in json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, fastpProjectId)).read()):
+      if existingAttribute["name"] == attribute: addAttribute = False
+
+    # Add the attribute
+    if addAttribute:
+      attType = projectAttributes[attribute]["type"]
+      try: jsonData = json.loads(os.popen(api_pa.postProjectAttribute(mosaicConfig, attribute, attType, "Null", "true", fastpProjectId)).read())
+      except: fail("Failed to create fastp public project attribute: " + attribute)
                   
-  # Create all the sample attributes required for Alignstats integration
+  # Create all the sample attributes required for Fastp integration
   for attribute in sampleAttributes:
-    attType  = sampleAttributes[attribute]["type"]
-    xlabel   = sampleAttributes[attribute]["xlabel"]
-    ylabel   = sampleAttributes[attribute]["ylabel"]
-    jsonData = json.loads(os.popen(api_sa.postSampleAttribute(mosaicConfig, attribute, attType, "Not Set", "true", xlabel, ylabel, alignstatsProjectId)).read())
+
+    # Check if the sample attribute exists
+    addAttribute = True
+    for existingAttribute in json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, fastpProjectId)).read()):
+      if existingAttribute["name"] == attribute: addAttribute = False
+
+    # Add the attribute
+    if addAttribute:
+      attType  = sampleAttributes[attribute]["type"]
+      xlabel   = sampleAttributes[attribute]["xlabel"]
+      ylabel   = sampleAttributes[attribute]["ylabel"]
+      try: jsonData = json.loads(os.popen(api_sa.postSampleAttribute(mosaicConfig, attribute, attType, "Not Set", "true", xlabel, ylabel, fastpProjectId)).read())
+      except: fail("Failed to create fastp public sample attribute: " + attribute)
 
 # Import the attributes into the current project
 def getAttributeIds(args):
   global errors
-  global alignstatsProjectId
+  global fastpProjectId
   global projectAttributes
   global sampleAttributes
   global mosaicConfig
 
-  # First, get all the project attribute ids from the Alignstats Attributes project
-  command  = api_pa.getProjectAttributes(mosaicConfig, alignstatsProjectId)
-  jsonData = json.loads(os.popen(command).read())
+  # First, get all the project attribute ids from the Fastp Attributes project
+  jsonData = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, fastpProjectId)).read())
 
   # Loop over the project attributes and store the ids                                                 
   for attribute in jsonData:
     projectAttributes[str(attribute["name"])]["id"]  = attribute["id"]
     projectAttributes[str(attribute["name"])]["uid"] = attribute["uid"]
 
-  # Get all the sample attribute ids from the Alignstats Attributes project
-  command  = api_sa.getSampleAttributes(mosaicConfig, alignstatsProjectId)
-  jsonData = json.loads(os.popen(command).read())
+  # Get all the sample attribute ids from the Fastp Attributes project
+  jsonData = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, fastpProjectId)).read())
 
   # Loop over the sample attributes and store the ids                                                
   for attribute in jsonData:                                                                          
@@ -227,7 +239,7 @@ def getAttributeIds(args):
     # added to all Mosaic projects
     if str(attribute["is_custom"]) == "True":
 
-      # Only set the values for attributes that exist in alignstats tsv file. The Alignstats Attributes
+      # Only set the values for attributes that exist in fastp tsv file. The Fastp Attributes
       # project may contain more attributes than the tsv. This could be the case if we are just trying
       # to update a subset of attributes, or if the alignstats output has been updated
       if str(attribute["name"]) in sampleAttributes:
@@ -236,23 +248,9 @@ def getAttributeIds(args):
         sampleAttributes[str(attribute["name"])]["processed"] = True
 
       # Store the names of any attributes that exist in Mosaic, but are not being updated
-      else: errors.append("Mosaic attribute \"" + str(attribute["name"]) + "\" was not included in the alignstats tsv and was thus not updated")
+      else: fail("Mosaic attribute \"" + str(attribute["name"]) + "\" was not included in the fastp tsv and was thus not updated")
 
-  # Loop over the sampleAttributes (e.g. all the attributes that were defined in the alignstats tsv, representing
-  # all attributes to be included. If any of these attributes were not "processed" above, there is no attribute in
-  # the Mosaic Alignstats Attributes project and it needs to be created
-  for attribute in sampleAttributes:
-    if not sampleAttributes[attribute]["processed"]:
-      attType  = sampleAttributes[attribute]["type"]
-      xlabel   = sampleAttributes[attribute]["xlabel"]
-      ylabel   = sampleAttributes[attribute]["ylabel"]
-      command  = api_sa.postSampleAttribute(mosaicConfig, attribute, attType, xlabel, ylabel, "Null", True, alignstatsProjectId)
-      jsonData = json.loads(os.popen(command).read())
-      sampleAttributes[str(jsonData["name"])]["id"]        = jsonData["id"]
-      sampleAttributes[str(jsonData["name"])]["uid"]       = jsonData["uid"]
-      sampleAttributes[str(jsonData["name"])]["processed"] = True
-
-# Check if the attributes already exist in the target project and check if the Alignstats integration has
+# Check if the attributes already exist in the target project and check if the fastp integration has
 # already been run (attributes could have been deleted, so both checks are required)
 def checkAttributesExist(args):
   global sampleAttributes
@@ -261,17 +259,15 @@ def checkAttributesExist(args):
   global mosaicConfig
 
   for attribute in projectAttributes:
-    if attribute == "Alignstats Data": alignstatsId = projectAttributes[attribute]["id"]
+    if attribute == "Fastp Data": fastpId = projectAttributes[attribute]["id"]
 
   # Get all the project attributes in the target project
-  command  = api_pa.getProjectAttributes(mosaicConfig, args.project)
-  jsonData = json.loads(os.popen(command).read())
+  jsonData = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, args.project)).read())
   for attribute in jsonData:
-    if attribute["name"] == "Alignstats Data" and attribute["id"] == alignstatsId: hasRun = True
+    if attribute["name"] == "Fastp Data" and attribute["id"] == fastpId: hasRun = True
 
   # Get all the sample attributes in the target project
-  command  = api_sa.getSampleAttributes(mosaicConfig, args.project)
-  jsonData = json.loads(os.popen(command).read())
+  jsonData = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, args.project)).read())
   projectSampleAttributes = []
   for attribute in jsonData: projectSampleAttributes.append(attribute["id"])
 
@@ -279,102 +275,54 @@ def checkAttributesExist(args):
   for attribute in sampleAttributes:
     if sampleAttributes[attribute]["id"] in projectSampleAttributes: sampleAttributes[attribute]["present"] = True
 
-# Read the input file to get the names of the json files for all the samples in the project
-def getSampleFiles(args):
+# Read through the Alignstats json file and store the information
+def readJsonFile(args):
   global integrationStatus
   global errors
-  global samples
-
-  # Get all of the samples in the project
-  command  = api_s.getSamples(mosaicConfig, args.project)
-  jsonData = json.loads(os.popen(command).read())
-  for record in jsonData: samples[record["name"]] = False
-
-  # Loop over the provided input files - there should be one file per sample - and check the files exist
-  isSuccess  = True
-  for index, filename in enumerate(args.input_files):
-
-    # The file may include the entire path, so extract just the filename
-    fileNoPath = filename.split("/")[-1] if "/" in filename else filename
-
-    # See if one, and only one, of the project samples are embedded in the filename
-    hasMatch      = False
-    matchedSample = False
-    for sample in samples:
-      if sample in fileNoPath:
-        if hasMatch:
-          errors.append("File: " + fileNoPath + " contains the names of multiple project samples, so it cannot be determined which samples this file belongs to")
-          integrationStatus = "Fail"
-          isSuccess         = False
-          break
-        else:
-          hasMatch      = True
-          matchedSample = sample
-
-    # If the filename does not contain the name of a sample, it cannot be determined which sample the file belongs to
-    if not hasMatch:
-      errors.append("File: " + fileNoPath + " does not contain the name of any project samples, so it cannot be determined which samples this file belongs to")
-      integrationStatus = "Fail"
-      break
-
-    # Otherwise associate this file with the sample, and check it exists
-    else:
-      try: samples[matchedSample] = {"file": filename, "handle": open(filename, "r")}
-      except:
-        errors.append("File: " + filename + " could not be opened")
-        integrationStatus = "Fail"
-        isSuccess = False
-
-  # Only samples with associated files can be processed, so remove all samples without a file, and provide a warning
-  toRemove = []
-  for sample in samples:
-    if not samples[sample]: toRemove.append(sample)
-  if len(toRemove) > 0:
-    for sample in toRemove: samples.pop(sample)
-    print("WARNING: ", len(toRemove), " samples did not have alignstats files associated", sep = "")
-
-  return isSuccess
-
-# Read through the Alignstats json files for each sample and store the information
-def readJsonFiles(args):
-  global integrationStatus
-  global errors
-  global samples
   global sampleNames
   global sampleAttributes
 
-  # Loop over the samples, and open and read the associated json files
-  for sample in samples:
+  # Open the input file
+  try: jsonFile = open(args.input, "r")
+  except:
+    integrationStatus = "Fail"
+    errors.append("File: " + args.input + " was not found")
+    return False
 
-    # Read through the alignstats file
-    try: sampleData = json.loads(samples[sample]["handle"].read())
-    except:
-      integrationStatus= "Fail"
-      errors.append("File: " + samples[sample]["file"] + " is not a well formed json")
-      return False
+  # Read through the alignstats file
+  try: fastpData = json.loads(jsonFile.read())
+  except:
+    integrationStatus= "Fail"
+    errors.append("File: " + args.input + " is not a well formed json")
+    return False
 
-    # Loop over all the attributes in the json file
-    for attribute in sampleData:
-      try: attributeName = sampleNames[attribute]
-      except:
-        errors.append("Attribute \"" +  attribute + "\" not present for sample \"" + sample + "\"")
-        continue
+  # Loop over all attributes to be imported
+  for attribute in sampleNames:
 
-      # Store the values for this sample
-      try: sampleAttributes[attributeName]["values"][sample] = sampleData[attribute]
+    # If the attribute contains pipes, this is a nested object in the json, so break this up
+    attributePath = attribute.split("|") if "|" in attribute else [attribute]
 
-      # If the attribute in the json file is not present in Mosaic, flag it
-      except: 
-      #if attributeName not in sampleAttributes:
-        ################
-        ################
-        ################
-        ###########ERROR
-        print("ATTRIBUTE MISSING", sample, attributeName, sampleAttributes[attributeName])
-        continue
+    # Check that this attribute is present in the json and extract the value
+    value = False
+    while len(attributePath) > 0:
+      marker = attributePath.pop(0)
 
-    # Close the sample file
-    samples[sample]["handle"].close()
+      # If value is False, this is the first step, so the value must be extracted from the fastpData
+      if not value:
+        try: value = fastpData[marker]
+        except:
+          print("Attribute: \"" + attribute + "\" could not be processed")
+          break
+
+      # Otherwise, value has already been populated and the required value is within this object
+      else:
+        try: value = value[marker]
+        except:
+          print("Attribute: \"" + attribute + "\" could not be processed")
+          break
+
+    # Store the value
+    sampleAttributes[sampleNames[attribute]]["value"] = value
 
   # If the files were successfully processed, return True
   return True
@@ -385,7 +333,7 @@ def outputToMosaic(args):
   global sampleAttributes
 
   # Open the output file
-  if not args.output: args.output = "alignstats_mosaic_upload.tsv"
+  if not args.output: args.output = "fastp_mosaic_upload.tsv"
   outFile = open(args.output, "w")
 
   # Output the header line
@@ -393,14 +341,13 @@ def outputToMosaic(args):
   for attribute in sorted(sampleAttributes.keys()): line += "\t" + str(sampleAttributes[attribute]["uid"])
   print(line, file = outFile)
   
-  # Loop over the samples and output the required information
-  for sample in sorted(samples):
-    line = sample
-    for attribute in sorted(sampleAttributes.keys()):
-      try: value = sampleAttributes[attribute]["values"][sample]
-      except: value = "" 
-      line += "\t" + str(value)
-    print(line, sep = "\t", file = outFile)
+  line = "BOB"
+  for attribute in sorted(sampleAttributes.keys()):
+    try: value = sampleAttributes[attribute]["value"]
+    except: value = "" 
+    line += "\t" + str(value)
+  print(line, sep = "\t", file = outFile)
+  exit(0)
 
   # Close the output file
   outFile.close()
@@ -494,13 +441,18 @@ def outputErrors(errorCode):
 
   for error in errors: print(error)
 
+# Fail
+def fail(message):
+  print(message)
+  exit(1)
+
 # Initialise global variables
 
 # Store mosaic info, e.g. the token, url etc.
 mosaicConfig = {}
 
 # The id of the project holding alignstats attributes
-alignstatsProjectId = False
+fastpProjectId = False
   
 # Record if the Alignstats integration has previously run
 hasRun = False

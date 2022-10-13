@@ -31,7 +31,7 @@ def main():
   args = parseCommandLine()
 
   # Parse the mosaic configuration file
-  mosaicRequired = {"token": True, "url": True, "attributeProjectId": True}
+  mosaicRequired = {"token": True, "url": True, "attributesProjectId": True}
   mosaicConfig   = mosaic_config.parseConfig(args, mosaicRequired)
 
   # Check the integration status, e.g. if the required attributes exist or need to be created
@@ -205,14 +205,14 @@ def createAttributes(args):
   # Create all the project attributes required for Peddy integration
   for attribute in projectAttributes:
     attType  = projectAttributes[attribute]["type"]
-    jsonData = json.loads(os.popen(api_pa.postProjectAttribute(mosaicConfig, attribute, attType, "Null", "true", peddyProjectId)).read())
+    jsonData = json.loads(os.popen(api_pa.postProjectAttribute(mosaicConfig, attribute, attType, "Not Set", "true", peddyProjectId)).read())
 
   # Create all the sample attributes required for Peddy integration
   for attribute in sampleAttributes:
     attType  = sampleAttributes[attribute]["type"]
     xlabel   = sampleAttributes[attribute]["xlabel"]
     ylabel   = sampleAttributes[attribute]["ylabel"]
-    jsonData = json.loads(os.popen(api_sa.postSampleAttribute(mosaicConfig, attribute, attType, "Null", "true", xlabel, ylabel, peddyProjectId)).read())
+    jsonData = json.loads(os.popen(api_sa.postSampleAttribute(mosaicConfig, attribute, attType, "Not Set", "true", xlabel, ylabel, peddyProjectId)).read())
 
 # Get the attributes to be imported into the current project
 def getAttributeIds(args):

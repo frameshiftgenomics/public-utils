@@ -78,3 +78,13 @@ def putProjectAttribute(mosaicConfig, value, projectId, attributeId):
 ######
 ###### DELETE routes
 ######
+
+# Delete a project attribute
+def deleteProjectAttribute(mosaicConfig, projectId, attributeId):
+  token = mosaicConfig["token"]
+  url   = mosaicConfig["url"]
+
+  command  = 'curl -S -s -X DELETE -H "Authorization: Bearer ' + str(token) + '" '
+  command += str(url) + 'api/v1/projects/' + str(projectId) + '/attributes/' + str(attributeId)
+
+  return command
