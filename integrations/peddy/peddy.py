@@ -574,6 +574,9 @@ def outputErrors(errorCode):
 
 # Initialise global variables
 
+# Store the version
+version = "0.1.2"
+
 # Store mosaic info, e.g. the token, url etc.
 mosaicConfig = {}
 
@@ -589,16 +592,13 @@ sampleAttributes  = {}
 
 # Keep a list of all errors seen, and the status of the processing
 errors            = []
-integrationStatus = "Pass"
+integrationStatus = "v" + str(version)
 
 # Keep track of the samples in the project
 samples  = []
 
 # Record if sample attributes are successfully processed
 hasSampleAttributes = False
-
-# Store the version
-version = "0.1.1"
 
 if __name__ == "__main__":
   main()

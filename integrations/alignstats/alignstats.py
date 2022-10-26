@@ -103,6 +103,9 @@ def parseCommandLine():
   parser.add_argument('--url', '-u', required = False, metavar = "string", help = "The base url for Mosaic")
   parser.add_argument('--attributes_project', '-a', required = False, metavar = "integer", help = "The Mosaic project id that contains public attributes")
 
+  # Version
+  parser.add_argument('--version', '-v', action="version", version='Alignstats integration version: ' + str(version))
+
   return parser.parse_args()
 
 # Check if the Alignstats attributes have already been created or if then need to be created
@@ -493,6 +496,9 @@ def outputErrors(errorCode):
 
 # Initialise global variables
 
+# Store the version
+version = "0.1.2"
+
 # Store mosaic info, e.g. the token, url etc.
 mosaicConfig = {}
 
@@ -512,7 +518,7 @@ sampleNames = {}
 
 # Keep a list of all errors seen, and the status of the processing
 errors            = []
-integrationStatus = "Pass"
+integrationStatus = "v" + str(version)
 
 # Keep track of the samples in the project
 samples  = {}
