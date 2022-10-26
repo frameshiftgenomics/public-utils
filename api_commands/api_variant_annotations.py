@@ -56,6 +56,21 @@ def postImportVariantAnnotations(mosaicConfig, annotationId, projectId):
 ###### PUT routes
 ######
 
+# Update a variant annotation
+def updateVariantAnnotation(mosaicConfig, projectId, fields, annotationId):
+  token = mosaicConfig["token"]
+  url   = mosaicConfig["url"]
+
+  command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token)
+  command += '" -d \'{'
+  for i, field in enumerate(fields):
+    command += '"' + str(field) + '": "' + str(fields[field]) + '"'
+    if int(i) + 1 != len(fields): command += ', '
+  command += '}\' '
+  command += str(url) + 'api/v1/projects/' + str(projectId) + '/variants/annotations/' + str(annotationId)
+
+  return command
+
 ######
 ###### DELETE routes
 ######

@@ -217,8 +217,7 @@ def getAttributeIds(args):
     projectAttributes[str(attribute["name"])]["uid"] = attribute["uid"]
 
   # Get all the sample attribute ids from the Alignstats Attributes project
-  command  = api_sa.getSampleAttributes(mosaicConfig, alignstatsProjectId)
-  jsonData = json.loads(os.popen(command).read())
+  jsonData = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, alignstatsProjectId)).read())
 
   # Loop over the sample attributes and store the ids                                                
   for attribute in jsonData:                                                                          
@@ -246,8 +245,7 @@ def getAttributeIds(args):
       attType  = sampleAttributes[attribute]["type"]
       xlabel   = sampleAttributes[attribute]["xlabel"]
       ylabel   = sampleAttributes[attribute]["ylabel"]
-      command  = api_sa.postSampleAttribute(mosaicConfig, attribute, attType, xlabel, ylabel, "Null", True, alignstatsProjectId)
-      jsonData = json.loads(os.popen(command).read())
+      jsonData = json.loads(os.popen(api_sa.postSampleAttribute(mosaicConfig, attribute, attType, xlabel, ylabel, "Null", True, alignstatsProjectId)).read())
       sampleAttributes[str(jsonData["name"])]["id"]        = jsonData["id"]
       sampleAttributes[str(jsonData["name"])]["uid"]       = jsonData["uid"]
       sampleAttributes[str(jsonData["name"])]["processed"] = True
@@ -264,14 +262,12 @@ def checkAttributesExist(args):
     if attribute == "Alignstats Data": alignstatsId = projectAttributes[attribute]["id"]
 
   # Get all the project attributes in the target project
-  command  = api_pa.getProjectAttributes(mosaicConfig, args.project)
-  jsonData = json.loads(os.popen(command).read())
+  jsonData = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, args.project)).read())
   for attribute in jsonData:
     if attribute["name"] == "Alignstats Data" and attribute["id"] == alignstatsId: hasRun = True
 
   # Get all the sample attributes in the target project
-  command  = api_sa.getSampleAttributes(mosaicConfig, args.project)
-  jsonData = json.loads(os.popen(command).read())
+  jsonData = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, args.project)).read())
   projectSampleAttributes = []
   for attribute in jsonData: projectSampleAttributes.append(attribute["id"])
 
@@ -412,6 +408,7 @@ def importAttributes(args):
   global projectAttributes
   global sampleAttributes
   global hasSampleAttributes
+  global hasRun
   global mosaicConfig
 
   # Set the Alignstats Data project attribute value to the value stored in integrationStatus
@@ -421,20 +418,20 @@ def importAttributes(args):
   for attribute in projectAttributes:                                                                           
     attributeId = projectAttributes[attribute]["id"]                                                            
     value       = projectAttributes[attribute]["values"]                                                        
-    command     = api_pa.postImportProjectAttribute(mosaicConfig, attributeId, value, args.project)
-    jsonData    = json.loads(os.popen(command).read())
+
+    # If the integration has already been run, just update the values, otherwise import them
+    if hasRun: jsonData = json.loads(os.popen(api_pa.putProjectAttribute(mosaicConfig, value, args.project, attributeId)).read())
+    else: jsonData = json.loads(os.popen(api_pa.postImportProjectAttribute(mosaicConfig, attributeId, value, args.project)).read())
 
   # Loop over all the defined sample attributes and import them, but only if the parsing of the peddy           
   # html was successful     
   if hasSampleAttributes:   
     for attribute in sampleAttributes:
       attributeId = sampleAttributes[attribute]["id"]
-      command     = api_sa.postImportSampleAttribute(mosaicConfig, attributeId, args.project)
-      jsonData    = json.loads(os.popen(command).read())
+      jsonData    = json.loads(os.popen(api_sa.postImportSampleAttribute(mosaicConfig, attributeId, args.project)).read())
   
     # Upload the sample attribute values tsv
-    command = api_sa.postUploadSampleAttribute(mosaicConfig, args.output, args.project)
-    data     = os.popen(command)
+    data = os.popen(api_sa.postUploadSampleAttribute(mosaicConfig, args.output, args.project))
 
 # Create an attribute set
 def createAttributeSet(args):
