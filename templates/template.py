@@ -301,7 +301,6 @@ def assignTemplateAttribute(projectId, templateName, projectAttributes):
 
   # If the attribute id was not found, fail
   if not attributeId: fail("Couldn't find the \"Assigned Template\" attribute in the public attributes project")
-  for attribute in projectAttributes: print(projectAttributes[attribute])
 
   # If the Assigned Template attribute is not already in the project, import it, otherwise, update the value
   if attributeId not in projectAttributes: data = json.loads(os.popen(api_pa.postImportProjectAttribute(mosaicConfig, attributeId, value, projectId)).read())
