@@ -220,7 +220,7 @@ def getAttributeIds(args):
     projectAttributes[str(attribute["name"])]["uid"] = attribute["uid"]
 
   # Get all the sample attribute ids from the Alignstats Attributes project
-  jsonData = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, alignstatsProjectId)).read())
+  jsonData = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, alignstatsProjectId, 'false')).read())
 
   # Loop over the sample attributes and store the ids                                                
   for attribute in jsonData:                                                                          
@@ -270,7 +270,7 @@ def checkAttributesExist(args):
     if attribute["name"] == "Alignstats Data" and attribute["id"] == alignstatsId: hasRun = True
 
   # Get all the sample attributes in the target project
-  jsonData = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, args.project)).read())
+  jsonData = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, args.project, 'false')).read())
   projectSampleAttributes = []
   for attribute in jsonData: projectSampleAttributes.append(attribute["id"])
 

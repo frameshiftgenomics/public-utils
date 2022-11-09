@@ -6,6 +6,26 @@
 ###### GET routes
 ######
 
+# Get information about a project
+def getProject(mosaicConfig, projectId):
+  token = mosaicConfig["token"]
+  url   = mosaicConfig["url"]
+
+  command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
+  command += str(url) + 'api/v1/projects/' + str(projectId)
+
+  return command
+
+# Get all projects in a collection
+def getCollectionProjects(mosaicConfig, projectId):
+  token = mosaicConfig["token"]
+  url   = mosaicConfig["url"]
+
+  command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
+  command += str(url) + 'api/v1/projects/' + str(projectId) + '/sub-projects'
+
+  return command
+
 ######
 ###### POST routes
 ######

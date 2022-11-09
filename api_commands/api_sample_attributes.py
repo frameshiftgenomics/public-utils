@@ -7,12 +7,23 @@
 ######
 
 # Get sample attributes in a project
-def getSampleAttributes(mosaicConfig, projectId):
+def getSampleAttributes(mosaicConfig, projectId, includeValues):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
 
   command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
   command += str(url) + 'api/v1/projects/' + str(projectId) + '/samples/attributes'
+  if includeValues: command += '?include_values=true'
+
+  return command
+
+# Get attributes for a sample in a project
+def getAttributesForSample(mosaicConfig, projectId, sampleId):
+  token = mosaicConfig["token"]
+  url   = mosaicConfig["url"]
+
+  command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
+  command += str(url) + 'api/v1/projects/' + str(projectId) + '/samples/' + str(sampleId) + '/attributes'
 
   return command
 
@@ -29,6 +40,17 @@ def postSampleAttribute(mosaicConfig, name, valueType, value, isPublic, xLabel, 
   command += '-d \'{"name": "' + str(name) + '", "value_type": "' + str(valueType) + '", "value": "' + str(value) + '", "is_public": "'
   command += str(isPublic) + '", "x_label": "' + str(xLabel) + '", "y_label": "' + str(yLabel) + '"}\' '
   command += str(url) + 'api/v1/projects/' + str(projectId) + '/samples/attributes'
+
+  return command
+
+# Update the value for a sample attribute
+def postUpdateSampleAttribute(mosaicConfig, value, projectId, sampleId, attributeId):
+  token = mosaicConfig["token"]
+  url   = mosaicConfig["url"]
+
+  command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"value": "' + str(value) + '"}\' '
+  command += str(url) + 'api/v1/projects/' + str(projectId) + '/samples/' + str(sampleId) + '/attributes/' + str(attributeId)
 
   return command
 
