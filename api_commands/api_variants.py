@@ -12,8 +12,19 @@ import json
 ###### POST routes
 ######
 
-# Upload variant via a file
-def postUploadVariants(mosaicConfig, filename, fileType, name, projectId):
+# Upload variants via a file, but do not create a variant set
+def postUploadVariants(mosaicConfig, filename, fileType, projectId):
+  token = mosaicConfig["token"]
+  url   = mosaicConfig["url"]
+
+  command  = 'curl -S -s -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-F "file=@' + str(filename) + '" -F "type=' + str(fileType) + '" -F "create_variant_set=False' + '" '
+  command += str(url) + 'api/v1/projects/' + str(projectId) + '/variants/upload'
+
+  return command
+
+# Upload variants via a file and create a variant set
+def postUploadVariantsWithSet(mosaicConfig, filename, fileType, name, projectId):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
 

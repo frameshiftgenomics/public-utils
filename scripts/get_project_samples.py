@@ -32,7 +32,7 @@ def main():
   args = parseCommandLine()
 
   # Parse the mosaic configuration file
-  mosaicRequired = {"token": True, "url": True, "attributeProjectId": True}
+  mosaicRequired = {"token": True, "url": True, "attributesProjectId": True}
   mosaicConfig   = mosaic_config.parseConfig(args, mosaicRequired)
 
   # Get the samples from a project
