@@ -28,7 +28,7 @@ def main():
   # Check the arguments are valid
   checkArguments(args)
 
-  # Upload the variants
+  # Upload the variants without creating a variant set unless a name was provided
   uploadVariants(args)
 
 # Input options
@@ -43,7 +43,8 @@ def parseCommandLine():
   # The project id to which the filter is to be added is required
   parser.add_argument('--project_id', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
 
-  # Arguments related to the event
+  # Additional arguments
+  parser.add_argument('--name', '-n', required = False, metavar = "string", help = 'The variant set name to be applied')
   parser.add_argument('--method', '-m', required = True, metavar = "string", help = 'The variant upload method: "allele"')
   parser.add_argument('--input_vcf', '-i', required = True, metavar = "string", help = 'The vcf file to upload variants from')
 
@@ -63,12 +64,16 @@ def checkArguments(args):
 def uploadVariants(args):
   global mosaicConfig
 
-  # Get all of the project attributes
-  try: data = json.loads(os.popen(api_v.postUploadVariants(mosaicConfig, args.input_vcf, args.method, args.description, project_id)).read())
-  except: fail('Couldn\'t upload variants to Mosaic')
+  # Upload the variants without a variant set unless a name was provided
+  if args.name:
+    try: data = json.loads(os.popen(api_v.postUploadVariantsWithSet(mosaicConfig, args.input_vcf, args.method, args.name, args.project_id)).read())
+    except: fail('Couldn\'t upload variants to Mosaic')
+  else:
+    try: data = json.loads(os.popen(api_v.postUploadVariants(mosaicConfig, args.input_vcf, args.method, args.project_id)).read())
+    except: fail('Couldn\'t upload variants to Mosaic')
 
   # If a message is returned instead of data, check that the user has access to the project
-  if 'message' in data: fail('Failed to upload variants. The following was returned:\n' + data{'message'})
+  if 'message' in data: print('Upload resulted in the following message:\n  ' + str(data['message']))
 
 # If the script fails, provide an error message and exit
 def fail(message):
