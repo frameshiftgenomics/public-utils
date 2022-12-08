@@ -80,6 +80,21 @@ def postUploadSampleAttribute(mosaicConfig, filename, projectId):
 ###### PUT routes
 ######
 
+# Update a sample attribute
+def putSampleAttribute(mosaicConfig, fields, projectId, attributeId):
+  token = mosaicConfig["token"]
+  url   = mosaicConfig["url"]
+
+  command  = 'curl -S -s -i -X PUT -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{'
+  for i, field in enumerate(fields):
+    command += '"' + str(field) + '": "' + str(fields[field]) + '"'
+    if int(i) + 1 != len(fields): command += ', '
+  command += '}\' '
+  command += str(url) + 'api/v1/projects/' + str(projectId) + '/samples/attributes/' + str(attributeId)
+
+  return command
+
 ######
 ###### DELETE routes
 ######
