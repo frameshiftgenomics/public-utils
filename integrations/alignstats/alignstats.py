@@ -41,7 +41,9 @@ def main():
   parseAttributes(args)
 
   # Get any alignstats files attached to the project samples
-  test = get_mosaic_data.getSampleFiles(mosaicConfig, args.project, "alignstats.json")
+  #test = get_mosaic_data.getSampleFiles(mosaicConfig, args.project, "alignstats.json")
+  #print(test)
+  #exit(0)
 
   # If the alignstatsProjectId is False, the project needs to be created along with all the Alignstats attributes
   if not alignstatsProjectId:
@@ -211,8 +213,8 @@ def getAttributeIds(args):
   global mosaicConfig
 
   # First, get all the project attribute ids from the Alignstats Attributes project
-  command  = api_pa.getProjectAttributes(mosaicConfig, alignstatsProjectId)
-  jsonData = json.loads(os.popen(command).read())
+  try: jsonData = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, alignstatsProjectId)).read())
+  except: fail('Couldn\'t get project attributes')
 
   # Loop over the project attributes and store the ids                                                 
   for attribute in jsonData:
@@ -220,7 +222,8 @@ def getAttributeIds(args):
     projectAttributes[str(attribute["name"])]["uid"] = attribute["uid"]
 
   # Get all the sample attribute ids from the Alignstats Attributes project
-  jsonData = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, alignstatsProjectId, 'false')).read())
+  try: jsonData = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, alignstatsProjectId, 'false')).read())
+  except: fail('Couldn\'t get sample attriubtes')
 
   # Loop over the sample attributes and store the ids                                                
   for attribute in jsonData:                                                                          
@@ -248,7 +251,13 @@ def getAttributeIds(args):
       attType  = sampleAttributes[attribute]["type"]
       xlabel   = sampleAttributes[attribute]["xlabel"]
       ylabel   = sampleAttributes[attribute]["ylabel"]
-      jsonData = json.loads(os.popen(api_sa.postSampleAttribute(mosaicConfig, attribute, attType, xlabel, ylabel, "Null", True, alignstatsProjectId)).read())
+      try: jsonData = json.loads(os.popen(api_sa.postSampleAttribute(mosaicConfig, attribute, attType, 'Null', 'true', xlabel, ylabel, alignstatsProjectId)).read())
+      except: fail('Could not create sample attribute: ' + str(attribute))
+
+      # If an error was thrown, inform the user and quit
+      if 'message' in jsonData: fail('Failed to create sample attribute (' + str(attribute) + '. Error message was: ' + str(jsonData['message']))
+
+      # Store information about the created attribute
       sampleAttributes[str(jsonData["name"])]["id"]        = jsonData["id"]
       sampleAttributes[str(jsonData["name"])]["uid"]       = jsonData["uid"]
       sampleAttributes[str(jsonData["name"])]["processed"] = True
@@ -487,6 +496,11 @@ def removeFiles(args):
 
   # Remove the tsv file
   if args.output: os.remove(args.output)
+
+# If the script fails, provide an error message and exit
+def fail(message):
+  print(message, sep = "")
+  exit(1)
 
 # Output errors
 def outputErrors(errorCode):

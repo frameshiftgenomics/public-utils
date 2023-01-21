@@ -1,11 +1,216 @@
 project	Alignstats Data	string
-sample	Duplicate Reads Percent (Alignstats)	float	DuplicateReadsPct	Percent (%)	Sample Count
-sample	Insert Size Mean (Alignstats)	float	InsertSizeMean	Mean Size (bp)	Sample Count
-sample	Insert Size Median (Alignstats)	float	InsertSizeMedian	Median Size (bp)	Sample Count
-sample	Q20 Bases Percent (Alignstats)	float	Q20BasesPct	Percent (%)	Sample Count
-sample	Soft Clipped Bases Percent (Alignstats)	float	SoftClippedBasesPct	Percent (%)	Sample Count
-sample	Soft Clipped Reads Percent (Alignstats)	float	SoftClippedReadsPct	Percent (%)	Sample Count
+sample	Total Records (Alignstats)	float	TotalRecords	Number of records	Sample Count
+sample	Unfiltered Records (Alignstats)	float	UnfilteredRecords	Number of records	Sample Count
+sample	Unfiltered Records Percent (Alignstats)	float	UnfilteredRecordsPct	Percent (%)	Sample Count
+sample	Filtered Records (Alignstats)	float	FilteredRecords	Number of records	Sample Count
+sample	Filtered Records Percent (Alignstats)	float	FilteredRecordsPct	Percent (%)	Sample Count
+sample	Yield Reads (Alignstats)	float	YieldReads	Yield Reads	Sample Count
+sample	Yield Bases (Alignstats)	float	YieldBases	Yield Bases	Sample Count
+sample	Unmapped Reads (Alignstats)	float	UnmappedReads	Number of records	Sample Count
 sample	Unmapped Reads Percent (Alignstats)	float	UnmappedReadsPct	Percent (%)	Sample Count
-sample	WGS Coverage Bases 20 Percent (Alignstats)	float	WgsCoverageBases20Pct	Coverage	Sample Count
+sample	Unmapped Bases (Alignstats)	float	UnmappedBases	Number of bases	Sample Count
+sample	Unmapped Bases Percent (Alignstats)	float	UnmappedBasesPct	Percent (%)	Sample Count
+sample	Duplicate Reads (Alignstats)	float	DuplicateReads	Number of reads	Sample Count
+sample	Duplicate Reads Percent (Alignstats)	float	DuplicateReadsPct	Percent (%)	Sample Count
+sample	Duplicate Bases (Alignstats)	float	DuplicateBases	Number of bases	Sample Count
+sample	Duplicate Bases Percent (Alignstats)	float	DuplicateBasesPct	Percent (%)	Sample Count
+sample	Mapped Reads (Alignstats)	float	MappedReads	Number of reads	Sample Count
+sample	Mapped Reads Percent (Alignstats)	float	MappedReadsPct	Percent (%)	Sample Count
+sample	Mapped Bases (Alignstats)	float	MappedBases	Number of bases	Sample Count
+sample	Mapped Bases Percent (Alignstats)	float	MappedBasesPct	Percent (%)	Sample Count
+sample	Aligned Bases (Alignstats)	float	AlignedBases	Number of bases	Sample Count
+sample	Aligned Bases Percent (Alignstats)	float	AlignedBasesPct	Percent (%)	Sample Count
+sample	Matched Bases (Alignstats)	float	MatchedBases	Number of bases	Sample Count
+sample	Matched Bases Percent (Alignstats)	float	MatchedBasesPct	Percent (%)	Sample Count
+sample	Mismatched Bases (Alignstats)	float	MismatchedBases	Number of bases	Sample Count
+sample	Mismatched Bases Percent (Alignstats)	float	MismatchedBasesPct	Percent (%)	Sample Count
+sample	Inserted Bases (Alignstats)	float	InsertedBases	Number of bases	Sample Count
+sample	Inserted Bases Percent (Alignstats)	float	InsertedBasesPct	Percent (%)	Sample Count
+sample	Deleted Bases (Alignstats)	float	DeletedBases	Number of bases	Sample Count
+sample	Deleted Bases Percent (Alignstats)	float	DeletedBasesPct	Percent (%)	Sample Count
+sample	Soft Clipped Reads (Alignstats)	float	SoftClippedReads	Number of reads	Sample Count
+sample	Soft Clipped Reads Percent (Alignstats)	float	SoftClippedReadsPct	Percent (%)	Sample Count
+sample	Soft Clipped Bases (Alignstats)	float	SoftClippedBases	Number of bases	Sample Count
+sample	Soft Clipped Bases Percent (Alignstats)	float	SoftClippedBasesPct	Percent (%)	Sample Count
+sample	Perfect Reads (Alignstats)	float	PerfectReads	Number of reads	Sample Count
+sample	Perfect Reads Percent (Alignstats)	float	PerfectReadsPct	Percent (%)	Sample Count
+sample	Perfect Bases (Alignstats)	float	PerfectBases	Number of bases	Sample Count
+sample	Perfect Bases Percent (Alignstats)	float	PerfectBasesPct	Percent (%)	Sample Count
+sample	Q20 Bases (Alignstats)	float	Q20Bases	Number of bases	Sample Count
+sample	Q20 Bases Percent (Alignstats)	float	Q20BasesPct	Percent (%)	Sample Count
+sample	R1 Yield Reads (Alignstats)	float	R1YieldReads	Yield Reads	Sample Count
+sample	R1 Yield Bases (Alignstats)	float	R1YieldBases	Yield Bases	Sample Count
+sample	R1 Unmapped Reads (Alignstats)	float	R1UnmappedReads	Number of reads	Sample Count
+sample	R1 Unmapped Reads Percent (Alignstats)	float	R1UnmappedReadsPct	Percent (%)	Sample Count
+sample	R1 Unmapped Bases (Alignstats)	float	R1UnmappedBases	Number of bases	Sample Count
+sample	R1 Unmapped Bases Percent (Alignstats)	float	R1UnmappedBasesPct	Percent (%)	Sample Count
+sample	R1 Mapped Reads (Alignstats)	float	R1MappedReads	Number of reads	Sample Count
+sample	R1 Mapped Reads Percent (Alignstats)	float	R1MappedReadsPct	Percent (%)	Sample Count
+sample	R1 Mapped Bases (Alignstats)	float	R1MappedBases	Number of bases	Sample Count
+sample	R1 Mapped Bases Percent (Alignstats)	float	R1MappedBasesPct	Percent (%)	Sample Count
+sample	R1 Aligned Bases (Alignstats)	float	R1AlignedBases	Number of bases	Sample Count
+sample	R1 Aligned Bases Percent (Alignstats)	float	R1AlignedBasesPct	Percent (%)	Sample Count
+sample	R1 Matched Bases (Alignstats)	float	R1MatchedBases	Number of bases	Sample Count
+sample	R1 Matched Bases Percent (Alignstats)	float	R1MatchedBasesPct	Percent (%)	Sample Count
+sample	R1 MisMatched Bases (Alignstats)	float	R1MismatchedBases	Number of bases	Sample Count
+sample	R1 Mismatched Bases Percent (Alignstats)	float	R1MismatchedBasesPct	Percent (%)	Sample Count
+sample	R1 Inserted Bases (Alignstats)	float	R1InsertedBases	Number of bases	Sample Count
+sample	R1 Inserted Bases Percent (Alignstats)	float	R1InsertedBasesPct	Percent (%)	Sample Count
+sample	R1 Deleted Bases (Alignstats)	float	R1DeletedBases	Number of bases	Sample Count
+sample	R1 Deleted Bases Percent (Alignstats)	float	R1DeletedBasesPct	Percent (%)	Sample Count
+sample	R1 Soft Clipped Reads (Alignstats)	float	R1SoftClippedReads	Number of reads	Sample Count
+sample	R1 Soft Clipped Reads Percent (Alignstats)	float	R1SoftClippedReadsPct	Percent (%)	Sample Count
+sample	R1 Soft Clipped Bases (Alignstats)	float	R1SoftClippedBases	Number of bases	Sample Count
+sample	R1 Soft Clipped Bases Percent (Alignstats)	float	R1SoftClippedBasesPct	Percent (%)	Sample Count
+sample	R1 Perfect Reads (Alignstats)	float	R1PerfectReads	Number of reads	Sample Count
+sample	R1 Perfect Reads Percent (Alignstats)	float	R1PerfectReadsPct	Percent (%)	Sample Count
+sample	R1 Perfect Bases (Alignstats)	float	R1PerfectBases	Number of bases	Sample Count
+sample	R1 Perfect Bases Percent (Alignstats)	float	R1PerfectBasesPct	Percent (%)	Sample Count
+sample	R1 Q20 Bases (Alignstats)	float	R1Q20Bases	Number of bases	Sample Count
+sample	R1 Q20 Bases Percent (Alignstats)	float	R1Q20BasesPct	Percent (%)	Sample Count
+sample	R2 Yield Reads (Alignstats)	float	R2YieldReads	Yield Reads	Sample Count
+sample	R2 Yield Bases (Alignstats)	float	R2YieldBases	Yield Bases	Sample Count
+sample	R2 Unmapped Reads (Alignstats)	float	R2UnmappedReads	Number of reads	Sample Count
+sample	R2 Unmapped Reads Percent (Alignstats)	float	R2UnmappedReadsPct	Percent (%)	Sample Count
+sample	R2 Unmapped Bases (Alignstats)	float	R2UnmappedBases	Number of bases	Sample Count
+sample	R2 Unmapped Bases Percent (Alignstats)	float	R2UnmappedBasesPct	Percent (%)	Sample Count
+sample	R2 Mapped Reads (Alignstats)	float	R2MappedReads	Number of reads	Sample Count
+sample	R2 Mapped Reads Percent (Alignstats)	float	R2MappedReadsPct	Percent (%)	Sample Count
+sample	R2 Mapped Bases (Alignstats)	float	R2MappedBases	Number of bases	Sample Count
+sample	R2 Mapped Bases Percent (Alignstats)	float	R2MappedBasesPct	Percent (%)	Sample Count
+sample	R2 Aligned Bases (Alignstats)	float	R2AlignedBases	Number of bases	Sample Count
+sample	R2 Aligned Bases Percent (Alignstats)	float	R2AlignedBasesPct	Percent (%)	Sample Count
+sample	R2 Matched Bases (Alignstats)	float	R2MatchedBases	Number of bases	Sample Count
+sample	R2 Matched Bases Percent (Alignstats)	float	R2MatchedBasesPct	Percent (%)	Sample Count
+sample	R2 MisMatched Bases (Alignstats)	float	R2MismatchedBases	Number of bases	Sample Count
+sample	R2 Mismatched Bases Percent (Alignstats)	float	R2MismatchedBasesPct	Percent (%)	Sample Count
+sample	R2 Inserted Bases (Alignstats)	float	R2InsertedBases	Number of bases	Sample Count
+sample	R2 Inserted Bases Percent (Alignstats)	float	R2InsertedBasesPct	Percent (%)	Sample Count
+sample	R2 Deleted Bases (Alignstats)	float	R2DeletedBases	Number of bases	Sample Count
+sample	R2 Deleted Bases Percent (Alignstats)	float	R2DeletedBasesPct	Percent (%)	Sample Count
+sample	R2 Soft Clipped Reads (Alignstats)	float	R2SoftClippedReads	Number of reads	Sample Count
+sample	R2 Soft Clipped Reads Percent (Alignstats)	float	R2SoftClippedReadsPct	Percent (%)	Sample Count
+sample	R2 Soft Clipped Bases (Alignstats)	float	R2SoftClippedBases	Number of bases	Sample Count
+sample	R2 Soft Clipped Bases Percent (Alignstats)	float	R2SoftClippedBasesPct	Percent (%)	Sample Count
+sample	R2 Perfect Reads (Alignstats)	float	R2PerfectReads	Number of reads	Sample Count
+sample	R2 Perfect Reads Percent (Alignstats)	float	R2PerfectReadsPct	Percent (%)	Sample Count
+sample	R2 Perfect Bases (Alignstats)	float	R2PerfectBases	Number of bases	Sample Count
+sample	R2 Perfect Bases Percent (Alignstats)	float	R2PerfectBasesPct	Percent (%)	Sample Count
+sample	R2 Q20 Bases (Alignstats)	float	R2Q20Bases	Number of bases	Sample Count
+sample	R2 Q20 Bases Percent (Alignstats)	float	R2Q20BasesPct	Percent (%)	Sample Count
+sample	Aligned Read Length Mean (Alignstats)	float	AlignedReadLengthMean	Read length (bp)	Sample Count
+sample	Aligned Read Length Median (Alignstats)	float	AlignedReadLengthMedian	Read length (bp)	Sample Count
+sample	Aligned Read Length Mode (Alignstats)	float	AlignedReadLengthMode	Read length (bp)	Sample Count
+sample	Aligned Read Length Standard Deviation (Alignstats)	float	AlignedReadLengthStandardDeviation	Read length (bp)	Sample Count
+sample	R1 Aligned Read Length Mean (Alignstats)	float	R1AlignedReadLengthMean	Read length (bp)	Sample Count
+sample	R1 Aligned Read Length Median (Alignstats)	float	R1AlignedReadLengthMedian	Read length (bp)	Sample Count
+sample	R1 Aligned Read Length Mode (Alignstats)	float	R1AlignedReadLengthMode	Read length (bp)	Sample Count
+sample	R1 Aligned Read Length Standard Deviation (Alignstats)	float	R1AlignedReadLengthStandardDeviation	Read length (bp)	Sample Count
+sample	R2 Aligned Read Length Mean (Alignstats)	float	R2AlignedReadLengthMean	Read length (bp)	Sample Count
+sample	R2 Aligned Read Length Median (Alignstats)	float	R2AlignedReadLengthMedian	Read length (bp)	Sample Count
+sample	R2 Aligned Read Length Mode (Alignstats)	float	R2AlignedReadLengthMode	Read length (bp)	Sample Count
+sample	R2 Aligned Read Length Standard Deviation (Alignstats)	float	R2AlignedReadLengthStandardDeviation	Read length (bp)	Sample Count
+sample	Total Pairs (Alignstats)	float	TotalPairs	Number of pairs	Sample Count
+sample	Total Same Chromosome Pairs (Alignstats)	float	TotalSameChrPairs	Number of pairs	Sample Count
+sample	Total Same Chromosome Pairs Percent (Alignstats)	float	TotalSameChrPairsPct	Percent (%)	Sample Count
+sample	Unpaired Reads (Alignstats)	float	UnpairedReads	Number of reads	Sample Count
+sample	Unpaired Reads Percent (Alignstats)	float	UnpairedReadsPct	Percent (%)	Sample Count
+sample	R1 Unpaired Reads (Alignstats)	float	R1UnpairedReads	Number of reads	Sample Count
+sample	R1 Unpaired Reads Percent (Alignstats)	float	R1UnpairedReadsPct	Percent (%)	Sample Count
+sample	R2 Unpaired Reads (Alignstats)	float	R2UnpairedReads	Number of reads	Sample Count
+sample	R2 Unpaired Reads Percent (Alignstats)	float	R2UnpairedReadsPct	Percent (%)	Sample Count
+sample	Chimeric Read Pairs Percent (Alignstats)	float	ChimericReadPairPct	Percent (%)	Sample Count
+sample	Insert Size Mean (Alignstats)	float	InsertSizeMean	Insert length (bp)	Sample Count
+sample	Insert Size Median (Alignstats)	float	InsertSizeMedian	Insert length (bp)	Sample Count
+sample	Insert Size Mode (Alignstats)	float	InsertSizeMode	Insert length (bp)	Sample Count
+sample	Insert Size Standard Deviation (Alignstats)	float	InsertSizeStandardDeviation	Insert length (bp)	Sample Count
+sample	WGS Total Reads (Alignstats)	float	WgsTotalReads	Number of reads	Sample Count
+sample	WGS Coverage Duplicate Reads (Alignstats)	float	WgsCovDuplicateReads	Coverage	Sample Count
+sample	WGS Coverage Duplicate Reads Percent (Alignstats)	float	WgsCovDuplicateReadsPct	Percent (%)	Sample Count
+sample	WGS Aligned Reads (Alignstats)	float	WgsAlignedReads	Number of reads	Sample Count
+sample	WGS Aligned Reads Percent (Alignstats)	float	WgsAlignedReadsPct	Percent (%)	Sample Count
+sample	WGS Reads Paired (Alignstats)	float	WgsReadsPaired	Number of reads	Sample Count
+sample	WGS Reads Paired with Mates (Alignstats)	float	WgsReadsPairedWithMates	Number of reads	Sample Count
 sample	WGS Coverage Mean (Alignstats)	float	WgsCoverageMean	Coverage	Sample Count
 sample	WGS Coverage Median (Alignstats)	float	WgsCoverageMedian	Coverage	Sample Count
+sample	WGS Coverage Standard Deviation (Alignstats)	float	WgsCoverageStandardDeviation	Coverage	Sample Count
+sample	WGS Expected Aligned Reads (Alignstats)	float	WgsExpectedAlignedReads	Number of reads	Sample Count
+sample	WGS Calculated Aligned Reads (Alignstats)	float	WgsCalculatedAlignedReads	Number of reads	Sample Count
+sample	WGS Coverage Bases 1 (Alignstats)	float	WgsCoverageBases1	Coverage	Sample Count
+sample	WGS Coverage Bases 1 Percent (Alignstats)	float	WgsCoverageBases1Pct	Percent (%)	Sample Count
+sample	WGS Coverage Bases 10 (Alignstats)	float	WgsCoverageBases10	Coverage	Sample Count
+sample	WGS Coverage Bases 10 Percent (Alignstats)	float	WgsCoverageBases10Pct	Percent (%)	Sample Count
+sample	WGS Coverage Bases 15 (Alignstats)	float	WgsCoverageBases15	Coverage	Sample Count
+sample	WGS Coverage Bases 15 Percent (Alignstats)	float	WgsCoverageBases15Pct	Percent (%)	Sample Count
+sample	WGS Coverage Bases 20 (Alignstats)	float	WgsCoverageBases20	Coverage	Sample Count
+sample	WGS Coverage Bases 20 Percent (Alignstats)	float	WgsCoverageBases20Pct	Percent (%)	Sample Count
+sample	WGS Coverage Bases 30 (Alignstats)	float	WgsCoverageBases30	Coverage	Sample Count
+sample	WGS Coverage Bases 30 Percent (Alignstats)	float	WgsCoverageBases30Pct	Percent (%)	Sample Count
+sample	WGS Coverage Bases 40 (Alignstats)	float	WgsCoverageBases40	coverage	Sample Count
+sample	WGS Coverage Bases 40 Percent (Alignstats)	float	WgsCoverageBases40Pct	Percent (%)	Sample Count
+sample	WGS Coverage Bases 50 (Alignstats)	float	WgsCoverageBases50	coverage	Sample Count
+sample	WGS Coverage Bases 50 Percent (Alignstats)	float	WgsCoverageBases50Pct	Percent (%)	Sample Count
+sample	WGS Coverage Bases 60 (Alignstats)	float	WgsCoverageBases60	coverage	Sample Count
+sample	WGS Coverage Bases 60 Percent (Alignstats)	float	WgsCoverageBases60Pct	Percent (%)	Sample Count
+sample	WGS Coverage Bases 70 (Alignstats)	float	WgsCoverageBases70	coverage	Sample Count
+sample	WGS Coverage Bases 70 Percent (Alignstats)	float	WgsCoverageBases70Pct	Percent (%)	Sample Count
+sample	WGS Coverage Bases 100 (Alignstats)	float	WgsCoverageBases100	coverage	Sample Count
+sample	WGS Coverage Bases 100 Percent (Alignstats)	float	WgsCoverageBases100Pct	Percent (%)	Sample Count
+sample	WGS Coverage Bases 500 (Alignstats)	float	WgsCoverageBases500	coverage	Sample Count
+sample	WGS Coverage Bases 500 Percent (Alignstats)	float	WgsCoverageBases500Pct	Percent (%)	Sample Count
+sample	WGS Coverage Bases 1000 (Alignstats)	float	WgsCoverageBases1000	coverage	Sample Count
+sample	WGS Coverage Bases 1000 Percent (Alignstats)	float	WgsCoverageBases1000Pct	Percent (%)	Sample Count
+sample	WGS Filtered Overlap Bases (Alignstats)	float	WgsFilteredOverlapBases	Number of bases	Sample Count
+sample	WGS Filtered Low Base Quality Bases (Alignstats)	float	WgsFilteredLowBaseQualityBases	Number of bases	Sample Count
+sample	Cap Total Reads (Alignstats)	float	CapTotalReads	Number of reads	Sample Count
+sample	Cap Coverage Duplicate Reads (Alignstats)	float	CapCovDuplicateReads	Number of reads	Sample Count
+sample	Cap Coverage Duplicate Reads Percent (Alignstats)	float	CapCovDuplicateReadsPct	Percent (%)	Sample Count
+sample	Cap Aligned Reads (Alignstats)	float	CapAlignedReads	Number of reads	Sample Count
+sample	Cap Aligned Reads Percent (Alignstats)	float	CapAlignedReadsPct	Percent (%)	Sample Count
+sample	Cap Reads Paired (Alignstats)	float	CapReadsPaired	Number of reads	Sample Count
+sample	Cap Reads Paired With Mates (Alignstats)	float	CapReadsPairedWithMates	Number of reads	Sample Count
+sample	Cap Coverage Mean (Alignstats)	float	CapCoverageMean	Coverage	Sample Count
+sample	Cap Coverage Median (Alignstats)	float	CapCoverageMedian	Coverage	Sample Count
+sample	Cap Coverage Standard Deviation (Alignstats)	float	CapCoverageStandardDeviation	Coverage	Sample Count
+sample	Cap Expected Aligned Reads (Alignstats)	float	CapExpectedAlignedReads	Number of reads	Sample Count
+sample	Cap Calculated Aligned Reads (Alignstats)	float	CapCalculatedAlignedReads	Number of reads	Sample Count
+sample	Cap Coverage Bases 1 (Alignstats)	float	CapCoverageBases1	coverage	Sample Count
+sample	Cap Coverage Bases 1 Percent (Alignstats)	float	CapCoverageBases1Pct	Percent (%)	Sample Count
+sample	Cap Coverage Bases 10 (Alignstats)	float	CapCoverageBases10	coverage	Sample Count
+sample	Cap Coverage Bases 10 Percent (Alignstats)	float	CapCoverageBases10Pct	Percent (%)	Sample Count
+sample	Cap Coverage Bases 15 (Alignstats)	float	CapCoverageBases15	coverage	Sample Count
+sample	Cap Coverage Bases 15 Percent (Alignstats)	float	CapCoverageBases15Pct	Percent (%)	Sample Count
+sample	Cap Coverage Bases 20 (Alignstats)	float	CapCoverageBases20	coverage	Sample Count
+sample	Cap Coverage Bases 20 Percent (Alignstats)	float	CapCoverageBases20Pct	Percent (%)	Sample Count
+sample	Cap Coverage Bases 30 (Alignstats)	float	CapCoverageBases30	coverage	Sample Count
+sample	Cap Coverage Bases 30 Percent (Alignstats)	float	CapCoverageBases30Pct	Percent (%)	Sample Count
+sample	Cap Coverage Bases 40 (Alignstats)	float	CapCoverageBases40	coverage	Sample Count
+sample	Cap Coverage Bases 40 Percent (Alignstats)	float	CapCoverageBases40Pct	Percent (%)	Sample Count
+sample	Cap Coverage Bases 50 (Alignstats)	float	CapCoverageBases50	coverage	Sample Count
+sample	Cap Coverage Bases 50 Percent (Alignstats)	float	CapCoverageBases50Pct	Percent (%)	Sample Count
+sample	Cap Coverage Bases 60 (Alignstats)	float	CapCoverageBases60	coverage	Sample Count
+sample	Cap Coverage Bases 60 Percent (Alignstats)	float	CapCoverageBases60Pct	Percent (%)	Sample Count
+sample	Cap Coverage Bases 70 (Alignstats)	float	CapCoverageBases70	coverage	Sample Count
+sample	Cap Coverage Bases 70 Percent (Alignstats)	float	CapCoverageBases70Pct	Percent (%)	Sample Count
+sample	Cap Coverage Bases 100 (Alignstats)	float	CapCoverageBases100	coverage	Sample Count
+sample	Cap Coverage Bases 100 Percent (Alignstats)	float	CapCoverageBases100Pct	Percent (%)	Sample Count
+sample	Cap Coverage Bases 500 (Alignstats)	float	CapCoverageBases500	coverage	Sample Count
+sample	Cap Coverage Bases 500 Percent (Alignstats)	float	CapCoverageBases500Pct	Percent (%)	Sample Count
+sample	Cap Coverage Bases 1000 (Alignstats)	float	CapCoverageBases1000	coverage	Sample Count
+sample	Cap Coverage Bases 1000 Percent (Alignstats)	float	CapCoverageBases1000Pct	Percent (%)	Sample Count
+sample	Cap Filtered Overlap Bases (Alignstats)	float	CapFilteredOverlapBases	Number of bases	Sample Count
+sample	Cap Filtered Low Base Quality Bases (Alignstats)	float	CapFilteredLowBaseQualityBases	Number of bases	Sample Count
+sample	Cap Buffer Aligned Reads (Alignstats)	float	CapBufferAlignedReads	Number of reads	Sample Count
+sample	Cap Buffer Aligned Reads Percent (Alignstats)	float	CapBufferAlignedReadsPct	Percent (%)	Sample Count
+sample	Cap Target Aligned Reads (Alignstats)	float	CapTargetAlignedReads	Number of reads	Sample Count
+sample	Cap Target Aligned Reads Percent (Alignstats)	float	CapTargetAlignedReadsPct	Percent (%)	Sample Count
+sample	Cap Targets Hit (Alignstats)	float	CapTargetsHit	Number of targets	Sample Count
+sample	Cap Targets Hit Percent (Alignstats)	float	CapTargetsHitPct	Percent (%)	Sample Count
+sample	Cap Target Buffers Hit (Alignstats)	float	CapTargetBuffersHit	Number of target buffers	Sample Count
+sample	Cap Target Buffers Hit Percent (Alignstats)	float	CapTargetBuffersHitPct	Percent (%)	Sample Count
+sample	Cap Total Targets (Alignstats)	float	CapTotalTargets	Number of targets	Sample Count
+sample	Cap High Coverage Non-Target Hits (Alignstats)	float	CapHighCoverageNonTargetHits	Number of Non-target hits	Sample Count
+sample	Cap Bases On Target (Alignstats)	float	CapBasesOnTarget	Number of bases	Sample Count
+sample	Cap Bases On Buffer (Alignstats)	float	CapBasesOnBuffer	Number of bases	Sample Count
+sample	Cap Reads On Target Or Buffer (Alignstats)	float	CapReadsOnTargetOrBuffer	Number of reads	Sample Count
+sample	Cap Reads On Target Or Buffer Percent (Alignstats)	float	CapReadsOnTargetOrBufferPct	Percent (%)	Sample Count

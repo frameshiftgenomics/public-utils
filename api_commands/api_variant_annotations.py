@@ -41,6 +41,19 @@ def postCreateVariantAnnotations(mosaicConfig, name, valueType, privacy, project
 
   return command
 
+# Create a variant annotation with the display type and severity set
+def postCreateVariantAnnotationWithSeverity(mosaicConfig, name, valueType, privacy, fields, projectId):
+  token = mosaicConfig["token"]
+  url   = mosaicConfig["url"]
+
+  command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token)
+  command += '" -d \'{"name": "' + str(name) + '", "value_type": "' + str(valueType) + '", "privacy_level": "' + str(privacy) + '"'
+  for field in fields: command += ', "' + str(field) + '": "' + str(fields[field]) + '"'
+  command += '}\' '
+  command += str(url) + 'api/v1/projects/' + str(projectId) + '/variants/annotations'
+
+  return command
+
 # Import variant annotations to the project
 def postImportVariantAnnotations(mosaicConfig, annotationId, projectId):
   token = mosaicConfig["token"]

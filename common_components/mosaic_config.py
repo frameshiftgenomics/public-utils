@@ -4,8 +4,9 @@ from os.path import exists
 
 # Parse the config file and get the Mosaic token and url
 def parseConfig(args, required):
-  token = False
-  url   = False
+  token     = False
+  url       = False
+  projectId = False
 
   # Check the config file exists, if it was defined
   if args.config:
