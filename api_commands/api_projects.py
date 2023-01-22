@@ -17,12 +17,12 @@ def getProject(mosaicConfig, projectId):
   return command
 
 # Get a list of projects the user has access to
-def getProjects(mosaicConfig):
+def getProjects(mosaicConfig, limit, page):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
 
   command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
-  command += str(url) + 'api/v1/projects'
+  command += '"' + str(url) + 'api/v1/projects?limit=' + str(limit) + '&page=' + str(page) + '"'
 
   return command
 
