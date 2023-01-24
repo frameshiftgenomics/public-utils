@@ -31,8 +31,10 @@ def main():
   args = parseCommandLine()
 
   # Parse the mosaic configuration file
-  mosaicRequired = {"token": True, "url": True, "attributesProjectId": True}
-  mosaicConfig   = mosaic_config.parseConfig(args, mosaicRequired)
+  mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
+                    'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'},
+                    'MOSAIC_ATTRIBUTES_PROJECT_ID': {'value': args.attributes_project, 'desc': 'The public attribtes project id', 'long': '--attributes_project', 'short': '-a'}}
+  mosaicConfig   = mosaic_config.parseConfig(args.config, mosaicRequired)
 
   # Get all of the available template projects from the Attribute project
   availableTemplates = getAvailableTemplates(args)
@@ -95,7 +97,7 @@ def getAvailableTemplates(args):
   availableTemplates = {}
 
   # Get all the project attributes
-  jsonData = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, mosaicConfig["attributesProjectId"])).read())
+  jsonData = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'])).read())
 
   # Loop over all the attributes and identify the templates
   for attribute in jsonData:
@@ -105,7 +107,7 @@ def getAvailableTemplates(args):
 
       # Loop over the values for the attribute for the different projects it is in
       for project in attribute["values"]:
-        if int(project["project_id"]) == int(mosaicConfig["attributesProjectId"]):
+        if int(project["project_id"]) == int(mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID']):
           availableTemplates[templateName] = project["value"]
 
   # Return the available templates
@@ -228,7 +230,7 @@ def updateAttributes(projectId, templateAttributes, projectAttributes):
     # If the attribute should be pinned, and isn't already pined, pin it
     if isPinned and not projectAttributes[attributeId]['isPinned']:
       try: pinData = json.loads(os.popen(api_d.postPinAttribute(mosaicConfig, attributeId, isNamePinned, projectId)).read())
-      except: fail("Couldn't pin attribute " + str(name) + "to the project")
+      except: fail('Couldn\'t pin attribute ' + str(name) + 'to the project')
 
 # Update the timing information for the project
 def updateTiming(projectId, templateEvents, templateIntervals, projectEvents, projectIntervals):
@@ -293,7 +295,7 @@ def assignTemplateAttribute(projectId, templateName, projectAttributes):
   value = str(templateName) + ":" + str(version)
 
   # Get the id of the "Assigned Template" attribute from the public attributes project
-  try: data = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, mosaicConfig['attributesProjectId'])).read())
+  try: data = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'])).read())
   except: fail("Couldn't get attributes from the public attributes project")
   attributeId = False
   for attribute in data:

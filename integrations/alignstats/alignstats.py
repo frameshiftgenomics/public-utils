@@ -31,19 +31,17 @@ def main():
   args = parseCommandLine()
 
   # Parse the mosaic configuration file
-  mosaicRequired = {"token": True, "url": True, "attributesProjectId": True}
-  mosaicConfig   = mosaic_config.parseConfig(args, mosaicRequired)
+  mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
+                    'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'},
+                    'MOSAIC_ATTRIBUTES_PROJECT_ID': {'value': args.attributes_project, 'desc': 'The public attribtes project id', 'long': '--attributes_project', 'short': '-a'},
+                    'ALIGNSTATS_ATTRIBUTES_PROJECT_ID': {'value': args.alignstats_project, 'desc': 'The alignstats project id', 'long': '--alignstats_project', 'short': '-l'}}
+  mosaicConfig = mosaic_config.parseConfig(args.config, mosaicRequired)
 
-  # Check the integration status, e.g. if the required attributes exist or need to be created
-  checkStatus(args)
+  # Define the alignstats project id
+  alignstatsProjectId = mosaicConfig['ALIGNSTATS_ATTRIBUTES_PROJECT_ID']
 
   # Get the attributes names to be populated
   parseAttributes(args)
-
-  # Get any alignstats files attached to the project samples
-  #test = get_mosaic_data.getSampleFiles(mosaicConfig, args.project, "alignstats.json")
-  #print(test)
-  #exit(0)
 
   # If the alignstatsProjectId is False, the project needs to be created along with all the Alignstats attributes
   if not alignstatsProjectId:
@@ -104,28 +102,12 @@ def parseCommandLine():
   parser.add_argument('--token', '-t', required = False, metavar = "string", help = "The Mosaic authorization token")
   parser.add_argument('--url', '-u', required = False, metavar = "string", help = "The base url for Mosaic")
   parser.add_argument('--attributes_project', '-a', required = False, metavar = "integer", help = "The Mosaic project id that contains public attributes")
+  parser.add_argument('--alignstats_project', '-l', required = False, metavar = "integer", help = "The Mosaic project id that contains alignstats attributes")
 
   # Version
   parser.add_argument('--version', '-v', action="version", version='Alignstats integration version: ' + str(version))
 
   return parser.parse_args()
-
-# Check if the Alignstats attributes have already been created or if then need to be created
-def checkStatus(args):
-  global alignstatsProjectId
-
-  # Check the public attributes project for the project attribute indicating that the alignstats integration
-  # has been run before
-  data = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, mosaicConfig["attributesProjectId"])).read())
-
-  # Loop over all the project attributes and look for attribute "Alignstats Integration xa545Ihs"
-  alignstatsProjectId = False
-  for attributeName in data:
-    if attributeName["name"] == "Alignstats Integration xa545Ihs":
-
-      # There should be a value in the json object corresponding to the value in this project. Check this is the case
-      alignstatsProjectId = attributeName["values"][0]["value"]
-      break
 
 # Parse the tsv file containing the Mosaic attributes
 def parseAttributes(args):
@@ -511,7 +493,7 @@ def outputErrors(errorCode):
 # Initialise global variables
 
 # Store the version
-version = "0.1.2"
+version = "1.0.0"
 
 # Store mosaic info, e.g. the token, url etc.
 mosaicConfig = {}

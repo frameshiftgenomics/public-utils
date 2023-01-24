@@ -21,8 +21,9 @@ def main():
   args = parseCommandLine()
 
   # Parse the Mosaic config file to get the token and url for the api calls
-  mosaicRequired = {"token": True, "url": True, "attributesProjectId": False}
-  mosaicConfig   = mosaic_config.parseConfig(args, mosaicRequired)
+  mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
+                    'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'}}
+  mosaicConfig = mosaic_config.parseConfig(args.config, mosaicRequired)
 
   # Upload variants
   uploadAnnotations(args)

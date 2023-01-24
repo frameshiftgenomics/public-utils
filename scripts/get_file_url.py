@@ -23,8 +23,9 @@ def main():
   args = parseCommandLine()
 
   # Parse the mosaic configuration file
-  mosaicRequired = {"token": True, "url": True, "attributesProjectId": False}
-  mosaicConfig   = mosaic_config.parseConfig(args, mosaicRequired)
+  mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
+                    'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'}}
+  mosaicConfig = mosaic_config.parseConfig(args.config, mosaicRequired)
 
   # If no file id was supplied, show all the files for the project
   if not args.file_id: getFileIds(args)
