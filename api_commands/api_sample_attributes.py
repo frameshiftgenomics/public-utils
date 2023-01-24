@@ -17,6 +17,21 @@ def getSampleAttributes(mosaicConfig, projectId, includeValues):
 
   return command
 
+# Get a specified list of sample attributes in a project
+def getSpecifiedSampleAttributes(mosaicConfig, projectId, includeValues, attributeIds):
+  token = mosaicConfig["token"]
+  url   = mosaicConfig["url"]
+
+  command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" "'
+  command += str(url) + 'api/v1/projects/' + str(projectId) + '/samples/attributes?'
+  for i, attributeId in enumerate(attributeIds):
+    if i == 0: command += 'attribute_ids[]=' + str(attributeId)
+    else: command += '?attribute_ids[]=' + str(attributeId)
+  if includeValues: command += '&include_values=true'
+  command += '"'
+
+  return command
+
 # Get attributes for a sample in a project
 def getAttributesForSample(mosaicConfig, projectId, sampleId):
   token = mosaicConfig["token"]
@@ -70,7 +85,7 @@ def postUploadSampleAttribute(mosaicConfig, filename, projectId):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
 
-  command  = 'curl -S -s -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ' + str(token) + '" '
+  command  = 'curl -S -s -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-F "file=@' + str(filename) + '" -F "disable_queue=true" '
   command += str(url) + 'api/v1/projects/' + str(projectId) + '/samples/attributes/upload'
 
@@ -80,12 +95,23 @@ def postUploadSampleAttribute(mosaicConfig, filename, projectId):
 ###### PUT routes
 ######
 
+# Update a sample attribute value
+def putSampleAttributeValue(mosaicConfig, projectId, sampleId, attributeId, value):
+  token = mosaicConfig["token"]
+  url   = mosaicConfig["url"]
+
+  command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"value": "' + str(value) + '"}\' '
+  command += str(url) + 'api/v1/projects/' + str(projectId) + '/samples/' + str(sampleId) + '/attributes/' + str(attributeId)
+
+  return command
+
 # Update a sample attribute
 def putSampleAttribute(mosaicConfig, fields, projectId, attributeId):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
 
-  command  = 'curl -S -s -i -X PUT -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ' + str(token) + '" '
+  command  = 'curl -S -s -i -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-d \'{'
   for i, field in enumerate(fields):
     command += '"' + str(field) + '": "' + str(fields[field]) + '"'

@@ -1,59 +1,44 @@
 #!/usr/bin/python
 
 from os.path import exists
+import argparse
 
 # Parse the config file and get the Mosaic token and url
-def parseConfig(args, required):
-  token     = False
-  url       = False
-  projectId = False
+def parseConfig(configFilename, required):
+  config = {}
 
   # Check the config file exists, if it was defined
-  if args.config:
-    if not exists(args.config): fail("Config file '" + str(args.config) + "' does not exist")
+  if configFilename:
+    if not exists(configFilename): fail('Config file "' + str(configFilename) + '" does not exist')
 
     # Parse the config file and store the token and url
-    try: configFile = open(args.config, "r")
-    except: fail("Failed to open config file '" + str(args.config) + "'")
+    try: configFile = open(configFilename, "r")
+    except: fail('Failed to open config file "' + str(configFilename) + '"')
     for line in configFile.readlines():
-      fields = line.rstrip().split("=")
-      if fields[0].startswith("MOSAIC_TOKEN"): token = fields[1]
-      elif fields[0].startswith("MOSAIC_URL"): url = fields[1]
-      elif fields[0].startswith("MOSAIC_ATTRIBUTES_PROJECT_ID"): projectId = fields[1]
+      fields            = line.rstrip().split("=")
+      config[fields[0]] = fields[1]
 
-  # Explicitly set attributes will overwrite the config file
-  try: 
-    if args.token: token = args.token
-  except: token = False
-  try:
-    if args.url: url = args.url
-  except: url = False
-  try:
-    if args.attributes_project: projectId = args.attributes_project
-  except: projectId = False
+  # Loop over the required arguments and overwrite the config file if values are provided
+  for requiredConfig in required:
+    if required[requiredConfig]['value']: config[requiredConfig] = required[requiredConfig]['value']
+    if requiredConfig not in config: config[requiredConfig] = required[requiredConfig]['value']
 
-  # Check that all required values are set
-  if required["token"] and not token:
-    print("An access token is required. You can either supply a token with '--token (-t)' or")
-    print("supply a config file '--config (-c)' which includes the line:")
-    print("  MOSAIC_TOKEN = <TOKEN>")
-    exit(1)
-  if required["url"] and not url:
-    print("The api url is required. You can either supply the url with '--url (-u)' or")
-    print("supply a config file '--config (-c)' which includes the line:")
-    print("  MOSAIC_URL = <URL>")
-    exit(1)
-  if required["attributesProjectId"] and not projectId:
-    print("The project id for the attributes project is required. You can either supply the id with '--attributesProject (-a)' or")
-    print("supply a config file '--config (-c)' which includes the line:")
-    print("  MOSAIC_ATTRIBUTES_PROJECT_ID = <ID>")
-    exit(1)
+    # Check that values are set for the required arguments
+    if not config[requiredConfig]:
+      print(required[requiredConfig]['desc'], ' is required. You can either supply this with "', required[requiredConfig]['long'], ' (', required[requiredConfig]['short'], ')" or', sep = '')
+      print("supply a config file '--config (-c)' which includes the line:")
+      print('  ', requiredConfig, '=<VALUE>', sep = '')
+      exit(1)
+
+  # The api routines expect the keys 'token' and 'url' to be used, so update config
+  config['token'] = config.pop('MOSAIC_TOKEN')
+  config['url']   = config.pop('MOSAIC_URL')
 
   # Ensure the url terminates with a '/'
-  if not url.endswith("/"): url += "/"
+  if not config['url'].endswith("/"): config['url'] += "/"
 
   # Return the values
-  return {"token": token, "url": url, "attributesProjectId": projectId}
+  return config
 
 # If problems are found with the templates, fail
 def fail(text):

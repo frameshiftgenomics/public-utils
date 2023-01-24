@@ -90,7 +90,7 @@ def parseCommandLine():
 
   parser = argparse.ArgumentParser(description='Process the command line arguments')
 
-# Required arguments
+  # Required arguments
   parser.add_argument('--reference', '-r', required = True, metavar = "string", help = "The reference genome to use. Allowed values: '37', '38'")
   parser.add_argument('--input_files', '-i', required = True, metavar = "file", action = "append", help = "The input json files (this can be set multiple times - once file per sample")
   parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
