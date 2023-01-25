@@ -225,12 +225,17 @@ def updateAttributes(projectId, templateAttributes, projectAttributes):
     # Only import the attribute if it doesn't already exist in the project being updated and is public
     if attributeId not in projectAttributes and isPublic:
       try: importData = json.loads(os.popen(api_pa.postImportProjectAttribute(mosaicConfig, attributeId, value, projectId)).read())
-      except: fail("Couldn't add attribute " + str(name) + " to the project")
+      except: fail('Couldn\'t add attribute ' + str(name) + ' to the project')
+      if 'message' in importData: fail('Couldn\'t add attribute ' + str(name) + ' to the project. API returned message "' + str(importData['message']) + '"')
+
+      # Store the project attribute. This attribute was just imported and so is not currently pinned
+      projectAttributes[attributeId] = {'name': name, 'value': value, 'isPinned': False, 'isNamePinned': isNamePinned, 'isPublic': isPublic}
 
     # If the attribute should be pinned, and isn't already pined, pin it
     if isPinned and not projectAttributes[attributeId]['isPinned']:
       try: pinData = json.loads(os.popen(api_d.postPinAttribute(mosaicConfig, attributeId, isNamePinned, projectId)).read())
       except: fail('Couldn\'t pin attribute ' + str(name) + 'to the project')
+      if 'message' in pinData: fail('Couldn\'t pin attribute ' + str(name) + 'to the project. API returned message "' + str(pinData['message']) + '"')
 
 # Update the timing information for the project
 def updateTiming(projectId, templateEvents, templateIntervals, projectEvents, projectIntervals):
@@ -319,7 +324,7 @@ def fail(text):
 mosaicConfig = {}
 
 # Store the version
-version = "1.02"
+version = "1.03"
 
 if __name__ == "__main__":
   main()

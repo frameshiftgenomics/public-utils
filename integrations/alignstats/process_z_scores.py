@@ -10,6 +10,7 @@ import math
 import os
 import statistics
 
+from datetime import datetime
 from sys import path
 path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-2]) + "/api_commands")
 path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-2]) + "/common_components")
@@ -46,26 +47,30 @@ def main():
   samples, projectIds = getProjectSamples(args, projects)
 
   # Calculate and assign the Z-scores
-  calculateZscores(args, samples, projectIds, attributes, zscoreAttributes)
+  failedSamples = calculateZscores(args, samples, projectIds, attributes, zscoreAttributes)
+  print(failedSamples)
 
 # Input options
 def parseCommandLine():
   parser = argparse.ArgumentParser(description='Process the command line arguments')
 
   # Arguments related to the config file
-  parser.add_argument('--config', '-c', required = False, metavar = "string", help = "A config file containing token / url information")
-  parser.add_argument('--token', '-t', required = False, metavar = "string", help = "The Mosaic authorization token")
-  parser.add_argument('--url', '-u', required = False, metavar = "string", help = "The base url for Mosaic curl commands, up to an including \"api\". Do NOT include a trailing /")
-  parser.add_argument('--attributes_project', '-a', required = False, metavar = "integer", help = "The Mosaic project id that contains public attributes")
-  parser.add_argument('--alignstats_project', '-l', required = False, metavar = "integer", help = "The Mosaic project id that contains alignstats attributes")
+  parser.add_argument('--config', '-c', required = False, metavar = 'string', help = 'A config file containing token / url information')
+  parser.add_argument('--token', '-t', required = False, metavar = 'string', help = 'The Mosaic authorization token')
+  parser.add_argument('--url', '-u', required = False, metavar = 'string', help = 'The base url for Mosaic curl commands, up to an including "api". Do NOT include a trailing "')
+  parser.add_argument('--attributes_project', '-a', required = False, metavar = 'integer', help = 'The Mosaic project id that contains public attributes')
+  parser.add_argument('--alignstats_project', '-l', required = False, metavar = 'integer', help = 'The Mosaic project id that contains alignstats attributes')
 
   # The project id to which the filter is to be added is required
-  parser.add_argument('--project_id', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
+  parser.add_argument('--project_id', '-p', required = True, metavar = 'integer', help = 'The Mosaic project id to upload attributes to')
 
   # The name to define the collection used for generating Z-scores. The same project could be in multiple collections and so
   # Z-scores could be calculated for different groups of samples. The Z-score attributes must therefore include some text to
   # indicate the collection they are associated with
   parser.add_argument('--collection_name', '-n', required = True, metavar = 'string', help = 'A name to identify the collection used to generate z-scores')
+
+  # Include an optional pass/fail cutoff. Samples whose z-scores fall out of this range will be flagged
+  parser.add_argument('--cutoff', '-f', required = False, metavar = 'integer', help = 'Z-score cutoff. Samples whose Z-score falls outside this range will be flagged')
 
   return parser.parse_args()
 
@@ -125,6 +130,7 @@ def getProjectSamples(args, projects):
 def calculateZscores(args, samples, projectIds, attributes, zscoreAttributes):
   global mosaicConfig
   global alignstatsProjectId
+  failedSamples = {}
 
   # Loop over the alignstats attributes
   for attribute in attributes:
@@ -163,9 +169,17 @@ def calculateZscores(args, samples, projectIds, attributes, zscoreAttributes):
 
     # Loop over all of the samples and calculate the z-score
     for sampleId in attributeValues:
-      zScore    = float((attributeValues[sampleId]['value'] - mean) / sd)
+      if sd == 0: zScore = 0.
+      else: zScore = float((attributeValues[sampleId]['value'] - mean) / sd)
       projectId = attributeValues[sampleId]['projectId']
       updateZscore(projectId, sampleId, attributeId, zScore)
+      if args.cutoff:
+        if abs(zScore) > float(args.cutoff):
+          if zscoreAttribute not in failedSamples: failedSamples[zscoreAttribute] = {}
+          failedSamples[zscoreAttribute][sampleId] = {'zscore': zScore, 'projectId': projectId}
+
+  # Return the list of failed samples
+  return failedSamples
 
 # Create a z-score attribute in the alignstats project
 def createZscoreAttribute(zscoreAttribute, attribute):
@@ -205,11 +219,32 @@ def importAttribute(projectId, attributeId, zscoreAttribute):
 # Update the Z-score attribute for a sample
 def updateZscore(projectId, sampleId, attributeId, value):
   global mosaicConfig
+  hasSample = False
 
-  # Update the value
-  try: data = json.loads(os.popen(api_sa.putSampleAttributeValue(mosaicConfig, projectId, sampleId, attributeId, value)).read())
-  except: fail('Failed to update sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId))
-  if 'message' in data: fail('Failed to update sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId) + '. API returned message "' + str(data['message']))
+  # Check if the sample has this attribute. If so, use the PUT route to update the value, and if not, use the POST route
+  # to add a value
+  try: data = json.loads(os.popen(api_sa.getSpecifiedSampleAttributes(mosaicConfig, projectId, True, [attributeId])).read())
+  except: fail('Failed to get attribute information for attribute ' + str(attributeId))
+  if 'message' in data: fail('Failed to get attribute information for attribute ' + str(attributeId) + '. API returned message "' + str(data['message']))
+  if len(data) != 1: fail('Unexpected number of records returned for a single attribute')
+
+  # Check if the sample has a value
+  for a in data[0]['values']:
+    if a['sample_id'] == sampleId:
+      hasSample = True
+      break
+
+  # If the sample already has a value, update the value with the PUT route
+  if hasSample:
+    try: data = json.loads(os.popen(api_sa.putSampleAttributeValue(mosaicConfig, projectId, sampleId, attributeId, value)).read())
+    except: fail('Failed to update (PUT) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId))
+    if 'message' in data: fail('Failed to update (PUT) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId) + '. API returned message "' + str(data['message']))
+
+  # Otherwise, use the POST route to add a value for the sample
+  else:
+    try: data = json.loads(os.popen(api_sa.postUpdateSampleAttribute(mosaicConfig, value, projectId, sampleId, attributeId)).read())
+    except: fail('Failed to update (POST) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId))
+    if 'message' in data: fail('Failed to update (POST) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId) + '. API returned message "' + str(data['message']))
 
 # If the script fails, provide an error message and exit
 def fail(message):
