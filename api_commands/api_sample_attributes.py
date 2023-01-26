@@ -111,7 +111,7 @@ def putSampleAttribute(mosaicConfig, fields, projectId, attributeId):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
 
-  command  = 'curl -S -s -i -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-d \'{'
   for i, field in enumerate(fields):
     command += '"' + str(field) + '": "' + str(fields[field]) + '"'
@@ -124,3 +124,13 @@ def putSampleAttribute(mosaicConfig, fields, projectId, attributeId):
 ######
 ###### DELETE routes
 ######
+
+# Delete a sample attribute from a project
+def deleteSampleAttribute(mosaicConfig, projectId, attributeId):
+  token = mosaicConfig["token"]
+  url   = mosaicConfig["url"]
+
+  command  = 'curl -S -s -X DELETE -H "Authorization: Bearer ' + str(token) + '" '
+  command += str(url) + 'api/v1/projects/' + str(projectId) + '/samples/attributes/' + str(attributeId)
+
+  return command
