@@ -38,17 +38,14 @@ def main():
   alignstatsProjectId = mosaicConfig['ALIGNSTATS_ATTRIBUTES_PROJECT_ID']
 
   # Get a list of all projects in the collection, If this is not a collection, fail
-  projects = getSubProjects(args)
+  projects, sampleProjects = getSubProjects(args)
 
   # Get all of the Alignstats attributes from the Alignstats project
   attributes, zscoreAttributes = getSampleAttributes(args)
 
-  # Get all of the samples in the collection
-  samples, projectIds = getProjectSamples(args, projects)
-
   # Calculate and assign the Z-scores
-  failedSamples = calculateZscores(args, samples, projectIds, attributes, zscoreAttributes)
-  print(failedSamples)
+  failedSamples = calculateZscores(args, projects, sampleProjects, attributes, zscoreAttributes)
+  for sampleId in failedSamples: print(sampleId, failedSamples[sampleId])
 
 # Input options
 def parseCommandLine():
@@ -77,18 +74,30 @@ def parseCommandLine():
 # Get a list of all projects in the collection
 def getSubProjects(args):
   global mosaicConfig
-  projects = []
+  projects       = []
+  sampleProjects = {}
 
   # Get all project information for the collection
   try: data = json.loads(os.popen(api_p.getCollectionProjects(mosaicConfig, args.project_id)).read())
   except: fail('Could not get collection projects')
-  for project in data: projects.append(project['id'])
+  if 'message' in data: fail('Could not get collection projects. API returned the message' + str(data['message']) + '"')
+  for project in data:
+    projectId = project['id']
+    projects.append(projectId)
+
+    # Get all of the samples in the project
+    try: samplesData = json.loads(os.popen(api_s.getSamples(mosaicConfig, projectId)).read())
+    except: fail('Could not get samples for project ' + str(projectId))
+    if 'message' in samplesData: fail('Could not get samples for project ' + str(projectId) + '. API returned the message "' + str(samplesData['message']) + '"')
+
+    # Store the project for every sample
+    for sample in samplesData: sampleProjects[sample['id']] = projectId
 
   # This script is only for collections. If there are no sub-projects, fail
   if len(projects) == 0: fail('The defined project_id must be associated with a collection')
 
   # Return the list of projects
-  return projects
+  return projects, sampleProjects
 
 # Get all of the sample attributes from the Alignstats project. Z-scores will be calulcated for all of these attributes
 def getSampleAttributes(args):
@@ -99,152 +108,135 @@ def getSampleAttributes(args):
 
   try: data = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, alignstatsProjectId, False)).read())
   except: fail('Could not get sample attribute from the alignstats project')
+  if 'message' in data: fail('Could not get sample attribute from the alignstats project. API returned message "' + str(data['message']) + '"')
 
   # Store the attribute ids
   for attribute in data:
     if attribute['name'].endswith('Z-score (Alignstats)'): zscoreAttributes[attribute['name']] = attribute['id']
-    elif attribute['name'].endswith('(Alignstats)'): attributes[attribute['name']] = attribute['id']
+    elif attribute['name'].endswith('(Alignstats)'): attributes[attribute['id']] = attribute['name']
 
   # Return the list of attribute Ids
   return attributes, zscoreAttributes
 
-# Loop over all projects in the collection and determine their samples
-def getProjectSamples(args, projects):
-  global mosaicConfig
-  samples    = {}
-  projectIds = {}
-
-  # Loop over the projects and extract all samples from the project
-  for projectId in projects:
-    try: data = json.loads(os.popen(api_s.getSamples(mosaicConfig, projectId)).read())
-    except: fail('Couldn\'t get samples for project ' + str(projectId))
-    for sample in data:
-      samples[sample['id']] = {'name': sample['name'], 'projectId': projectId}
-      if projectId not in projectIds: projectIds[projectId] = [sample['id']]
-      else: projectIds[projectId].append(sample['id'])
-
-  # Return the samples and projectIds
-  return samples, projectIds
-
 # Get the values for the specified sample attribute
-def calculateZscores(args, samples, projectIds, attributes, zscoreAttributes):
+def calculateZscores(args, projectIds, sampleProjects, attributes, zscoreAttributes):
   global mosaicConfig
   global alignstatsProjectId
-  failedSamples = {}
+  attributeValues = {}
+  valuesForMean   = {}
+  failedSamples   = {}
+  toImport        = []
+  projectAttributeIds = {}
 
-  # Loop over the alignstats attributes
-  for attribute in attributes:
+  # Populate attributeValues with all the necessary attribute ids
+  for attributeId in attributes:
+    attributeValues[attributeId] = {}
+    valuesForMean[attributeId]   = []
 
     # Define the name of the z-score attribute for this attribute and check if it exists in the alignstats project. If not,
     # create it
-    zscoreAttribute = attribute.replace('(Alignstats)', 'Z-score (Alignstats)')
+    zscoreAttribute = attributes[attributeId].replace('(Alignstats)', 'Z-score (Alignstats)')
     zscoreAttribute = str(args.collection_name) + ' ' + zscoreAttribute
-    if zscoreAttribute not in zscoreAttributes: attributeId = createZscoreAttribute(zscoreAttribute, attribute)
-    else: attributeId = zscoreAttributes[zscoreAttribute]
+    if zscoreAttribute not in zscoreAttributes: zscoreAttributes[zscoreAttribute] = createZscoreAttribute(zscoreAttribute)
 
-    # Loop over all the projects and import the zscore attribute if necessary
-    for projectId in projectIds: importAttribute(projectId, attributeId, zscoreAttribute)
+  # Loop over all of the projects in the collection
+  for projectId in projectIds:
+    projectAttributeIds[projectId] = {}
 
-    # Reset the array of values for the samples in the collection
-    attributeValues = {}
-    values          = []
+    # Get all the attribute information for the project
+    try: data = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, projectId, True)).read())
+    except: fail('Could not get attribute values for attribute id: ' + str(attributes[attribute]))
+    if 'message' in data: fail('Could not get attribute values for attribute id: ' + str(attributes[attribute]) + '. API returned the message "' + data['message'] + '"')
 
-    # Loop over all the constituent projects and get the values for all samples
-    for projectId in projectIds:
-      try: data = json.loads(os.popen(api_sa.getSpecifiedSampleAttributes(mosaicConfig, projectId, True, [attributes[attribute]])).read())
-      except: fail('Could not get attribute values for attribute id: ' + str(attributes[attribute]))
+    # Loop over all of the returned attributes and consider only those listed in the attributes dictionary
+    for attribute in data:
 
-      # Check that the data object only contains one value
-      if len(data) != 1: fail('Number of sample attributes is incorrect')
+      # Store all the attribute ids that are present in the project
+      projectAttributeIds[projectId][attribute['id']] = []
+      for sample in attribute['values']: projectAttributeIds[projectId][attribute['id']].append(sample['sample_id'])
 
-      # Loop over the values for this attribute in this project and store the values
-      for valueObject in data[0]['values']:
-        if valueObject['sample_id'] not in projectIds[projectId]: fail('Unknown sample')
-        attributeValues[valueObject['sample_id']] = {'value': valueObject['value'], 'projectId': projectId}
-        values.append(valueObject['value'])
+      # Proceed with alignstats attributes
+      if attribute['id'] in attributes:
+        zscoreAttribute = attributes[attribute['id']].replace('(Alignstats)', 'Z-score (Alignstats)')
+        zscoreAttribute = str(args.collection_name) + ' ' + zscoreAttribute
+
+        # Loop over the project samples and store the values
+        for sampleInfo in attribute['values']:
+          attributeValues[attribute['id']][sampleInfo['sample_id']] = sampleInfo['value']
+          valuesForMean[attribute['id']].append(sampleInfo['value'])
+
+  # Process all the data for each attribute
+  for attributeId in attributes:
+
+    # Get the id of the associated z-score attribute
+    zscoreAttribute   = attributes[attributeId].replace('(Alignstats)', 'Z-score (Alignstats)')
+    zscoreAttribute   = str(args.collection_name) + ' ' + zscoreAttribute
+    zscoreAttributeId = zscoreAttributes[zscoreAttribute]
 
     # Calculate the mean and standard deviation of the values
-    mean = statistics.mean(values)
-    sd   = statistics.stdev(values, mean)
+    mean = statistics.mean(valuesForMean[attributeId])
+    sd   = statistics.stdev(valuesForMean[attributeId], mean)
 
-    # Loop over all of the samples and calculate the z-score
-    for sampleId in attributeValues:
+    # Loop over all of the samples and calculate their z-scores
+    for sampleId in attributeValues[attributeId]:
       if sd == 0: zScore = 0.
-      else: zScore = float((attributeValues[sampleId]['value'] - mean) / sd)
-      projectId = attributeValues[sampleId]['projectId']
-      updateZscore(projectId, sampleId, attributeId, zScore)
+      else: zScore = float((attributeValues[attributeId][sampleId] - mean) / sd)
+      projectId = sampleProjects[sampleId]
+
+      # If the z-score attribute is not in the project, import it
+      if zscoreAttributeId not in projectAttributeIds[projectId]:
+        importAttribute(projectId, zscoreAttributeId, zscoreAttribute)
+        projectAttributeIds[projectId][zscoreAttributeId] = []
+
+      # Add or update the z-score value
+      if sampleId in projectAttributeIds[projectId][zscoreAttributeId]: updateZscore(projectId, sampleId, zscoreAttributeId, zScore)
+      else: addZscore(projectId, sampleId, zscoreAttributeId, zScore)
+
+      # Determine if the z-score is outside of the pass/fail threshold
       if args.cutoff:
         if abs(zScore) > float(args.cutoff):
-          if zscoreAttribute not in failedSamples: failedSamples[zscoreAttribute] = {}
-          failedSamples[zscoreAttribute][sampleId] = {'zscore': zScore, 'projectId': projectId}
+          if sampleId not in failedSamples: failedSamples[sampleId] = attributeId
+          else: failedSamples[sampleId] = str(failedSamples[sampleId]) + ',' + str(attributeId)
 
   # Return the list of failed samples
   return failedSamples
 
 # Create a z-score attribute in the alignstats project
-def createZscoreAttribute(zscoreAttribute, attribute):
+def createZscoreAttribute(zscoreAttribute):
   global mosaicConfig
   global alignstatsProjectId
 
   # Create a new attribute
   try: data = json.loads(os.popen(api_sa.postSampleAttribute(mosaicConfig, zscoreAttribute, 'float', 'Null', 'true', 'Z-score', 'Sample Count', alignstatsProjectId)).read())
   except: fail('Failed to create new attribute: ' + str(zscoreAttribute))
-
-  # Check if the api call failed with a message
   if 'message' in data: fail('Failed to create new sample attribute (' + str(zscoreAttribute) + '). API returned message "' + str(data['message']) + '"')
 
   # Return the id of the created attribute
   return data['id']
 
-# Check if a project has a sample attribute and if not, import it
+## Check if a project has a sample attribute and if not, import it
 def importAttribute(projectId, attributeId, zscoreAttribute):
   global mosaicConfig
 
-  # Get the sample attributes in the project
-  try: data = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, projectId, False)).read())
-  except: fail('Failed to get sample attributes for project ' + str(projectId))
-  if 'message' in data: fail('Failed to get sample attributes for project ' + str(projectId) + '. API returned the error "' + str(data['message']) + '"')
-  hasAttribute = False
-  for attribute in data:
-    if int(attribute['id']) == int(attributeId):
-      hasAttribute = True
-      break
+  try: data = json.loads(os.popen(api_sa.postImportSampleAttribute(mosaicConfig, attributeId, projectId)).read())
+  except: fail('Failed to import attribute ' + str(zscoreAttribute))
+  if 'message' in data: fail('Failed to import attribute ' + str(zscoreAttribute) + '. API returned message "' + str(data['message']) + '"')
 
-  # Import the attribute
-  if not hasAttribute:
-    try: data = json.loads(os.popen(api_sa.postImportSampleAttribute(mosaicConfig, attributeId, projectId)).read())
-    except: fail('Failed to import attribute ' + str(zscoreAttribute))
-    if 'message' in data: fail('Failed to import attribute ' + str(zscoreAttribute) + '. API returned message "' + str(data['message']) + '"')
+# Add a value for a sample attribute
+def addZscore(projectId, sampleId, attributeId, value):
+  global mosaicConfig
+
+  try: data = json.loads(os.popen(api_sa.postUpdateSampleAttribute(mosaicConfig, value, projectId, sampleId, attributeId)).read())
+  except: fail('Failed to update (POST) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId))
+  if 'message' in data: fail('Failed to update (POST) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId) + '. API returned message "' + str(data['message']) + '"')
 
 # Update the Z-score attribute for a sample
 def updateZscore(projectId, sampleId, attributeId, value):
   global mosaicConfig
-  hasSample = False
 
-  # Check if the sample has this attribute. If so, use the PUT route to update the value, and if not, use the POST route
-  # to add a value
-  try: data = json.loads(os.popen(api_sa.getSpecifiedSampleAttributes(mosaicConfig, projectId, True, [attributeId])).read())
-  except: fail('Failed to get attribute information for attribute ' + str(attributeId))
-  if 'message' in data: fail('Failed to get attribute information for attribute ' + str(attributeId) + '. API returned message "' + str(data['message']))
-  if len(data) != 1: fail('Unexpected number of records returned for a single attribute')
-
-  # Check if the sample has a value
-  for a in data[0]['values']:
-    if a['sample_id'] == sampleId:
-      hasSample = True
-      break
-
-  # If the sample already has a value, update the value with the PUT route
-  if hasSample:
-    try: data = json.loads(os.popen(api_sa.putSampleAttributeValue(mosaicConfig, projectId, sampleId, attributeId, value)).read())
-    except: fail('Failed to update (PUT) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId))
-    if 'message' in data: fail('Failed to update (PUT) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId) + '. API returned message "' + str(data['message']))
-
-  # Otherwise, use the POST route to add a value for the sample
-  else:
-    try: data = json.loads(os.popen(api_sa.postUpdateSampleAttribute(mosaicConfig, value, projectId, sampleId, attributeId)).read())
-    except: fail('Failed to update (POST) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId))
-    if 'message' in data: fail('Failed to update (POST) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId) + '. API returned message "' + str(data['message']))
+  try: data = json.loads(os.popen(api_sa.putSampleAttributeValue(mosaicConfig, projectId, sampleId, attributeId, value)).read())
+  except: fail('Failed to update (PUT) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId))
+  if 'message' in data: fail('Failed to update (PUT) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId) + '. API returned message "' + str(data['message']) + '"')
 
 # If the script fails, provide an error message and exit
 def fail(message):
