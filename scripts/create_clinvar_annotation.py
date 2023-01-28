@@ -69,7 +69,7 @@ def createAnnotation(args):
   fields["severity"]      = severity
 
   # Update the annotation
-  try: data = json.loads(os.popen(api_va.postCreateVariantAnnotationWithSeverity(mosaicConfig, args.name, 'string', args.privacy_level, fields, mosaicConfig['attributesProjectId'])).read())
+  try: data = json.loads(os.popen(api_va.postCreateVariantAnnotationWithSeverity(mosaicConfig, args.name, 'string', args.privacy_level, fields, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'])).read())
   except: fail("Couldn't update variant annotation")
 
   # Output the id of the created annotation
