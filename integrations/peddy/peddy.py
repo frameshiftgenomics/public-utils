@@ -31,8 +31,10 @@ def main():
   args = parseCommandLine()
 
   # Parse the mosaic configuration file
-  mosaicRequired = {"token": True, "url": True, "attributesProjectId": True}
-  mosaicConfig   = mosaic_config.parseConfig(args, mosaicRequired)
+  mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
+                    'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'},
+                    'MOSAIC_ATTRIBUTES_PROJECT_ID': {'value': args.attributes_project, 'desc': 'The public attribtes project id', 'long': '--attributes_project', 'short': '-a'}}
+  mosaicConfig = mosaic_config.parseConfig(args.config, mosaicRequired)
 
   # Check the integration status, e.g. if the required attributes exist or need to be created
   checkStatus(args)
@@ -119,7 +121,7 @@ def checkStatus(args):
 
   # Check the public attributes project for the project attribute indicating that the peddy integration
   # has been run before
-  data = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, mosaicConfig["attributesProjectId"])).read())
+  data = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'])).read())
 
   # If the public attributse project doesn't exist, terminate
   if "message" in data:
