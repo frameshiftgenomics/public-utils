@@ -54,16 +54,15 @@ def main():
 
   # Get all of the attributes from the project for this integration for which z-scores will be calculated
   print('Getting integration attributes...')
-  getIntegrationAttributes(integrationName)
+  getIntegrationAttributes()
 
-  # If a json file was supplied describing how to subset samples, read in the information and build the cohorts
+  # Read in information from the supplied json file describing how to subset samples etc.
   print('Building cohorts to calculate Z-scores for')
-  if args.sample_cohorts:
-    getSampleCohortData(args.sample_cohorts)
-    buildProjectAttributeCohorts(cohorts, args.collection_id)
-    if includeFullCohort: buildFullCohort()
-    addAttributeValuesToCohorts()
-    addCohortIds()
+  parseJsonInput(args.sample_cohorts)
+  buildProjectAttributeCohorts(cohorts, args.collection_id)
+  if includeFullCohort: buildFullCohort()
+  addAttributeValuesToCohorts()
+  addCohortIds()
 
   # Loop over all of the projects in the collection, get the sample attributes, loop over the attributes associated
   # with this integration and get the values for all the samples, store them and build a list of values to calculate
@@ -79,46 +78,13 @@ def main():
   print('Calculating Z-scores')
   calculateZscores()
 
+  # Store the number of failed attributes for each sample and cohort
+  print('Updating failures counts in Mosaic')
+  storeFailureCounts(args.name)
+
   # Write out all failure information
   print('Writing out failures')
   writeFailures(args.project_id)
-  exit(0)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  # Get a list of all projects in the collection, If this is not a collection, fail
-  projects, projectSamples, sampleProjects = getSubProjects(args)
-
-  # Check that the specified project is in the collection (or is 0)
-  checkProjectId(args, projects)
-
-  # Get all of the Alignstats attributes from the Alignstats project
-  attributes, zscoreAttributes = getSampleAttributes(args)
-
-  # Calculate and assign the Z-scores
-  failedSamples, failedAttributeId = calculateZscores(args, projects, projectSamples, sampleProjects, attributes, zscoreAttributes)
-
-  # Post results to conversations
-  print('Posting results...')
-  processFailedSamples(args, projects, sampleProjects, failedSamples, failedAttributeId)
   print('Complete')
 
 # Input options
@@ -138,16 +104,11 @@ def parseCommandLine():
   parser.add_argument('--collection_id', '-d', required = True, metavar = 'integer', help = 'The Mosaic collection id to generate z-scores for')
   parser.add_argument('--project_id', '-p', required = True, metavar = 'integer', help = 'The Mosaic project to update. If set to 0, z-scores for all samples in the collection will be calculated and their projects updated. Otherwise, only the specifid project will be processed')
 
-  # The name to define the collection used for generating Z-scores. The same project could be in multiple collections and so
-  # Z-scores could be calculated for different groups of samples. The Z-score attributes must therefore include some text to
-  # indicate the collection they are associated with
-  #parser.add_argument('--collection_name', '-n', required = True, metavar = 'string', help = 'A name to identify the collection used to generate z-scores')
-
   # Include the path to a json describing how to subset samples
-  parser.add_argument('--sample_cohorts', '-s', required = False, metavar = 'string', help = 'A json file describing how to subset samples to calculate Z-scores')
+  parser.add_argument('--sample_cohorts', '-s', required = True, metavar = 'string', help = 'A json file describing how to subset samples to calculate Z-scores')
 
-  # Include an optional pass/fail cutoff. Samples whose z-scores fall out of this range will be flagged
-  #parser.add_argument('--cutoff', '-f', required = False, metavar = 'integer', help = 'Z-score cutoff. Samples whose Z-score falls outside this range will be flagged')
+  # Include a name that will be included in the names of the created attributes
+  parser.add_argument('--name', '-n', required = True, metavar = 'string', help = 'A name that will be included in the created sample attributes that identifies which collection they are associated with. It is recommended to keep this short, and use the collection nickname if appropriate')
 
   # Version
   parser.add_argument('--version', '-v', action="version", version='Alignstats integration version: ' + str(version))
@@ -190,10 +151,12 @@ def getProjects(collectionId):
   if len(projectIds) == 0: fail('The defined collection_id must be associated with a collection')
 
 # Get all of the attributes from the project for this integration for which z-scores will be calculated
-def getIntegrationAttributes(integrationName):
+def getIntegrationAttributes():
   global mosaicConfig
   global integrationProjectId
   global integrationAttributes
+  global integrationName
+  global failedIntegrationAttributes
 
   # Attributes associated with this integration will end with the integration name in parentheses. Define this string for searching
   nameEnd = '(' + str(integrationName) + ')'
@@ -206,42 +169,48 @@ def getIntegrationAttributes(integrationName):
   # Store the attribute ids, ignoring attributes with 'Z-score' in the name
   for attribute in data:
     if attribute['name'].endswith(nameEnd) and str('Z-score') not in attribute['name']: integrationAttributes[attribute['id']] = attribute['name']
+    if attribute['name'].startswith('Failed ' + str(integrationName)): failedIntegrationAttributes[attribute['id']] = attribute['name']
  
-# If a json file was supplied describing how to subset samples, read in the information
-def getSampleCohortData(cohortFile):
+# Parse the json file describing how to subset samples etc.
+def parseJsonInput(jsonFile):
   global cohorts
   global includeFullCohort
+  global primaryAttributes
+  global integrationAttributes
 
   # Get the json data
-  try: jsonFile = open(cohortFile, 'r')
-  except: fail('Could not open the json file: ' + cohortFile)
-  try: jsonData = json.loads(jsonFile.read())
-  except: fail('Json file ' + cohortFile + ' is not valid')
+  try: jsonHandle = open(jsonFile, 'r')
+  except: fail('Could not open the json file: ' + jsonFile)
+  try: jsonData = json.loads(jsonHandle.read())
+  except: fail('Json file ' + jsonFile + ' is not valid')
+
+  # First, check that there is a section describing how to build sample cohorts
+  if 'Cohorts' not in jsonData: fail('The json input file (' + str(jsonFile) + ') requires a "Cohorts" section describing how to build sample cohorts')
 
   # Check the entries are valid and complete, and determine if project attributes need to be read in
-  for cohort in jsonData:
+  for cohort in jsonData['Cohorts']:
 
     # The 'type' field is necessary to determine if this subset is the full cohort, based on a sample or
     # project attribute
-    try: cohortType = jsonData[cohort]['type']
+    try: cohortType = jsonData['Cohorts'][cohort]['type']
     except: fail('The field "type" is not present in the input json file for sample cohort "' + cohort + '"')
 
     # Each cohort needs the cutoff defined. Any samples whose absolute Z-score value is greated than the cutoff fail
-    try: cutoff = jsonData[cohort]['cutoff']
+    try: cutoff = jsonData['Cohorts'][cohort]['cutoff']
     except: fail('The field "cutoff" is not present in the input json file for sample cohort "' + cohort + '"')
 
     # If the type is "project", get the project attribute id and value to subset the samples
     if cohortType == 'project':
-      try: attributeId = jsonData[cohort]['project_attribute']
+      try: attributeId = jsonData['Cohorts'][cohort]['project_attribute']
       except: fail('Cohort ' + cohort + ' is based on a project attribute, but the "project_attribute" field is not provided')
 
       # The project attribute value can be a string, a number, or a Boolean. Depending on the type,
       # different values and comparisons will be required
-      if 'string' in jsonData[cohort]: fail('Have not handled string comparisons')
-      elif 'number' in jsonData[cohort]: fail('Have not handled numerical comparisons')
-      elif 'boolean' in jsonData[cohort]:
-        if type(jsonData[cohort]['boolean']) != bool: fail('Cohort ' + str(cohort) + ' is determined with a Boolean project attribute, but the provided value (' + str(jsonData[cohort]['boolean']) + ') is not Boolean')
-        cohorts[cohort] = {'cutoff': cutoff, 'cohortType': 'project', 'attributeId': attributeId, 'type': 'bool', 'value': jsonData[cohort]['boolean']}
+      if 'string' in jsonData['Cohorts'][cohort]: fail('Have not handled string comparisons')
+      elif 'number' in jsonData['Cohorts'][cohort]: fail('Have not handled numerical comparisons')
+      elif 'boolean' in jsonData['Cohorts'][cohort]:
+        if type(jsonData['Cohorts'][cohort]['boolean']) != bool: fail('Cohort ' + str(cohort) + ' is determined with a Boolean project attribute, but the provided value (' + str(jsonData['Cohorts'][cohort]['boolean']) + ') is not Boolean')
+        cohorts[cohort] = {'cutoff': cutoff, 'cohortType': 'project', 'attributeId': attributeId, 'type': 'bool', 'value': jsonData['Cohorts'][cohort]['boolean']}
 
     # If the type is "sample", get the sample attribute id and value to subset the samples
     elif cohortType == 'sample': fail('Not implemented subsetting on samples yet')
@@ -254,6 +223,27 @@ def getSampleCohortData(cohortFile):
 
     # If a different value is provided for the "type" field, fail
     else: fail('Cohort type "' + cohortType + '" is not valid')
+
+  # Check if there is a "Primary_attributes" section in the json file. This is used to prioritize attributes in the
+  # resulting conversation posted to Mosaic. Check that the supplied attributes are valid and store their ids
+  if 'Primary_attributes' in jsonData:
+    attributeNames = []
+    attributeIds   = {}
+    for attribute in jsonData['Primary_attributes']: attributeNames.append(attribute)
+
+    # Loop over the attribute ids available for this integration and check that the supplied attributes are valid
+    for attributeId in integrationAttributes:
+      if integrationAttributes[attributeId] in attributeNames: attributeIds[integrationAttributes[attributeId]] = attributeId
+
+    # If there are any attributes left in the attributeNames list, these are not valid
+    if len(attributeNames) != len(attributeIds):
+      text = 'The following primary attributes were not recognised. Ensure the input json contains valid attributes:\n'
+      for attribute in attributeNames:
+        if attribute not in attributeIds: text += '  ' + str(attribute) + '\n'
+      fail(text)
+
+    # Store the primary attribute ids in the order they appeared in the json
+    for attribute in attributeNames: primaryAttributes.append(attributeIds[attribute])
 
 # Build the cohorts that are constructed based on project attributes
 def buildProjectAttributeCohorts(cohorts, collectionId):
@@ -299,6 +289,9 @@ def buildBooleanProjectCohort(attributeValues, cohort, attributeId, value):
   if 'sampleIds' in cohorts[cohort]: fail('The cohorts dictionary already contains sample ids for cohort ' + str(cohort))
   cohorts[cohort]['sampleIds'] = []
 
+  # Count the number of projects that are in this cohort
+  noProjects = 0
+
   # Check that the number of projects in the collection - len(projectsIds) - is equal to the number of projects that have values in
   # this collection - len(attributeValues). If these values are different, not all projects in the collection have values for this
   # project attribute, and so the cohort cannot be build
@@ -312,7 +305,11 @@ def buildBooleanProjectCohort(attributeValues, cohort, attributeId, value):
 
     # If the project has the correct Boolean value, loop over the project samples and add them to the cohort
     if str(projectValue) == str(value):
+      noProjects += 1
       for sampleId in projectIds[projectId]: cohorts[cohort]['sampleIds'].append(sampleId)
+
+  # Store the number of projects associated with this cohort
+  cohorts[cohort]['numberOfProjects'] = noProjects
 
 # Build the cohort including all samples
 def buildFullCohort():
@@ -323,6 +320,9 @@ def buildFullCohort():
   # Loop over all projects and add all sample ids to the full cohort
   for projectId in projectIds:
     for sampleId in projectIds[projectId]: cohorts['all']['sampleIds'].append(sampleId)
+
+  # Store the number of projects in the full cohort
+  cohorts['all']['numberOfProjects'] = len(projectIds)
 
 # Add the ids of all of the integration attributes to each of the cohorts. This is where the sample attribute values
 # for each of the samples will be stored
@@ -366,6 +366,8 @@ def processAllSamples():
   global integrationName
   global cohorts
   global missingSamples
+  global failedIntegrationAttributes
+  global failedAttributesInProject
 
   # First define a dictionary to store the values
   for projectId in projectIds:
@@ -385,6 +387,8 @@ def processAllSamples():
       # Proceed with alignstats attributes. All other attributes in the project are not part of this integration and do not need
       # Z-scores calculating
       if attributeId in integrationAttributes:
+
+        # Skip integration attributes that start with "Failed <integrationName>". These are counts of failed attributes and not integration attributes themselves
         noIntegrationAttributes += 1
 
         # Check that the samples in the project all have values for this attribute. If not, store the missing samples so that they
@@ -408,6 +412,12 @@ def processAllSamples():
           # calculating the mean and standard deviation.
           for cohort in cohorts:
             if sampleId in cohorts[cohort]['sampleIds']: cohorts[cohort]['attributes'][attributeId]['values'].append(sampleValue)
+
+      # Also store information on the number of failed attributes
+      elif attributeId in failedIntegrationAttributes:
+        if projectId not in failedAttributesInProject: failedAttributesInProject[projectId] = {}
+        if attributeId not in failedAttributesInProject[projectId]: failedAttributesInProject[projectId][attributeId] = []
+        for sample in attribute['values']: failedAttributesInProject[projectId][attributeId].append(sample['sample_id'])
 
     # If the number of sample attributes associated with this integration that are seen in this project is not equal to
     # the expected number of attributes, fail
@@ -469,6 +479,90 @@ def calculateZscores():
           if cohort not in noFailures[sampleId]: noFailures[sampleId][cohort] = 1
           else: noFailures[sampleId][cohort] += 1
 
+# Store the number of failed attributes by cohort for each sample
+def storeFailureCounts(name):
+  global mosaicConfig
+  global projectIds
+  global noFailures
+  global cohorts
+  global failedIntegrationAttributes
+  global integrationName
+  global integrationProjectId
+  global sampleAttributeValues
+  global failedAttributesInProject
+
+  # Loop over all of the samples,in all of the projects,  import the failed attributes as required 
+  for projectId in projectIds:
+    attributeInProject = {}
+    for sampleId in projectIds[projectId]:
+      for cohort in cohorts:
+        value         = 0
+        attributeName = 'Failed ' + str(integrationName) +  ' attributes for ' + str(name) + ' ' + str(cohorts[cohort]['name'])
+
+        # Check if this attribute exists in the integration project. If not, create it
+        attributeId = False
+        for integrationId in failedIntegrationAttributes:
+          if str(attributeName) == str(failedIntegrationAttributes[integrationId]):
+            attributeId = integrationId
+            break
+
+        # Create the attribute
+        if not attributeId:
+          try: data = json.loads(os.popen(api_sa.postSampleAttribute(mosaicConfig, attributeName, 'float', 'Null', 'true', 'Failed Attributes', 'Sample Count', integrationProjectId)).read())
+          except: fail('Failed to create new attribute: ' + str(zscoreAttribute))
+          if 'message' in data: fail('Failed to create new sample attribute (' + str(zscoreAttribute) + '). API returned message "' + str(data['message']) + '"')
+          attributeId = data['id']
+
+        # If the attribute is already in the project, it will be stored in the failedAttributesInProject dictionary
+        if attributeId not in attributeInProject: attributeInProject[attributeId] = False
+        if projectId in failedAttributesInProject:
+          if attributeId in failedAttributesInProject[projectId]: attributeInProject[attributeId] = True
+
+        # Only proceed if this sample is a member of the cohort
+        if sampleId in cohorts[cohort]['sampleIds']:
+          if sampleId not in noFailures: value = 0
+          elif cohort not in noFailures[sampleId]: value = 0
+          else: value = noFailures[sampleId][cohort]
+
+          # Update the number of failed attributes in Mosaic for this sample and cohort
+          # If the attribute is not in the project, import it
+          if not attributeInProject[attributeId]: 
+            importAttribute(projectId, attributeId, value)
+            addValue(projectId, sampleId, attributeId, value)
+            attributeInProject[attributeId] = True
+
+          # If the attribute is in the project, but this sample does not have a value, POST a value
+          elif projectId not in failedAttributesInProject: addValue(projectId, sampleId, attributeId, value)
+          elif attributeId not in failedAttributesInProject[projectId]: addValue(projectId, sampleId, attributeId, value)
+          elif sampleId not in failedAttributesInProject[projectId][attributeId]: addValue(projectId, sampleId, attributeId, value)
+
+          # If the sample already has a value, update (PUT) it
+          else: updateValue(projectId, sampleId, attributeId, value)
+
+# Check if a project has a sample attribute and if not, import it
+def importAttribute(projectId, attributeId, zscoreAttribute):
+  global mosaicConfig
+
+  try: data = json.loads(os.popen(api_sa.postImportSampleAttribute(mosaicConfig, attributeId, projectId)).read())
+  except: fail('Failed to import attribute ' + str(zscoreAttribute))
+  if 'message' in data: fail('Failed to import attribute ' + str(zscoreAttribute) + '. API returned message "' + str(data['message']) + '"')
+
+# Add a value for a sample attribute
+def addValue(projectId, sampleId, attributeId, value):
+  global mosaicConfig
+
+  try: data = json.loads(os.popen(api_sa.postUpdateSampleAttribute(mosaicConfig, value, projectId, sampleId, attributeId)).read())
+  except: fail('Failed to update (POST) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId))
+  if 'message' in data: fail('Failed to update (POST) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId) + '. API returned message "' + str(data['message']) + '"')
+
+# Update a value for a sample attribute
+def updateValue(projectId, sampleId, attributeId, value):
+  global mosaicConfig
+
+  try: data = json.loads(os.popen(api_sa.putSampleAttributeValue(mosaicConfig, projectId, sampleId, attributeId, value)).read())
+  except: fail('Failed to update (PUT) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId))
+  if 'message' in data: fail('Failed to update (PUT) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId) + '. API returned message "' + str(data['message']) + '"')
+
 # Write out all failure information
 def writeFailures(updateProjectId):
   global projectIds
@@ -476,6 +570,7 @@ def writeFailures(updateProjectId):
   global noFailures
   global cohorts
   global integrationName
+  global primaryAttributes
 
   # Define the title of the conversation used to house information on failed samples
   title = str(integrationName) + ' information'
@@ -486,10 +581,10 @@ def writeFailures(updateProjectId):
 
   # If all projects are to have project conversations updated, the supplied projectId must be 0. Otherwise, only update
   # the conversation for the provided projectId
-  if updateProjectId == 0:
+  if int(updateProjectId) == 0:
 
     # Loop over all the projects to write out the failures for each sample in the project
-    for projectId in projectIds: updateProjectConversation(projectId, description)
+    for projectId in projectIds: updateProjectConversation(projectId, title, description)
   else: updateProjectConversation(updateProjectId, title, description)
 
 # Generate information for a project conversation and update it
@@ -530,8 +625,8 @@ def updateProjectConversation(projectId, title, description):
   # of the failing attributes by sample
   for i, cohort in enumerate(includedInCohorts):
     cohortName = cohorts[cohort]['name']
-    if i == 0: projectDescription += ' **' + str(cohortName) + '** (' + str(len(cohorts[cohort]['sampleIds'])) + ' samples)'
-    else: projectDescription += ', **' + str(cohortName) + '** (' + str(len(cohorts[cohort]['sampleIds'])) + ' samples)'
+    if i == 0: projectDescription += ' **' + str(cohortName) + '** (' + str(len(cohorts[cohort]['sampleIds'])) + ' samples in ' + str(cohorts[cohort]['numberOfProjects']) + ' projects)'
+    else: projectDescription += ', **' + str(cohortName) + '** (' + str(len(cohorts[cohort]['sampleIds'])) + ' samples in ' + str(cohorts[cohort]['numberOfProjects']) + ' projects)'
   projectDescription += '\\n\\n'
 
   # If there were no failures in the project, include this in the decription
@@ -551,31 +646,95 @@ def updateProjectConversation(projectId, title, description):
         for sampleId in projectIds[projectId]:
           if cohort in noFailures[sampleId]:
             if firstSample:
-              projectDescription += str(sampleNames[sampleId]) + ' had ' + str(noFailures[sampleId][cohort]) + ' failures\\n'
+              projectDescription += str(sampleNames[sampleId]) + ' had ' + str(noFailures[sampleId][cohort]) + ' failures'
               firstSample = False
-            else: projectDescription += ', ' + str(sampleNames[sampleId]) + ' had ' + str(noFailures[sampleId][cohort]) + ' failures\\n'
+            else: projectDescription += ', ' + str(sampleNames[sampleId]) + ' had ' + str(noFailures[sampleId][cohort]) + ' failures'
 
-    # Now give the full break down of failing sample attributes.
-    #projectDescription += '\n**Following is a break down of all failing attributes for all samples**\n'
-    for sampleId in projectIds[projectId]:
-
-      # If this sample has failures, include a title line for this sample in the description, then get the failing attriubtes
-      if len(failures[sampleId]) > 0:
-        projectDescription += '\\n**Sample ' + str(sampleNames[sampleId]) + '**:\\n'
-        for attributeId in failures[sampleId]:
-          projectDescription += str(integrationAttributes[attributeId]) + ': '
-          for i, cohort in enumerate(failures[sampleId][attributeId]):
-            if i == 0: projectDescription += str(cohorts[cohort]['id']) + ' (' + str(failures[sampleId][attributeId][cohort]) + ')'
-            else: projectDescription += ', ' + str(cohorts[cohort]['id']) + ' (' + str(failures[sampleId][attributeId][cohort]) + ')'
-          projectDescription += '\\n'
+    # If primary attributes were specified, include failures associated with these attributes first, then note that others failed
+    projectDescription += '\\n'
+    if len(primaryAttributes) != 0: projectDescription = primaryFailures(projectId, projectDescription)
+    projectDescription = nonPrimaryFailures(projectId, projectDescription)
 
   # Get the id of the conversation to update
   conversationId, isNew = getConversationId(projectId)
+
+  # Truncate the description if it is too long to fit in a Mosaic conversation
+  if len(projectDescription) > 4999: projectDescription = projectDescription[0:4900] + '...\\n\\nOutput truncated'
 
   # Update the conversation description
   try: data = json.loads(os.popen(api_pc.putUpdateCoversation(mosaicConfig, str(title), str(projectDescription), str(projectId), conversationId)).read())
   except: fail('Could not update project conversation with title "' + str(title) + '" in project ' + str(projectId))
   if 'message' in data: fail('Could not update project conversation with title "' + str(title) + '" in project ' + str(projectId) + '. API returned the message "' + str(data['message']) + '"')
+
+# Print a summary of primary attributes that failed
+def primaryFailures(projectId, projectDescription):
+  global projectIds
+  global failures
+  global primaryAttributes
+  global hasPrimaryFailure
+  global sampleNames
+  hasPrimaryFailure = False
+  sampleFailures    = {}
+
+  # Loop over all samples in the project
+  for sampleId in projectIds[projectId]:
+    sampleFailures[sampleId] = False
+
+    # Determine if any of the failing attributes are primary attributes
+    if len(failures[sampleId]) > 0:
+      for attributeId in failures[sampleId]:
+        if attributeId in primaryAttributes:
+          hasPrimaryFailure        = True
+          sampleFailures[sampleId] = True
+
+  # If the sample has failures in the primary attributes, include them in the description
+  if not hasPrimaryFailure: projectDescription += '**All samples passed all primary attributes**'
+  else:
+    projectDescription += '### Failed primary attributes\\n'
+    for sampleId in projectIds[projectId]:
+      if not sampleFailures[sampleId]: projectDescription += '**Sample ' + str(sampleNames[sampleId]) + ' passed all attributes**\\n'
+      else:
+        projectDescription += '**Sample ' + str(sampleNames[sampleId]) + '**:\\n'
+        for attributeId in failures[sampleId]:
+          if attributeId in primaryAttributes:
+            projectDescription += '&nbsp;&nbsp;' + str(integrationAttributes[attributeId]) + ': '
+            for i, cohort in enumerate(failures[sampleId][attributeId]):
+              if i == 0: projectDescription += str(cohorts[cohort]['id']) + ' (' + str(failures[sampleId][attributeId][cohort]) + ')'
+              else: projectDescription += ', ' + str(cohorts[cohort]['id']) + ' (' + str(failures[sampleId][attributeId][cohort]) + ')'
+            projectDescription += '\\n'
+
+  projectDescription += '\\n'
+
+  # Return the updated description
+  return projectDescription
+
+# Print a summary of non primary attributes that failed
+def nonPrimaryFailures(projectId, projectDescription):
+  global projectIds
+  global failures
+  global sampleNames
+  global primaryAttributes
+
+  # Provide a title
+  if len(primaryAttributes) == 0: projectDescription += '### Failed attributes\\n'
+  else: projectDescription += '### Failed non-primary attributes\\n'
+
+  # Loop over all samples in the project
+  for sampleId in projectIds[projectId]:
+
+    # Determine if any of the failing attributes are primary attributes
+    if len(failures[sampleId]) > 0:
+      projectDescription += '**Sample ' + str(sampleNames[sampleId]) + '** failed:\\n'
+      for attributeId in failures[sampleId]:
+        if attributeId not in primaryAttributes:
+          projectDescription += '&nbsp;&nbsp;' + str(integrationAttributes[attributeId]) + ': '
+          for i, cohort in enumerate(failures[sampleId][attributeId]):
+            if i == 0: projectDescription += str(cohorts[cohort]['id']) + ' (' + str(failures[sampleId][attributeId][cohort]) + ')'
+            else: projectDescription += ', ' + str(cohorts[cohort]['id']) + ' (' + str(failures[sampleId][attributeId][cohort]) + ')'
+          projectDescription += '\\n'
+
+  # Return the updated description
+  return projectDescription
 
 # Get the conversation id of the conversation to update
 def getConversationId(projectId):
@@ -625,285 +784,6 @@ def getConversationId(projectId):
   # Return the conversation id
   return conversationId, isNew
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## Get a list of all projects in the collection
-#def getSubProjects(args):
-#  global mosaicConfig
-#  projects       = []
-#  sampleProjects = {}
-#  projectSamples = {}
-#
-#  # Get all project information for the collection
-#  try: data = json.loads(os.popen(api_p.getCollectionProjects(mosaicConfig, args.collection_id)).read())
-#  except: fail('Could not get collection projects')
-#  if 'message' in data: fail('Could not get collection projects. API returned the message' + str(data['message']) + '"')
-#  for project in data:
-#    projectId                 = project['id']
-#    projectSamples[projectId] = []
-#    projects.append(projectId)
-#
-#    # Get all of the samples in the project
-#    try: samplesData = json.loads(os.popen(api_s.getSamples(mosaicConfig, projectId)).read())
-#    except: fail('Could not get samples for project ' + str(projectId))
-#    if 'message' in samplesData: fail('Could not get samples for project ' + str(projectId) + '. API returned the message "' + str(samplesData['message']) + '"')
-#
-#    # Store the project for every sample and vice versa
-#    for sample in samplesData:
-#      sampleProjects[sample['id']] = {'projectId': projectId, 'name': sample['name']}
-#      projectSamples[projectId].append(sample['id'])
-#
-#  # This script is only for collections. If there are no sub-projects, fail
-#  if len(projects) == 0: fail('The defined collection_id must be associated with a collection')
-#
-#  # Return the list of projects
-#  return projects, projectSamples, sampleProjects
-#
-## Check that the specified project is in the collection (or is 0)
-#def checkProjectId(args, projects):
-#
-#  # The supplied project_id must be an integer
-#  try: projectId = int(args.project_id)
-#  except: fail('The project_id (' + str(args.project_id) + ') needs to be 0 (update all projects), or the id of a project in the collection')
-#
-#  # If the project_id is 0, this means all projects need to be updated
-#  if int(args.project_id) == 0: pass
-#
-#  # Otherwise, the project_id must be a project in the collection
-#  elif projectId in projects: pass
-#
-#  # Otherwise, fail
-#  else: fail('The project_id (' + str(args.project_id) + ') needs to be 0 (update all projects), or the id of a project in the collection')
-#
-## Get all of the sample attributes from the Alignstats project. Z-scores will be calulcated for all of these attributes
-#def getSampleAttributes(args):
-#  global mosaicConfig
-#  global alignstatsProjectId
-#  attributes       = {}
-#  zscoreAttributes = {}
-#
-#  try: data = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, alignstatsProjectId, False)).read())
-#  except: fail('Could not get sample attribute from the alignstats project')
-#  if 'message' in data: fail('Could not get sample attribute from the alignstats project. API returned message "' + str(data['message']) + '"')
-#
-#  # Store the attribute ids
-#  for attribute in data:
-#    if attribute['name'].endswith('Z-score (Alignstats)'): zscoreAttributes[attribute['name']] = attribute['id']
-#    elif attribute['name'].endswith('(Alignstats)'): attributes[attribute['id']] = attribute['name']
-#
-#  # Return the list of attribute Ids
-#  return attributes, zscoreAttributes
-#
-#
-## Get the values for the specified sample attribute
-#def calculateZscores(args, projectIds, projectSamples, sampleProjects, attributes, zscoreAttributes):
-#  global mosaicConfig
-#  global alignstatsProjectId
-#  attributeValues = {}
-#  valuesForMean   = {}
-#  failedSamples   = {}
-#  toImport        = []
-#  projectAttributeIds = {}
-#
-#  # Populate attributeValues with all the necessary attribute ids
-#  print('Checking and creating Z-score attributes...')
-#  for attributeId in attributes:
-#    attributeValues[attributeId] = {}
-#    valuesForMean[attributeId]   = []
-#
-#    # Define the name of the z-score attribute for this attribute and check if it exists in the alignstats project. If not,
-#    # create it
-#    zscoreAttribute = attributes[attributeId].replace('(Alignstats)', 'Z-score (Alignstats)')
-#    zscoreAttribute = str(args.collection_name) + ' ' + zscoreAttribute
-#    if zscoreAttribute not in zscoreAttributes: zscoreAttributes[zscoreAttribute] = createZscoreAttribute(zscoreAttribute)
-#
-#  # Get the id of the failed attributes id
-#  failedAttributeId = False
-#  for attributeId in attributes:
-#    if attributes[attributeId] == 'Failed Attributes (Alignstats)': failedAttributeId = attributeId
-#  if not failedAttributeId: fail('The Alignstats project does not contain the "Failed Attributes (Alignstats)" sample attribute. Ensure this public attribute exists.')
-#
-#  # Loop over all of the projects in the collection
-#  print('Getting attributes for project:')
-#  for projectId in projectIds:
-#    hasFailedAttribute             = False
-#    projectAttributeIds[projectId] = {}
-#
-#    # Get all the attribute information for the project
-#    try: data = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, projectId, True)).read())
-#    except: fail('Could not get attribute values for attribute id: ' + str(attributes[attribute]))
-#    if 'message' in data: fail('Could not get attribute values for attribute id: ' + str(attributes[attribute]) + '. API returned the message "' + data['message'] + '"')
-#
-#    # Loop over all of the returned attributes and consider only those listed in the attributes dictionary
-#    for attribute in data:
-#
-#      # Check if this is the attribute that records the number of failed attributes
-#      if attribute['name'] == 'Failed Attributes (Alignstats)': hasFailedAttribute = True
-#
-#      # Store all the attribute ids that are present in the project
-#      projectAttributeIds[projectId][attribute['id']] = []
-#      for sample in attribute['values']: projectAttributeIds[projectId][attribute['id']].append(sample['sample_id'])
-#
-#      # Proceed with alignstats attributes
-#      if attribute['id'] in attributes:
-#        zscoreAttribute = attributes[attribute['id']].replace('(Alignstats)', 'Z-score (Alignstats)')
-#        zscoreAttribute = str(args.collection_name) + ' ' + zscoreAttribute
-#
-#        # Loop over the project samples and store the values
-#        for sampleInfo in attribute['values']:
-#          attributeValues[attribute['id']][sampleInfo['sample_id']] = sampleInfo['value']
-#          valuesForMean[attribute['id']].append(sampleInfo['value'])
-#
-#    # If the attribute that records the number of failed attributes is not present in the project, import it and set the value
-#    # to zero for all project samples
-#    if not hasFailedAttribute:
-#      importAttribute(projectId, failedAttributeId, 'Failed Attributes (Alignstats)')
-#      for sampleId in projectSamples[projectId]: addValue(projectId, sampleId, failedAttributeId, 0)
-#
-#  # Process all the data for each attribute
-#  print('Calculating Z-scores for attribute:')
-#  for attributeId in attributes:
-#    print('  ', attributes[attributeId], sep = '')
-#    if attributeId == failedAttributeId: continue
-#
-#    # Get the id of the associated z-score attribute
-#    zscoreAttribute   = attributes[attributeId].replace('(Alignstats)', 'Z-score (Alignstats)')
-#    zscoreAttribute   = str(args.collection_name) + ' ' + zscoreAttribute
-#    zscoreAttributeId = zscoreAttributes[zscoreAttribute]
-#
-#    # Calculate the mean and standard deviation of the values
-#    mean = statistics.mean(valuesForMean[attributeId])
-#    sd   = statistics.stdev(valuesForMean[attributeId], mean)
-#
-#    # Loop over all of the samples and calculate their z-scores
-#    for sampleId in attributeValues[attributeId]:
-#      if sd == 0: zscore = 0.
-#      else: zscore = float((attributeValues[attributeId][sampleId] - mean) / sd)
-#      projectId = sampleProjects[sampleId]['projectId']
-#
-#      # If the z-score attribute is not in the project, import it
-#      if zscoreAttributeId not in projectAttributeIds[projectId]:
-#        importAttribute(projectId, zscoreAttributeId, zscoreAttribute)
-#        projectAttributeIds[projectId][zscoreAttributeId] = []
-#
-#      # Add or update the z-score value
-#      if sampleId in projectAttributeIds[projectId][zscoreAttributeId]: updateValue(projectId, sampleId, zscoreAttributeId, zscore)
-#      else: addValue(projectId, sampleId, zscoreAttributeId, zscore)
-#
-#      # Determine if the z-score is outside of the pass/fail threshold
-#      if args.cutoff:
-#        if abs(zscore) > float(args.cutoff):
-#          if projectId not in failedSamples: failedSamples[projectId] = {}
-#          if sampleId not in failedSamples[projectId]: failedSamples[projectId][sampleId] = {}
-#          failedSamples[projectId][sampleId][attributeId] = {'name': attributes[attributeId], 'value': attributeValues[attributeId][sampleId], 'mean': mean, 'sd': sd, 'zscore': zscore}
-#
-#  # Return the list of failed samples
-#  return failedSamples, failedAttributeId
-#
-## Create a z-score attribute in the alignstats project
-#def createZscoreAttribute(zscoreAttribute):
-#  global mosaicConfig
-#  global alignstatsProjectId
-#
-#  # Create a new attribute
-#  try: data = json.loads(os.popen(api_sa.postSampleAttribute(mosaicConfig, zscoreAttribute, 'float', 'Null', 'true', 'Z-score', 'Sample Count', alignstatsProjectId)).read())
-#  except: fail('Failed to create new attribute: ' + str(zscoreAttribute))
-#  if 'message' in data: fail('Failed to create new sample attribute (' + str(zscoreAttribute) + '). API returned message "' + str(data['message']) + '"')
-#
-#  # Return the id of the created attribute
-#  return data['id']
-#
-### Check if a project has a sample attribute and if not, import it
-#def importAttribute(projectId, attributeId, zscoreAttribute):
-#  global mosaicConfig
-#
-#  try: data = json.loads(os.popen(api_sa.postImportSampleAttribute(mosaicConfig, attributeId, projectId)).read())
-#  except: fail('Failed to import attribute ' + str(zscoreAttribute))
-#  if 'message' in data: fail('Failed to import attribute ' + str(zscoreAttribute) + '. API returned message "' + str(data['message']) + '"')
-#
-## Add a value for a sample attribute
-#def addValue(projectId, sampleId, attributeId, value):
-#  global mosaicConfig
-#
-#  try: data = json.loads(os.popen(api_sa.postUpdateSampleAttribute(mosaicConfig, value, projectId, sampleId, attributeId)).read())
-#  except: fail('Failed to update (POST) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId))
-#  if 'message' in data: fail('Failed to update (POST) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId) + '. API returned message "' + str(data['message']) + '"')
-#
-## Update the Z-score attribute for a sample
-#def updateValue(projectId, sampleId, attributeId, value):
-#  global mosaicConfig
-#
-#  try: data = json.loads(os.popen(api_sa.putSampleAttributeValue(mosaicConfig, projectId, sampleId, attributeId, value)).read())
-#  except: fail('Failed to update (PUT) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId))
-#  if 'message' in data: fail('Failed to update (PUT) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId) + '. API returned message "' + str(data['message']) + '"')
-#
-## Post results to project conversations
-#def processFailedSamples(args, projects, sampleProjects, failedSamples, failedAttributeId):
-#  noProjects = len(projects)
-#  noSamples  = len(sampleProjects)
-#
-#  # If a single project was specified, only update this project, otherwise loop over all projects and post results to them all
-#  if int(args.project_id) == 0: 
-#    for projectId in projects: processProject(args.cutoff, projectId, sampleProjects, failedSamples, failedAttributeId, noProjects, noSamples)
-#  else: processProject(args.cutoff, int(args.project_id), sampleProjects, failedSamples, failedAttributeId, noProjects, noSamples)
-#
-## Process the z-score results for a project
-#def processProject(cutoff, projectId, sampleProjects, failedSamples, failedAttributeId, noProjects, noSamples):
-#  global mosaicConfig
-#
-#  # Get the conversation id of the conversation to update
-#  conversationId, isNew = getConversationId(projectId)
-#
-#  # Determine the number of attributes that failed (e.g. outside the Z-score cutoff) and update the sample attribute
-#  if projectId in failedSamples:
-#    for sampleId in failedSamples[projectId]: updateValue(projectId, sampleId, failedAttributeId, len(failedSamples[projectId][sampleId]))
-#
-#  # Generate the conversation description
-#  title       = 'Alignstats information'
-#  description  = '**Alignstats QC information** (' + str(datetime.date.today()) + ')'
-#  description += '\\nZ-scores calculated based on ' + str(noSamples) + ' samples from ' + str(noProjects) + ' projects'
-#
-#  # If no samples failed, state that in the message
-#  if projectId not in failedSamples: description += '\\n\\nNo samples failed. I.e. the Z-score for all samples and all attributes were within ' + str(cutoff) + ' standard deviations of the mean'
-#
-#  # If some samples failed for some attributes, list the failures
-#  else:
-#    description += '\\n\\nThe following failures occured:'
-#
-#    # Get all the sample names to add them to the description in order
-#    sampleNames = {}
-#    for sampleId in failedSamples[projectId]:
-#      sampleNames[sampleProjects[sampleId]['name']] = sampleId
-#
-#    for sampleName in sorted(sampleNames.keys()):
-#      sampleId = sampleNames[sampleName]
-#      description += '\\n**Sample ' + sampleProjects[sampleId]['name'] + ':**'
-#      for attributeId in failedSamples[projectId][sampleId]: 
-#        description += '\\n&nbsp;&nbsp;&nbsp;&nbsp;' + failedSamples[projectId][sampleId][attributeId]['name'] + ': '
-#        description += 'value: ' + str(failedSamples[projectId][sampleId][attributeId]['value']) + ', Z-score: ' + str(failedSamples[projectId][sampleId][attributeId]['zscore'])
-#
-#  # Update the conversation description
-#  try: data = json.loads(os.popen(api_pc.putUpdateCoversation(mosaicConfig, title, description, projectId, conversationId)).read())
-#  except: fail('Could not update project conversation with title "Alignstats information" in project ' + str(projectId))
-#  if 'message' in data: fail('Could not update project conversation with title "Alignstats information" in project ' + str(projectId) + '. API returned the message "' + str(data['message']) + '"')
-#
-
 # If the script fails, provide an error message and exit
 def fail(message):
   print(message, sep = "")
@@ -916,9 +796,11 @@ mosaicConfig = {}
 
 # The integrationProjectId defines the project that contains all of the attributes for this integration. Also
 # store the attribute ids of all the sample attributes associated with the integration
-integrationProjectId  = False
-integrationAttributes = {}
-integrationName       = False
+integrationProjectId        = False
+integrationAttributes       = {}
+integrationName             = False
+failedIntegrationAttributes = {}
+failedAttributesInProject   = {}
 
 # Store all of the project ids in the collection, along with the samples
 projectIds = {}
@@ -926,6 +808,10 @@ projectIds = {}
 # Store the list of samples in each cohort. Also determine if the cohort of all samples is required
 cohorts           = {}
 includeFullCohort = False
+
+# Store primary attributes
+primaryAttributes = []
+hasPrimaryFailure = False
 
 # Store the names of all samples
 sampleNames = {}
@@ -941,7 +827,7 @@ failures   = {}
 noFailures = {}
 
 # Store the version
-version = "0.0.3"
+version = "0.0.4"
 
 if __name__ == "__main__":
   main()
