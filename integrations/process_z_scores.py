@@ -24,10 +24,7 @@ import api_project_conversations as api_pc
 def main():
   global mosaicConfig
   global integrationProjectId
-  global integrationAttributes
-  global integrationName
   global includeFullCohort
-  global cohorts
 
   # Parse the command line
   args = parseCommandLine()
@@ -35,18 +32,11 @@ def main():
   # Parse the mosaic configuration file
   mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
                     'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'},
-                    'MOSAIC_ATTRIBUTES_PROJECT_ID': {'value': args.attributes_project, 'desc': 'The public attribtes project id', 'long': '--attributes_project', 'short': '-a'},
-                    'ALIGNSTATS_ATTRIBUTES_PROJECT_ID': {'value': args.alignstats_project, 'desc': 'The alignstats project id', 'long': '--alignstats_project', 'short': '-l'}}
+                    'MOSAIC_ATTRIBUTES_PROJECT_ID': {'value': args.attributes_project, 'desc': 'The public attribtes project id', 'long': '--attributes_project', 'short': '-a'}}
   mosaicConfig = mosaic_config.parseConfig(args.config, mosaicRequired)
 
-###################
-###################
-################### GENERALIZE
-###################
-###################
-  # Define the integrations project id
-  integrationProjectId = mosaicConfig['ALIGNSTATS_ATTRIBUTES_PROJECT_ID']
-  integrationName = 'Alignstats'
+  # Check all information on the integration is available
+  checkIntegration(args.integration_name)
 
   # Get a list of all projects in the collection
   print('Getting collection projects...')
@@ -59,7 +49,7 @@ def main():
   # Read in information from the supplied json file describing how to subset samples etc.
   print('Building cohorts to calculate Z-scores for')
   parseJsonInput(args.sample_cohorts)
-  buildProjectAttributeCohorts(cohorts, args.collection_id)
+  buildProjectAttributeCohorts(args.collection_id)
   if includeFullCohort: buildFullCohort()
   addAttributeValuesToCohorts()
   addCohortIds()
@@ -90,6 +80,7 @@ def main():
 # Input options
 def parseCommandLine():
   global version
+  global allowedIntegrations
 
   parser = argparse.ArgumentParser(description='Process the command line arguments')
 
@@ -98,7 +89,9 @@ def parseCommandLine():
   parser.add_argument('--token', '-t', required = False, metavar = 'string', help = 'The Mosaic authorization token')
   parser.add_argument('--url', '-u', required = False, metavar = 'string', help = 'The base url for Mosaic curl commands, up to an including "api". Do NOT include a trailing "')
   parser.add_argument('--attributes_project', '-a', required = False, metavar = 'integer', help = 'The Mosaic project id that contains public attributes')
-  parser.add_argument('--alignstats_project', '-l', required = False, metavar = 'integer', help = 'The Mosaic project id that contains alignstats attributes')
+
+  # Define the integration name. This will be used to find the project containing integration parameters and for naming etc.
+  parser.add_argument('--integration_name', '-i', required = True, metavar = 'string', help = 'The name of the integration. Allowed values include:\n' + str(', '.join(allowedIntegrations)))
 
   # The collection to calculate z-scores for and the project being updated
   parser.add_argument('--collection_id', '-d', required = True, metavar = 'integer', help = 'The Mosaic collection id to generate z-scores for')
@@ -111,9 +104,23 @@ def parseCommandLine():
   parser.add_argument('--name', '-n', required = True, metavar = 'string', help = 'A name that will be included in the created sample attributes that identifies which collection they are associated with. It is recommended to keep this short, and use the collection nickname if appropriate')
 
   # Version
-  parser.add_argument('--version', '-v', action="version", version='Alignstats integration version: ' + str(version))
+  parser.add_argument('--version', '-v', action="version", version='Z-score processor version: ' + str(version))
 
   return parser.parse_args()
+
+# Check all information on the integration is available
+def checkIntegration(name):
+  global allowedIntegrations
+  global integrationName
+  global integrationProjectId
+
+  # Fail if the defined integration is not recognised
+  if name not in allowedIntegrations: fail('Integration "' + str(name) + '" is not a recognized integration. Allowed integrations are: ' + str(', '.join(allowedIntegrations)))
+
+  # Define the integration name and project id
+  integrationName      = name
+  try: integrationProjectId = mosaicConfig[str(name.upper()) + '_ATTRIBUTES_PROJECT_ID']
+  except: fail('The project id for integration ' + name + ' must be included in the config file as "' + str(name.upper()) + '_ATTRIBUTES_PROJECT_ID=<ID>"')
 
 # Get a list of all projects in the collection
 def getProjects(collectionId):
@@ -246,8 +253,9 @@ def parseJsonInput(jsonFile):
     for attribute in attributeNames: primaryAttributes.append(attributeIds[attribute])
 
 # Build the cohorts that are constructed based on project attributes
-def buildProjectAttributeCohorts(cohorts, collectionId):
+def buildProjectAttributeCohorts(collectionId):
   global mosaicConfig
+  global cohorts
 
   # Get information on all of the project attributes associated with the collection
   try: attributeData = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, collectionId)).read())
@@ -384,7 +392,7 @@ def processAllSamples():
       if attributeId not in sampleAttributeValues: sampleAttributeValues[attributeId] = {}
       if attributeId not in missingSamples: missingSamples[attributeId] = []
 
-      # Proceed with alignstats attributes. All other attributes in the project are not part of this integration and do not need
+      # Proceed with all integration attributes. All other attributes in the project are not part of this integration and do not need
       # Z-scores calculating
       if attributeId in integrationAttributes:
 
@@ -745,7 +753,7 @@ def getConversationId(projectId):
   limit          = 100
   title          = integrationName + ' information'
 
-  # All z-score results are posted to a conversation in the project called 'Alignstats information'. If this conversation does
+  # All z-score results are posted to a conversation in the project called '<INTEGRATION> information'. If this conversation does
   # not exist, create it
   try: data = json.loads(os.popen(api_pc.getCoversations(mosaicConfig, limit, 1, projectId)).read())
   except: fail('Could not get project conversations for project ' + str(projectId))
@@ -754,7 +762,7 @@ def getConversationId(projectId):
   # Get the number of pages of conversations
   noPages = math.ceil(float(data['count']) / float(limit))
 
-  # Loop over the conversations and look for one with the name 'Alignstats information'
+  # Loop over the conversations and look for one with the name '<INTEGRATION> information'
   for conversation in data['data']:
     if str(conversation['title']) == str(title):
       conversationId = conversation['id']
@@ -776,7 +784,7 @@ def getConversationId(projectId):
 
     # Create a new conversation with a blank description. This will be populated with information in another routine
     try: data = json.loads(os.popen(api_pc.postCoversation(mosaicConfig, title, '', projectId)).read())
-    except: fail('Could not create a new alignstats conversation')
+    except: fail('Could not create a new conversation')
     if 'message' in data: fail('Could not create a new conversation. API returned the message "' + str(data['message']) + '"')
     conversationId = data['id']
     isNew          = True
@@ -793,6 +801,9 @@ def fail(message):
 
 # The mosaic config is used to request data from Mosaic
 mosaicConfig = {}
+
+# Define the list of allowed integrations
+allowedIntegrations = ['Alignstats', 'Peddy']
 
 # The integrationProjectId defines the project that contains all of the attributes for this integration. Also
 # store the attribute ids of all the sample attributes associated with the integration
