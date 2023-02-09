@@ -20,8 +20,8 @@ def getPublicProjectIntervalAttributes(mosaicConfig, limit, page):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
 
-  command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
-  command += str(url) + 'api/v1/projects/attributes/intervals?limit=' + str(limit) + '&page=' + str(page)
+  command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" "'
+  command += str(url) + 'api/v1/projects/attributes/intervals?limit=' + str(limit) + '&page=' + str(page) + '"'
 
   return command
 

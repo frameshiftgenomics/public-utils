@@ -11,10 +11,11 @@ def getProjectFiles(mosaicConfig, projectId, limit, page, fileTypes):
   token = mosaicConfig["token"]
   url   = mosaicConfig["url"]
 
-  command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
+  command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" "'
   command += str(url) + 'api/v1/projects/' + str(projectId) + '/files'
   command += '?limit=' + str(limit) + '&page=' + str(page)
-  if fileTypes: command += '&filetypes="' + str(fileTypes) + '"'
+  if fileTypes: command += '&filetypes=\\"' + str(fileTypes) + '\\"'
+  command += '"'
 
   return command
 
