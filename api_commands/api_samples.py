@@ -8,11 +8,11 @@
 
 # Get all samples in a project
 def getSamples(mosaicConfig, projectId):
-  token = mosaicConfig["token"]
-  url   = mosaicConfig["url"]
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
-  command += str(url) + 'api/v1/projects/' + str(projectId) + '/samples'
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/samples' + '"'
 
   return command
 

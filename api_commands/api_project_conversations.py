@@ -8,11 +8,11 @@
 
 # Get all project conversations
 def getCoversations(mosaicConfig, limit, page, projectId):
-  token = mosaicConfig["token"]
-  url   = mosaicConfig["url"]
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
 
-  command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" "'
-  command += str(url) + 'api/v1/projects/' + str(projectId) + '/conversations?limit=' + str(limit) + '&page=' + str(page) + '"'
+  command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/conversations?limit=' + str(limit) + '&page=' + str(page) + '"'
 
   return command
 
@@ -22,12 +22,12 @@ def getCoversations(mosaicConfig, limit, page, projectId):
 
 # Create a new project conversation
 def postCoversation(mosaicConfig, title, description, projectId):
-  token = mosaicConfig["token"]
-  url   = mosaicConfig["url"]
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-d \'{"title": "' + str(title) + '", "description": "' + str(description) + '"}\' '
-  command += str(url) + 'api/v1/projects/' + str(projectId) + '/conversations'
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/conversations' + '"'
 
   return command
 
@@ -37,12 +37,12 @@ def postCoversation(mosaicConfig, title, description, projectId):
 
 # Update a project conversation title and description
 def putUpdateCoversation(mosaicConfig, title, description, projectId, conversationId):
-  token = mosaicConfig["token"]
-  url   = mosaicConfig["url"]
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-d \'{"title": "' + str(title) + '", "description": "' + str(description) + '"}\' '
-  command += str(url) + 'api/v1/projects/' + str(projectId) + '/conversations/' + str(conversationId)
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/conversations/' + str(conversationId) + '"'
 
   return command
 
@@ -52,10 +52,10 @@ def putUpdateCoversation(mosaicConfig, title, description, projectId, conversati
 
 # Delete a project conversation
 def deleteCoversation(mosaicConfig, projectId, conversationId):
-  token = mosaicConfig["token"]
-  url   = mosaicConfig["url"]
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X DELETE -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
-  command += str(url) + 'api/v1/projects/' + str(projectId) + '/conversations/' + str(conversationId)
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/conversations/' + str(conversationId) + '"'
 
   return command

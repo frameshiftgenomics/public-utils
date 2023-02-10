@@ -8,8 +8,8 @@
 
 # Get all files associated with a sample in a project
 def getSampleFiles(mosaicConfig, projectId, sampleId, limit, page):
-  token = mosaicConfig["token"]
-  url   = mosaicConfig["url"]
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/samples/' + str(sampleId) + '/files?limit=' + str(limit) + '&page=' + str(page) + '"'
@@ -18,8 +18,8 @@ def getSampleFiles(mosaicConfig, projectId, sampleId, limit, page):
 
 # Get all sample files in a project
 def getAllSampleFiles(mosaicConfig, projectId, limit, page):
-  token = mosaicConfig["token"]
-  url   = mosaicConfig["url"]
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/samples/files?limit=' + str(limit) + '&page=' + str(page) + '"'
@@ -28,11 +28,11 @@ def getAllSampleFiles(mosaicConfig, projectId, limit, page):
 
 # Get the url for a sample file
 def getSampleFileUrl(mosaicConfig, projectId, fileId, create):
-  token = mosaicConfig["token"]
-  url   = mosaicConfig["url"]
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
-  command += str(url) + 'api/v1/projects/' + str(projectId) + '/files/' + str(fileId) + '/url?create_activity=' + str(create)
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/files/' + str(fileId) + '/url?create_activity=' + str(create) + '"'
 
   return command
 
@@ -42,8 +42,8 @@ def getSampleFileUrl(mosaicConfig, projectId, fileId, create):
 
 # Add a file attached to a specific sample
 def postSampleFile(mosaicConfig, name, nickname, fileType, fileUri, reference, sampleName, projectId, sampleId):
-  token = mosaicConfig["token"]
-  url   = mosaicConfig["url"]
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-d \'{'
@@ -64,8 +64,8 @@ def postSampleFile(mosaicConfig, name, nickname, fileType, fileUri, reference, s
 
 # Update a files name
 def putUpdateSampleFileName(mosaicConfig, name, projectId, sampleId, fileId):
-  token = mosaicConfig["token"]
-  url   = mosaicConfig["url"]
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-d \'{"name": "' + str(name) + '"}\' '
@@ -75,8 +75,8 @@ def putUpdateSampleFileName(mosaicConfig, name, projectId, sampleId, fileId):
 
 # Update a files nickname
 def putUpdateSampleFileNickname(mosaicConfig, name, projectId, sampleId, fileId):
-  token = mosaicConfig["token"]
-  url   = mosaicConfig["url"]
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-d \'{"nickname": "' + str(name) + '"}\' '
@@ -90,8 +90,8 @@ def putUpdateSampleFileNickname(mosaicConfig, name, projectId, sampleId, fileId)
 
 # Delete a sample file
 def deleteSampleFile(mosaicConfig, projectId, sampleId, fileId):
-  token = mosaicConfig["token"]
-  url   = mosaicConfig["url"]
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X DELETE -H "Authorization: Bearer ' + str(token) + '" '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/samples/' + str(sampleId) + '/files/' + str(fileId) + '"'

@@ -8,8 +8,8 @@
 
 # Get all files attached to a project
 def getProjectFiles(mosaicConfig, projectId, limit, page, fileTypes):
-  token = mosaicConfig["token"]
-  url   = mosaicConfig["url"]
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" "'
   command += str(url) + 'api/v1/projects/' + str(projectId) + '/files'
@@ -21,11 +21,11 @@ def getProjectFiles(mosaicConfig, projectId, limit, page, fileTypes):
 
 # Get the url for a project file
 def getProjectFileUrl(mosaicConfig, projectId, fileId, create):
-  token = mosaicConfig["token"]
-  url   = mosaicConfig["url"]
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
-  command += str(url) + 'api/v1/projects/' + str(projectId) + '/files/' + str(fileId) + '/url?create_activity=' + str(create)
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/files/' + str(fileId) + '/url?create_activity=' + str(create) + '"'
 
   return command
 
