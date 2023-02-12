@@ -8,7 +8,7 @@ import json
 # results etc and return data objects. The API routes themselves occur later in this file
 
 ######
-###### Execute the GET routes
+###### Execute GET routes
 ######
 
 # Return a list of all variant filter ids for a project
@@ -27,7 +27,20 @@ def getVariantFilterIds(config, projectId):
   return filterIds
 
 ######
-###### Execute the DELETE routes
+###### Execute POST routes
+######
+
+# Create a variant filter in a project and return the id of the created filter
+def createVariantFilter(mosaicConfig, projectId, name, category, annotationFilters):
+  try: data = json.loads(os.popen(postVariantFilter(mosaicConfig, name, category, annotationFilters, projectId)).read())
+  except: fail('Failed to POST a new variant filter for project ' + str(projectId))
+  if 'message' in data: fail('Failed to POST a new variant for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return the filter id
+  return data['id']
+
+######
+###### Execute DELETE routes
 ######
 
 # Given a project id and a list of filter ids, delete every filter
@@ -64,24 +77,15 @@ def getVariantFilters(mosaicConfig, projectId):
 ######
 
 # Post a new variant filter
-def postVariantFilter(mosaicConfig, name, annotationFilters, projectId):
+def postVariantFilter(mosaicConfig, name, category, annotationFilters, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
-  command += '-d \'{"name": "' + str(name) + '", "filter": ' + json.dumps(annotationFilters) + '}\' '
+  command += '-d \'{"name": "' + str(name) + '", '
+  if category: command += '"category": "' + str(category) + '", '
+  command += '"filter": ' + json.dumps(annotationFilters) + '}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/variants/filters' + '"'
-
-  return command
-
-# Post a new variant filter category
-def postVariantFilterCategory(mosaicConfig, name, category, projectId):
-  token = mosaicConfig['MOSAIC_TOKEN']
-  url   = mosaicConfig['MOSAIC_URL']
-
-  command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
-  command += '-d \'{"name": "' + str(name) + '", "category": "' + str(category) + '"}\' '
-  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/variants/filters"'
 
   return command
 

@@ -24,29 +24,24 @@ def main():
   # Parse the mosaic configuration file
   mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
                     'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'}}
-  mosaicConfig = mosaic_config.parseConfig(args.config, mosaicRequired)
+  mosaicConfig   = mosaic_config.mosaicConfigFile(args.config)
+  mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
-  command = api_vf.postVariantFilterCategory(mosaicConfig, args.name, args.category, args.project_id)
-  print(command)
-  try: data = json.loads(os.popen(api_vf.postVariantFilterCategory(mosaicConfig, args.name, args.category, args.project_id)).read())
-  except: fail('Failed')
-  if 'message' in data: fail('Failed. API returned the message "' + str(data['message']) + '"')
+  # Get the list of variant filter ids
+  filterIds = api_vf.getVariantFilterIds(mosaicConfig, args.project_id)
+  print(filterIds)
 
 # Input options
 def parseCommandLine():
   parser = argparse.ArgumentParser(description='Process the command line arguments')
 
   # Arguments related to the config file
-  parser.add_argument('--token', '-t', required = False, metavar = "string", help = "The Mosaic authorization token")
-  parser.add_argument('--url', '-u', required = False, metavar = "string", help = "The base url for Mosaic curl commands, up to an including \"api\". Do NOT include a trailing /")
-  parser.add_argument('--config', '-c', required = False, metavar = "string", help = "A config file containing token / url information")
+  parser.add_argument('--token', '-t', required = False, metavar = 'string', help = 'The Mosaic authorization token')
+  parser.add_argument('--url', '-u', required = False, metavar = 'string', help = 'The base url for Mosaic curl commands, up to an including "api". Do NOT include a trailing ')
+  parser.add_argument('--config', '-c', required = False, metavar = 'string', help = 'A config file containing token / url information')
 
   # The project id to which the filter is to be added is required
-  parser.add_argument('--project_id', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
-
-  # Arguments related to the file to add
-  parser.add_argument('--name', '-n', required = True, metavar = 'string', help = 'The name to be given to the category')
-  parser.add_argument('--category', '-a', required = True, metavar = 'string', help = 'The display name of the category')
+  parser.add_argument('--project_id', '-p', required = True, metavar = 'integer', help = 'The Mosaic project id to add variant filters to')
 
   return parser.parse_args()
 

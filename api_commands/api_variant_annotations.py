@@ -1,5 +1,86 @@
 #!/usr/bin/python
 
+import json
+import os
+
+# The first section of this file contains routines to execute the API routes and acts as a layer between the
+# calling script and the Pythonized API routes. This will check for errors, deal with looping over pages of 
+# results etc and return data objects. The API routes themselves occur later in this file
+
+######
+###### Execute the GET routes
+######
+
+# Return a list of annotation ids
+def getAnnotationIds(config, projectId):
+  ids = []
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getVariantAnnotations(config, projectId)).read())
+  except: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for annotation in data: ids.append(annotation['id'])
+
+  # Return the list of annotation ids
+  return ids
+
+# Return a dictionary with annotation ids as keys and annotation names as values
+def getAnnotationIdsWithNames(config, projectId):
+  ids = []
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getVariantAnnotations(config, projectId)).read())
+  except: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for annotation in data: ids[annotation['id']] = annotation['name']
+
+  # Return the dictionary
+  return ids
+
+# Return a list of all annotation uids
+def getAnnotationUids(config, projectId):
+  uids = []
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getVariantAnnotations(config, projectId)).read())
+  except: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for annotation in data: uids.append(annotation['uid'])
+
+  # Return the list of variant filter ids
+  return uids
+
+# Return a dictionary of uids with the corresponding value type
+def getAnnotationUidsWithTypes(config, projectId):
+  uids = {}
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getVariantAnnotations(config, projectId)).read())
+  except: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for annotation in data: uids[annotation['uid']] = annotation['value_type']
+
+  # Return the list of variant filter ids
+  return uids
+
+######
+###### Execute the DELETE routes
+######
+
+#################
+#################
+################# Following are the API routes for variant filters (mirrors the API docs)
+#################
+#################
+
 # This contains API routes for variant annotations (mirrors the API docs)
 
 ######
