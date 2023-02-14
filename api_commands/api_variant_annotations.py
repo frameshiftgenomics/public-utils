@@ -126,7 +126,7 @@ def getAnnotationInformation(config, annotationId, projectId):
 ###### Execute the POST routes
 ######
 
-# Create a new attribute and return the 
+# Create a new annotation and return the id and uid
 def createPrivateAnnotationIdUid(config, ann, valueType, projectId):
 
   # Eexcute the command
@@ -136,6 +136,17 @@ def createPrivateAnnotationIdUid(config, ann, valueType, projectId):
 
   # Store the id and uid
   return {'id': data['id'], 'uid': data['uid']}
+
+# Create a new annotation with severity and return the uid
+def createAnnotationSeverityUid(config, projectId, name, valueType, privacy, fields):
+
+  # Eexcute the command
+  try: data = json.loads(os.popen(postCreateVariantAnnotationWithSeverityCommand(config, name, valueType, privacy, fields, projectId)).read())
+  except: fail('Failed to create variant annotation for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to create variant annotation for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Store the id and uid
+  return data['uid']
 
 # Import an annotation
 def importAnnotation(config, annId, projectId):

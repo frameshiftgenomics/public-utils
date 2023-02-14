@@ -25,7 +25,8 @@ def main():
   mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
                     'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'},
                     'MOSAIC_ATTRIBUTES_PROJECT_ID': {'value': args.attributes_project, 'desc': 'The public attribtes project id', 'long': '--attributes_project', 'short': '-a'}}
-  mosaicConfig = mosaic_config.parseConfig(args.config, mosaicRequired)
+  mosaicConfig   = mosaic_config.mosaicConfigFile(args.config)
+  mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
   # Create the annotation
   createAnnotation(args)
@@ -69,11 +70,10 @@ def createAnnotation(args):
   fields["severity"]      = severity
 
   # Update the annotation
-  try: data = json.loads(os.popen(api_va.postCreateVariantAnnotationWithSeverity(mosaicConfig, args.name, 'string', args.privacy_level, fields, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'])).read())
-  except: fail("Couldn't update variant annotation")
+  uid = api_va.createAnnotationSeverityUid(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'], args.name, 'string', args.privacy_level, fields)
 
   # Output the id of the created annotation
-  print(data['uid'])
+  print(uid)
 
 # If the script fails, provide an error message and exit
 def fail(message):
