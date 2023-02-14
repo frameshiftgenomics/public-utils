@@ -154,6 +154,12 @@ def importAnnotation(config, annId, projectId):
   except: fail('Failed to import annotation for project: ' + str(projectId))
   if 'message' in data: fail('Failed to import annotation for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
+# Upload variant annotations
+def uploadAnnotations(config, projectId, tsv, allowDeletion):
+  try: data = os.popen(postUploadVariantAnnotationsCommand(config, tsv, allowDeletion, projectId))
+  except: fail('Failed to upload annotations to project: ' + str(projectId))
+  if 'message' in data: fail('Failed to upload annotations to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
 ######
 ###### Execute the PUT routes
 ######

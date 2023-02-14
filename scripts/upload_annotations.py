@@ -23,7 +23,8 @@ def main():
   # Parse the Mosaic config file to get the token and url for the api calls
   mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
                     'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'}}
-  mosaicConfig = mosaic_config.parseConfig(args.config, mosaicRequired)
+  mosaicConfig   = mosaic_config.mosaicConfigFile(args.config)
+  mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
   # Upload variants
   uploadAnnotations(args)
@@ -36,7 +37,7 @@ def parseCommandLine():
 
   # Required arguments
   parser.add_argument('--tsv_file', '-i', required = True, metavar = "string", help = "The vcf file containing variants to upload")
-  parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
+  parser.add_argument('--project_id', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
 
   # Optional arguments
   parser.add_argument('--no_deletion', '-d', required = False, action = "store_true", help = "If set, blank values will NOT overwite existing annotation values")
@@ -57,9 +58,7 @@ def uploadAnnotations(args):
 
   # By default overwrite existing annotations with a blank
   allowDeletion = "false" if args.no_deletion else "true"
-
-  try: data = os.popen(api_va.postUploadVariantAnnotations(mosaicConfig, args.tsv_file, allowDeletion, args.project)).read()
-  except: fail("Unable to upload file")
+  api_va.uploadAnnotations(mosaicConfig, args.project_id, args.tsv_file, allowDeletion)
 
 # If the script fails, provide an error message and exit
 def fail(message):
