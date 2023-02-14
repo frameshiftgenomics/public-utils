@@ -24,7 +24,8 @@ def main():
   # Parse the mosaic configuration file
   mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
                     'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'}}
-  mosaicConfig = mosaic_config.parseConfig(args.config, mosaicRequired)
+  mosaicConfig   = mosaic_config.mosaicConfigFile(args.config)
+  mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
   # Check the arguments are valid
   checkArguments(args)

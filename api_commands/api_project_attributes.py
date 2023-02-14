@@ -1,5 +1,81 @@
 #!/usr/bin/python
 
+import os
+import json
+import math
+
+# The first section of this file contains routines to execute the API routes and acts as a layer between the
+# calling script and the Pythonized API routes. This will check for errors, deal with looping over pages of 
+# results etc and return data objects. The API routes themselves occur later in this file
+
+######
+###### Execute the GET routes
+######
+
+# Return all project attribute information for a project
+def getProjectAttributes(config, projectId):
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getProjectAttributesCommand(config, projectId)).read())
+  except: fail('Failed to GET project attributes for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to GET project attributes for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return all the data
+  return data
+
+# Loop over all pages of public attributes and return all information
+def getPublicProjectAttributesNameIdUid(mosaicConfig):
+  limit = 100
+  page  = 1
+  pAtts = []
+
+  # Get the first page of attributes
+  try: data = json.loads(os.popen(getPublicProjectAttributesCommand(mosaicConfig, limit, page)).read())
+  except: fail('Failed to GET public project attributes')
+  if 'message' in data: fail('Failed to GET public project attributes')
+
+  # Store the required data
+  for record in data['data']: pAtts.append({'name': record['name'], 'id': record['id'], 'uid': record['uid']})
+
+  # Calculate the number of pages
+  noPages = math.ceil(int(data['count']) / int(limit))
+
+  # Loop over all pages of public attributes and store information to return
+  for page in range(2, noPages + 1):
+    try: data = json.loads(os.popen(getPublicProjectAttributesCommand(mosaicConfig, limit, page)).read())
+    except: fail('Failed to GET public project attributes')
+    if 'message' in data: fail('Failed to GET public project attributes')
+    for record in data['data']: pAtts.append({'name': record['name'], 'id': record['id'], 'uid': record['uid']})
+
+  # Return the data
+  return pAtts
+
+######
+###### Execute the POST routes
+######
+
+# Update a project attribute
+def importProjectAttribute(config, projectId, attId, value):
+  try: data = json.loads(os.popen(postImportProjectAttributeCommand(config, attId, value, projectId)).read())
+  except: fail('Failed to import a project attributes for project ' + str(projectId))
+  if 'message' in data: fail('Failed to import a project attributes for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+######
+###### Execute the PUT routes
+######
+
+# Update a project attribute
+def updateProjectAttribute(config, projectId, attId, value):
+  try: data = json.loads(os.popen(putProjectAttributeCommand(config, value, projectId, attId)).read())
+  except: fail('Failed to update a project attributes for project ' + str(projectId))
+  if 'message' in data: fail('Failed to update a project attributes for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+#################
+#################
+################# Following are the API routes for variant filters (mirrors the API docs)
+#################
+#################
+
 # This contains API routes for project attributes (mirrors the API docs)
 
 ######
@@ -7,7 +83,7 @@
 ######
 
 # Get the project attributes for the defined project
-def getProjectAttributes(mosaicConfig, projectId):
+def getProjectAttributesCommand(mosaicConfig, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -17,7 +93,7 @@ def getProjectAttributes(mosaicConfig, projectId):
   return command
 
 # Get all public project attributes
-def getPublicProjectAttributes(mosaicConfig, limit, page):
+def getPublicProjectAttributesCommand(mosaicConfig, limit, page):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -27,7 +103,7 @@ def getPublicProjectAttributes(mosaicConfig, limit, page):
   return command
 
 # Get the project attributes for the all projects the user has access to
-def getUserProjectAttributes(mosaicConfig):
+def getUserProjectAttributesCommand(mosaicConfig):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -41,7 +117,7 @@ def getUserProjectAttributes(mosaicConfig):
 ######
 
 # Create a new project attribute
-def postProjectAttribute(mosaicConfig, name, valueType, value, isPublic, projectId):
+def postProjectAttributeCommand(mosaicConfig, name, valueType, value, isPublic, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -52,7 +128,7 @@ def postProjectAttribute(mosaicConfig, name, valueType, value, isPublic, project
   return command
 
 # Import a project attribute
-def postImportProjectAttribute(mosaicConfig, attributeId, value, projectId):
+def postImportProjectAttributeCommand(mosaicConfig, attributeId, value, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -67,7 +143,7 @@ def postImportProjectAttribute(mosaicConfig, attributeId, value, projectId):
 ######
 
 # Update the value of a project attribute
-def putProjectAttribute(mosaicConfig, value, projectId, attributeId):
+def putProjectAttributeCommand(mosaicConfig, value, projectId, attributeId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -82,7 +158,7 @@ def putProjectAttribute(mosaicConfig, value, projectId, attributeId):
 ######
 
 # Delete a project attribute
-def deleteProjectAttribute(mosaicConfig, projectId, attributeId):
+def deleteProjectAttributeCommand(mosaicConfig, projectId, attributeId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -90,3 +166,8 @@ def deleteProjectAttribute(mosaicConfig, projectId, attributeId):
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/attributes/' + str(attributeId) + '"'
 
   return command
+
+# If the script fails, provide an error message and exit
+def fail(message):
+  print(message, sep = "")
+  exit(1)

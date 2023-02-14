@@ -2,6 +2,7 @@
 
 import json
 import os
+import math
 
 # The first section of this file contains routines to execute the API routes and acts as a layer between the
 # calling script and the Pythonized API routes. This will check for errors, deal with looping over pages of 
@@ -16,7 +17,7 @@ def getAnnotationIds(config, projectId):
   ids = []
 
   # Execute the GET route
-  try: data = json.loads(os.popen(getVariantAnnotations(config, projectId)).read())
+  try: data = json.loads(os.popen(getVariantAnnotationsCommand(config, projectId)).read())
   except: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId))
   if 'message' in data: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
@@ -28,10 +29,10 @@ def getAnnotationIds(config, projectId):
 
 # Return a dictionary with annotation ids as keys and annotation names as values
 def getAnnotationIdsWithNames(config, projectId):
-  ids = []
+  ids = {}
 
   # Execute the GET route
-  try: data = json.loads(os.popen(getVariantAnnotations(config, projectId)).read())
+  try: data = json.loads(os.popen(getVariantAnnotationsCommand(config, projectId)).read())
   except: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId))
   if 'message' in data: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
@@ -46,7 +47,7 @@ def getAnnotationUids(config, projectId):
   uids = []
 
   # Execute the GET route
-  try: data = json.loads(os.popen(getVariantAnnotations(config, projectId)).read())
+  try: data = json.loads(os.popen(getVariantAnnotationsCommand(config, projectId)).read())
   except: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId))
   if 'message' in data: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
@@ -61,7 +62,7 @@ def getAnnotationUidsWithTypes(config, projectId):
   uids = {}
 
   # Execute the GET route
-  try: data = json.loads(os.popen(getVariantAnnotations(config, projectId)).read())
+  try: data = json.loads(os.popen(getVariantAnnotationsCommand(config, projectId)).read())
   except: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId))
   if 'message' in data: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
@@ -71,9 +72,103 @@ def getAnnotationUidsWithTypes(config, projectId):
   # Return the list of variant filter ids
   return uids
 
+# Get the name, uid and id of all annotations in the project
+def getVariantAnnotationsNameIdUId(config, projectId):
+  anns = []
+
+  # Get the annotations
+  try: data = json.loads(os.popen(getVariantAnnotationsCommand(config, projectId)).read())
+  except: fail('Unable to find annotations available for project ' + str(projectId)) 
+  if 'message' in data: fail('Unable to find annotations available for project ' + str(projectId) + '. API returned the message: ' + str(data['messgage'])) 
+  for ann in data: anns.append({'name': ann['name'], 'id': ann['id'], 'uid': ann['uid']})
+                                                                  
+  # Return the list
+  return anns
+
+# Get the name, uid and id of all annotations available for import
+def getVariantAnnotationsImportNameIdUid(config, projectId):
+  limit = 100
+  page  = 1
+  anns  = []
+
+  # Get the annotations
+  try: data = json.loads(os.popen(getVariantAnnotationsImportCommand(config, projectId, limit, page)).read())
+  except: fail('Unable to find annotations available for import for project ' + str(projectId)) 
+  if 'message' in data: fail('Unable to find annotations available for import for project ' + str(projectId) + '. API returned the message: ' + str(data['messgage'])) 
+  for ann in data['data']: anns.append({'name': ann['name'], 'id': ann['id'], 'uid': ann['uid']})
+                                                                  
+  # Determine how many annotations there are and consequently how many pages of annotations
+  noPages = math.ceil(int(data['count']) / int(limit))            
+                                                                  
+  # Loop over remainig pages of annotations
+  for page in range(2, noPages + 1):
+    try: data = json.loads(os.popen(getVariantAnnotationsImportCommand(config, projectId, limit, page)).read())
+    except: fail('Unable to find annotations available for import for project ' + str(projectId)) 
+    if 'message' in data: fail('Unable to find annotations available for import for project ' + str(projectId) + '. API returned the message: ' + str(data['messgage'])) 
+    for ann in data['data']: anns.append({'name': ann['name'], 'id': ann['id'], 'uid': ann['uid']})
+
+  # Return the list
+  return anns
+
+# Given an annotation id, return all information about the annotation
+def getAnnotationInformation(config, annotationId, projectId):
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getVariantAnnotationsCommand(config, projectId)).read())
+  except: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for annotation in data: 
+    if int(annotationId) == annotation['id']: return annotation
+
+######
+###### Execute the POST routes
+######
+
+# Create a new attribute and return the 
+def createPrivateAnnotationIdUid(config, ann, valueType, projectId):
+
+  # Eexcute the command
+  try: data = json.loads(os.popen(postCreateVariantAnnotationsCommand(config, ann, valueType, 'private', projectId)).read())
+  except: fail('Failed to create private variant annotation for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to create private variant annotation for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Store the id and uid
+  return {'id': data['id'], 'uid': data['uid']}
+
+# Import an annotation
+def importAnnotation(config, annId, projectId):
+  try: data = json.loads(os.popen(postImportVariantAnnotationsCommand(config, annId, projectId)).read())
+  except: fail('Failed to import annotation for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to import annotation for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+######
+###### Execute the PUT routes
+######
+
+# Update an annotation category
+def updateAnnotationCategory(config, projectId, annotationId, category):
+
+  # The update command expects a list of fields to update. Set the category to update
+  fields = {}
+  fields['category'] = category
+
+  # Update the annotation
+  try: data = json.loads(os.popen(updateVariantAnnotationCommand(config, projectId, fields, annotationId)).read())
+  except: fail('Failed to update the variant annotation in project: ' + str(projectId))
+  if 'message' in data: fail('Failed to update the variant annotation in project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
 ######
 ###### Execute the DELETE routes
 ######
+
+# Delete an annotation by id
+def deleteAnnotationById(config, projectId, annId):
+  print(deleteVariantAnnotationCommand(config, projectId, annId))
+  try: data = os.popen(deleteVariantAnnotationCommand(config, projectId, annId))
+  except: fail('Failed to delete variant annotation in project: ' + str(projectId))
+  if 'message' in data: fail('Failed to delete variant annotation in project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
 #################
 #################
@@ -88,7 +183,7 @@ def getAnnotationUidsWithTypes(config, projectId):
 ######
 
 # Get the variant annotations for the project
-def getVariantAnnotations(mosaicConfig, projectId):
+def getVariantAnnotationsCommand(mosaicConfig, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -98,7 +193,7 @@ def getVariantAnnotations(mosaicConfig, projectId):
   return command
 
 # Get variant annotations available to import
-def getVariantAnnotationsImport(mosaicConfig, projectId, limit, page):
+def getVariantAnnotationsImportCommand(mosaicConfig, projectId, limit, page):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -112,7 +207,7 @@ def getVariantAnnotationsImport(mosaicConfig, projectId, limit, page):
 ######
 
 # Create a variant annotation
-def postCreateVariantAnnotations(mosaicConfig, name, valueType, privacy, projectId):
+def postCreateVariantAnnotationsCommand(mosaicConfig, name, valueType, privacy, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -123,7 +218,7 @@ def postCreateVariantAnnotations(mosaicConfig, name, valueType, privacy, project
   return command
 
 # Create a variant annotation with the display type and severity set
-def postCreateVariantAnnotationWithSeverity(mosaicConfig, name, valueType, privacy, fields, projectId):
+def postCreateVariantAnnotationWithSeverityCommand(mosaicConfig, name, valueType, privacy, fields, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -136,7 +231,7 @@ def postCreateVariantAnnotationWithSeverity(mosaicConfig, name, valueType, priva
   return command
 
 # Import variant annotations to the project
-def postImportVariantAnnotations(mosaicConfig, annotationId, projectId):
+def postImportVariantAnnotationsCommand(mosaicConfig, annotationId, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -147,7 +242,7 @@ def postImportVariantAnnotations(mosaicConfig, annotationId, projectId):
   return command
 
 # Upload variant annotations to the project
-def postUploadVariantAnnotations(mosaicConfig, filename, allowDeletion, projectId):
+def postUploadVariantAnnotationsCommand(mosaicConfig, filename, allowDeletion, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -162,7 +257,7 @@ def postUploadVariantAnnotations(mosaicConfig, filename, allowDeletion, projectI
 ######
 
 # Update a variant annotation
-def updateVariantAnnotation(mosaicConfig, projectId, fields, annotationId):
+def updateVariantAnnotationCommand(mosaicConfig, projectId, fields, annotationId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -181,7 +276,7 @@ def updateVariantAnnotation(mosaicConfig, projectId, fields, annotationId):
 ######
 
 # Delete a variant annotation from a project
-def deleteVariantAnnotation(mosaicConfig, projectId, annotationId):
+def deleteVariantAnnotationCommand(mosaicConfig, projectId, annotationId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -189,3 +284,8 @@ def deleteVariantAnnotation(mosaicConfig, projectId, annotationId):
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/variants/annotations/' + str(annotationId) + '"'
 
   return command
+
+# If the script fails, provide an error message and exit
+def fail(message):
+  print(message, sep = "")
+  exit(1)

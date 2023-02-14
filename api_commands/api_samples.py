@@ -13,18 +13,33 @@ import json
 
 # Return a list of all sample ids for a project
 def getSampleIds(config, projectId):
-  sampleIds = []
+  sIds = []
 
   # Execute the GET route
-  try: data = json.loads(os.popen(getSamples(config, projectId)).read())
+  try: data = json.loads(os.popen(getSamplesCommand(config, projectId)).read())
   except: fail('Failed to execute the GET samples route for project: ' + str(projectId))
   if 'message' in data: fail('Failed to execute the GET samples route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
   # Loop over the returned data object and put the filter ids in a list to return
-  for sample in data: sampleIds.append(sample['id'])
+  for sample in data: sIds.append(sample['id'])
 
   # Return the list of variant filter ids
-  return sampleIds
+  return sIds
+
+# Return a dictionary with the sample names as keys and the sample ids as values
+def getSampleNamesAndIds(config, projectId):
+  sIds = {}
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getSamplesCommand(config, projectId)).read())
+  except: fail('Failed to GET the sample names and ids for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to GET the sample names and ids for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for sample in data: sIds[sample['name']] = sample['id']
+
+  # Return the dictionary
+  return sIds
 
 ######
 ###### Execute the DELETE routes
@@ -43,7 +58,7 @@ def getSampleIds(config, projectId):
 ######
 
 # Get all samples in a project
-def getSamples(mosaicConfig, projectId):
+def getSamplesCommand(mosaicConfig, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 

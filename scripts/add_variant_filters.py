@@ -36,7 +36,7 @@ def main():
   sampleIds = api_s.getSampleIds(mosaicConfig, args.project_id)
   uids      = api_va.getAnnotationUidsWithTypes(mosaicConfig, args.project_id)
 
-  # Perform all steps to delete all variant filters from a project
+  # Add all the filters to the project
   addVariantFilters(mosaicConfig, args.filter_json, args.project_id, sampleIds, uids)
 
 # Input options

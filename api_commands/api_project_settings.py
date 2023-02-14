@@ -19,13 +19,19 @@ import json
 ###### Execute PUT routes
 ######
 
+# Set the default variant annotations
+def setDefaultVariantAnnotations(mosaicConfig, projectId, annIds):
+  try: data = json.loads(os.popen(putDefaultAnnotationsCommand(mosaicConfig, projectId, annIds)).read())
+  except: fail('Failed to set the default variant annotations for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to set the default variant annotations for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
 # Set the sort order of variant filters
 def setVariantFilterSortOrder(mosaicConfig, projectId, filterRecords):
   putSortVariantFilters(mosaicConfig, projectId, filterRecords)
   exit(0)
   try: data = json.loads(os.popen(putSortVariantFilters(mosaicConfig, projectId, filterRecords)).read())
   except: fail('Failed to set the variant filter sort order for project: ' + str(projectId))
-  if 'message' in data: fail('Failed to et the variant filter sort order for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+  if 'message' in data: fail('Failed to set the variant filter sort order for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
 ######
 ###### Execute DELETE routes
@@ -44,7 +50,7 @@ def setVariantFilterSortOrder(mosaicConfig, projectId, filterRecords):
 ######
 
 # Get the project settings
-def getProjectSettings(mosaicConfig, projectId):
+def getProjectSettingsCommand(mosaicConfig, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -62,7 +68,7 @@ def getProjectSettings(mosaicConfig, projectId):
 ######
 
 # Set a variant annotation as a default
-def putDefaultAnnotations(mosaicConfig, projectId, annotationIds):
+def putDefaultAnnotationsCommand(mosaicConfig, projectId, annotationIds):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -73,7 +79,7 @@ def putDefaultAnnotations(mosaicConfig, projectId, annotationIds):
   return command
 
 # Set the sort order of variant filters and annotations
-def putSortVariantFilters(mosaicConfig, projectId, filterRecords):
+def putSortVariantFiltersCommand(mosaicConfig, projectId, filterRecords):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -91,13 +97,6 @@ def putSortVariantFilters(mosaicConfig, projectId, filterRecords):
 
   print(command)
   return command
-
-#{
-#  sorted_annotations: {
-#    variant_filters: [['VARIANT_FILTERS|Custom Cat 2', [4, 3]], ['VARIANT_FILTERS|Custom Cat 1', [1, 2]]],
-#    variant_annotations: // same as above [['ENTITY_ENUM|Category Name', [...sortedEntityIds]]]
-#  }
-#}
 
 ######
 ###### DELETE routes
