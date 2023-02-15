@@ -27,9 +27,7 @@ def setDefaultVariantAnnotations(mosaicConfig, projectId, annIds):
 
 # Set the sort order of variant filters
 def setVariantFilterSortOrder(mosaicConfig, projectId, filterRecords):
-  putSortVariantFilters(mosaicConfig, projectId, filterRecords)
-  exit(0)
-  try: data = json.loads(os.popen(putSortVariantFilters(mosaicConfig, projectId, filterRecords)).read())
+  try: data = json.loads(os.popen(putSortVariantFiltersCommand(mosaicConfig, projectId, filterRecords)).read())
   except: fail('Failed to set the variant filter sort order for project: ' + str(projectId))
   if 'message' in data: fail('Failed to set the variant filter sort order for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
@@ -83,19 +81,14 @@ def putSortVariantFiltersCommand(mosaicConfig, projectId, filterRecords):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
-  print('TEST')
-  print(filterRecords)
   command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-d \'{"sorted_annotations": {"variant_filters": ['
   for i, record in enumerate(filterRecords):
-    print('  ', i, record)
-    print(','.join(str(record['sortOrder'])))
     if i == 0: command += '["VARIANT_FILTERS|' + str(record['category']) + '", [' + ','.join(record['sortOrder']) + ']]'
     else: command += ', ["VARIANT_FILTERS|' + str(record['category']) + '", [' + ','.join(record['sortOrder']) + ']]'
   command += ']}}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/settings' + '"'
 
-  print(command)
   return command
 
 ######

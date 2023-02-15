@@ -72,6 +72,21 @@ def getAnnotationUidsWithTypes(config, projectId):
   # Return the list of variant filter ids
   return uids
 
+# Return a dictionary of uids with the corresponding names and value types
+def getAnnotationUidsWithNamesTypes(config, projectId):
+  uids = {}
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getVariantAnnotationsCommand(config, projectId)).read())
+  except: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for annotation in data: uids[annotation['uid']] = {'name': annotation['name'], 'type': annotation['value_type']}
+
+  # Return the list of variant filter ids
+  return uids
+
 # Get the name, uid and id of all annotations in the project
 def getVariantAnnotationsNameIdUId(config, projectId):
   anns = []
@@ -81,6 +96,19 @@ def getVariantAnnotationsNameIdUId(config, projectId):
   except: fail('Unable to find annotations available for project ' + str(projectId)) 
   if 'message' in data: fail('Unable to find annotations available for project ' + str(projectId) + '. API returned the message: ' + str(data['messgage'])) 
   for ann in data: anns.append({'name': ann['name'], 'id': ann['id'], 'uid': ann['uid']})
+                                                                  
+  # Return the list
+  return anns
+
+# Get the name, uid, id, and type of all annotations in the project
+def getVariantAnnotationsNameIdUIdType(config, projectId):
+  anns = []
+
+  # Get the annotations
+  try: data = json.loads(os.popen(getVariantAnnotationsCommand(config, projectId)).read())
+  except: fail('Unable to find annotations available for project ' + str(projectId)) 
+  if 'message' in data: fail('Unable to find annotations available for project ' + str(projectId) + '. API returned the message: ' + str(data['messgage'])) 
+  for ann in data: anns.append({'name': ann['name'], 'id': ann['id'], 'uid': ann['uid'], 'type': ann['value_type']})
                                                                   
   # Return the list
   return anns

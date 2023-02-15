@@ -11,17 +11,58 @@ import json
 ###### Execute GET routes
 ######
 
+# Return aill information on variant filters for a project
+def getVariantFilters(config, projectId):
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getVariantFiltersCommand(config, projectId)).read())
+  except: fail('Failed to execute the GET variant filters route for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to execute the GET variant filters route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return the data
+  return data
+
 # Return a list of all variant filter ids for a project
 def getVariantFilterIds(config, projectId):
   filterIds = []
 
   # Execute the GET route
-  try: data = json.loads(os.popen(getVariantFilters(config, projectId)).read())
+  try: data = json.loads(os.popen(getVariantFiltersCommand(config, projectId)).read())
   except: fail('Failed to execute the GET variant filters route for project: ' + str(projectId))
   if 'message' in data: fail('Failed to execute the GET variant filters route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
   # Loop over the returned data object and put the filter ids in a list to return
   for variantFilter in data: filterIds.append(variantFilter['id'])
+
+  # Return the list of variant filter ids
+  return filterIds
+
+# Return a dictionary keyed by id for all variant filters in a project, with names as values
+def getVariantFilterIdsNames(config, projectId):
+  filterIds = {}
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getVariantFiltersCommand(config, projectId)).read())
+  except: fail('Failed to execute the GET variant filters route for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to execute the GET variant filters route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for variantFilter in data: filterIds[variantFilter['id']] = variantFilter['name']
+
+  # Return the list of variant filter ids
+  return filterIds
+
+# Return a dictionary keyed by name for all variant filters in a project, with ids as values
+def getVariantFilterNamesIds(config, projectId):
+  filterIds = {}
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getVariantFiltersCommand(config, projectId)).read())
+  except: fail('Failed to execute the GET variant filters route for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to execute the GET variant filters route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for variantFilter in data: filterIds[variantFilter['name']] = variantFilter['id']
 
   # Return the list of variant filter ids
   return filterIds
@@ -32,7 +73,7 @@ def getVariantFilterIds(config, projectId):
 
 # Create a variant filter in a project and return the id of the created filter
 def createVariantFilter(mosaicConfig, projectId, name, category, annotationFilters):
-  try: data = json.loads(os.popen(postVariantFilter(mosaicConfig, name, category, annotationFilters, projectId)).read())
+  try: data = json.loads(os.popen(postVariantFilterCommand(mosaicConfig, name, category, annotationFilters, projectId)).read())
   except: fail('Failed to POST a new variant filter for project ' + str(projectId))
   if 'message' in data: fail('Failed to POST a new variant for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
@@ -48,7 +89,7 @@ def deleteAllVariantFiltersInProject(config, projectId, filterIds):
 
   # Loop over the list of provided filter Ids and delete each filter
   for filterId in filterIds:
-    try: data = os.popen(deleteVariantFilter(config, projectId, filterId))
+    try: data = os.popen(deleteVariantFilterCommand(config, projectId, filterId))
     except: fail('Failed to DELETE the variant filter with id ' + str(filterId) + ' for project ' + str(projectId))
     if 'message' in data: fail('Failed to DELETE the variant filter with id ' + str(filterId) + ' for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
@@ -63,7 +104,7 @@ def deleteAllVariantFiltersInProject(config, projectId, filterIds):
 ######
 
 # Get the variant filters in the project
-def getVariantFilters(mosaicConfig, projectId):
+def getVariantFiltersCommand(mosaicConfig, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -77,7 +118,7 @@ def getVariantFilters(mosaicConfig, projectId):
 ######
 
 # Post a new variant filter
-def postVariantFilter(mosaicConfig, name, category, annotationFilters, projectId):
+def postVariantFilterCommand(mosaicConfig, name, category, annotationFilters, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -94,7 +135,7 @@ def postVariantFilter(mosaicConfig, name, category, annotationFilters, projectId
 ######
 
 # Update a variant filter
-def putVariantFilter(mosaicConfig, name, annotationFilters, projectId, filterId):
+def putVariantFilterCommand(mosaicConfig, name, annotationFilters, projectId, filterId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -105,7 +146,7 @@ def putVariantFilter(mosaicConfig, name, annotationFilters, projectId, filterId)
   return command
 
 # Update a variant filter category
-def putVariantFilterCategory(mosaicConfig, category, projectId, filterId):
+def putVariantFilterCategoryCommand(mosaicConfig, category, projectId, filterId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -121,7 +162,7 @@ def putVariantFilterCategory(mosaicConfig, category, projectId, filterId):
 ######
 
 # Delete a variant filter
-def deleteVariantFilter(mosaicConfig, projectId, filterId):
+def deleteVariantFilterCommand(mosaicConfig, projectId, filterId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 

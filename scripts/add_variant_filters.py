@@ -34,10 +34,14 @@ def main():
   # script, it is assumed that this information is known, and so those scripts will call the addVariantFilters
   # routine directly. When executed from the  command line, these ids must be provided.
   sampleIds = api_s.getSampleIds(mosaicConfig, args.project_id)
-  uids      = api_va.getAnnotationUidsWithTypes(mosaicConfig, args.project_id)
+  uids      = api_va.getAnnotationUidsWithNamesTypes(mosaicConfig, args.project_id)
+
+  ############ NEED TO GET FROM COMMAND LINE
+  sampleMap     = {}
+  annotationMap = {}
 
   # Add all the filters to the project
-  addVariantFilters(mosaicConfig, args.filter_json, args.project_id, sampleIds, uids)
+  addVariantFilters(mosaicConfig, args.filter_json, args.project_id, sampleIds, uids, sampleMap, annotationMap)
 
 # Input options
 def parseCommandLine():
@@ -63,8 +67,11 @@ def parseCommandLine():
 ##########################
 
 # Perform all steps necessary to add variant filters
-def addVariantFilters(mosaicConfig, jsonFilename, projectId, sampleIds, uids):
+def addVariantFilters(mosaicConfig, jsonFilename, projectId, sampleIds, uids, sampleMap, annotationMap):
   filterInformation = {}
+
+  # Get all filters that currently exist in the project
+  existingFilters = api_vf.getVariantFilterNamesIds(mosaicConfig, projectId)
 
   # Read the json
   filters = readJson(jsonFilename)
@@ -88,8 +95,8 @@ def addVariantFilters(mosaicConfig, jsonFilename, projectId, sampleIds, uids):
       filterFile            = getFilterFile(filters['categories'][category]['filters'][vFilter], filterPath, category, vFilter)
       data                  = readJson(filterFile)
       checkFilters(data, vFilter)
-      data = checkGenotypeFilters(data, vFilter, sampleIds)
-      checkAnnotationFilters(data, vFilter, uids)
+      data = checkGenotypeFilters(data, vFilter, sampleIds, sampleMap)
+      checkAnnotationFilters(data, vFilter, uids, annotationMap)
       filterInformation[vFilter] = data
 
   # Loop over the categories again and create all the filters
@@ -97,14 +104,17 @@ def addVariantFilters(mosaicConfig, jsonFilename, projectId, sampleIds, uids):
   for category in filters['categories']:
     filterIds = {}
     for vFilter in filters['categories'][category]['filters']:
-      filterId = api_vf.createVariantFilter(mosaicConfig, projectId, vFilter, category, filterInformation[vFilter]['filters'])
+
+      # If the filter doesn't exist, create it, otherwise use the id of the existing filter
+      if vFilter in existingFilters: filterId = existingFilters[vFilter]
+      else: filterId = api_vf.createVariantFilter(mosaicConfig, projectId, vFilter, category, filterInformation[vFilter]['filters'])
 
       # Store the sort position of this filter id
       filterIds[filters['categories'][category]['filters'][vFilter]['sort_position']] = filterId
 
     # Populate the object used to update the Mosaic project settings
     record = {'category': category, 'sortOrder': []}
-    for i in sorted(filterIds.keys()): record['sortOrder'].append('"' + str(filterIds[i]) + '"')
+    for i in sorted(filterIds.keys()): record['sortOrder'].append(str(filterIds[i]))
     sortedFilters.append(record)
 
   # Set the sort orders for all the categories
@@ -146,7 +156,7 @@ def checkFilters(data, name):
   if 'filters' not in data: fail('Variant filter json file with the name ' + str(name) + ' does not contain the required "filters" section')
 
 # Get information on the genotype filters
-def checkGenotypeFilters(data, name, sampleIds):
+def checkGenotypeFilters(data, name, sampleIds, sampleMap):
 
   # Only proceed if genotype information is present
   if 'genotypes' in data:
@@ -168,10 +178,15 @@ def checkGenotypeFilters(data, name, sampleIds):
       sampleList = []
       if type(data['genotypes'][genotype]) != list: fail('Mosaic variant filter with the name ' + str(name) + ' has an invalid genotypes section')
       for sample in data['genotypes'][genotype]:
-        try: int(sample)
-        except: fail('Mosaic variant filter ' + str(name) + ' references a sample with a non-integer id: ' + str(sample))
-        if int(sample) not in sampleIds: fail('Mosaic variant filter ' + str(name) + ' references sample ' + str(sample) + ' which is not in the requested project')
-        sampleList.append(sample)
+
+        # The genotype filter must either contain a valid sample id for the project, or the value in the json (e.g. proband)
+        # must be present in the sampleMap and point to a valid sample id for this project
+        sampleId = sampleMap[sample] if sample in sampleMap else False
+        if not sampleId:
+          try: sampleId = int(sample)
+          except: fail('Mosaic variant filter ' + str(name) + ' references a sample with a non-integer id: ' + str(sample))
+          if int(sampleId) not in sampleIds: fail('Mosaic variant filter ' + str(name) + ' references sample ' + str(sample) + ' which is not in the requested project')
+        sampleList.append(sampleId)
 
       # Add the genotype filter to the filters listed in the json
       data['filters'][genotype] = sampleList
@@ -180,7 +195,7 @@ def checkGenotypeFilters(data, name, sampleIds):
   return data
 
 # Process the annotation filters
-def checkAnnotationFilters(data, name, uids):
+def checkAnnotationFilters(data, name, uids, annotationMap):
 
   # Make sure the annotation_filters section exists
   if 'annotation_filters' not in data['filters']: fail('Annotation filter ' + str(name) + ' does not contain the required "annotation_filters" section')
@@ -189,17 +204,38 @@ def checkAnnotationFilters(data, name, uids):
   # ensure that each annotation has a valid uid (e.g. it is present in the project), and that supporting information
   # e.g. a minimum value cannot be supplied for a string annotation, is valid
   for aFilter in data['filters']['annotation_filters']:
-    if 'uid' not in aFilter: fail('Annotation filter ' + str(name) + ' contains a filter with no uid')
-    if aFilter['uid'] not in uids: fail('Annotation filter ' + str(name) + ' contains a filter with a uid (' + str(aFilter['uid']) + ') that is not in the project')
+
+    # The json file must contain either a valid uid for a project annotation, the name of a valid private annotation (for
+    # projects where private annotations are created, a new filter template shouldn't be required for every project), or
+    # have a name in the annotation map to relate a name to a uid. This is used for annotations (e.g. ClinVar) that are
+    # regularly updated, so the template does not need to be updated for updating annotations.
+    # If a uid is provided, check it is valid
+    uid = False
+    if 'uid' in aFilter: uid = aFilter['uid']
+
+    # If a name is provided instead of a uid...
+    elif 'name' in aFilter:
+
+      # ...check if this name is in the annotationMap and if so, use the mapped uid
+      if aFilter['name'] in annotationMap: uid = annotationMap[aFilter['name']]
+
+      # ...or if the name is not in the annotationMap, check if a private annotation with this name exists in the project
+      else:
+        for pUid in uids:
+          if str(uids[pUid]['name']) == str(aFilter['name']):
+            uid = pUid
+            break
+
+    if not uid: fail('No uid can be determined for annotation filter ' + str(name))
     if 'include_nulls' not in aFilter: fail('Annotation filter ' + str(name) + ' contains a filter with no "include_nulls" section')
 
     # If the annotation is a string, the "values" field must be present
-    if uids[aFilter['uid']] == 'string':
+    if uids[uid]['type'] == 'string':
       if 'values' not in aFilter: fail('Annotation filter ' + str(name) + ' contains a string based filter with no "values" section')
       if type(aFilter['values']) != list: fail('Annotation filter ' + str(name) + ' contains a string based filter with a "values" section that is not a list')
 
     # If the annotation is a float, check that the specified operation is valid
-    elif uids[aFilter['uid']] == 'float':
+    elif uids[uid] == 'float':
 
       # Loop over all the fields for the filter and check that they are valid
       hasRequiredValue = False
