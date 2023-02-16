@@ -41,9 +41,33 @@ def getSampleNamesAndIds(config, projectId):
   # Return the dictionary
   return sIds
 
+# Return a list of samples with their name and id
+def getSampleNameId(config, projectId):
+  sIds = []
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getSamplesCommand(config, projectId)).read())
+  except: fail('Failed to GET the sample names and ids for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to GET the sample names and ids for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for sample in data: sIds.append({'name': str(sample['name']), 'id': sample['id']})
+
+  # Return the dictionary
+  return sIds
+
 ######
-###### Execute the DELETE routes
+###### Execute POST routes
 ######
+
+# Create a new sample in a project
+def createSample(config, projectId, name):
+  try: data = json.loads(os.popen(postSampleCommand(config, projectId, name)).read())
+  except: fail('Failed to create a new sample in project: ' + str(projectId))
+  if 'message' in data: fail('Failed to create a new sample in project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return the sample id
+  return data['id']
 
 #################
 #################
@@ -70,6 +94,17 @@ def getSamplesCommand(mosaicConfig, projectId):
 ######
 ###### POST routes
 ######
+
+# Create a new sample in a project
+def postSampleCommand(mosaicConfig, projectId, name):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"name": "' + str(name) + '"}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/samples' + '"'
+
+  return command
 
 ######
 ###### PUT routes

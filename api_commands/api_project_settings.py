@@ -11,6 +11,15 @@ import json
 ###### Execute GET routes
 ######
 
+# Get the project reference
+def getProjectReference(config, projectId):
+  try: data = json.loads(os.popen(getProjectSettingsCommand(config, projectId)).read())
+  except: fail('Failed to get the settings for for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get the settings for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return the project reference
+  return data['reference']
+
 ######
 ###### Execute POST routes
 ######

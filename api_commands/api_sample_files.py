@@ -1,5 +1,40 @@
 #!/usr/bin/python
 
+import os
+import json
+
+# The first section of this file contains routines to execute the API routes and acts as a layer between the
+# calling script and the Pythonized API routes. This will check for errors, deal with looping over pages of 
+# results etc and return data objects. The API routes themselves occur later in this file
+
+######
+###### Execute POST routes
+######
+
+# Attach a vcf file to a project
+def attachVcfFile(config, name, nickname, uri, reference, sampleName, sampleId, projectId):
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(postSampleFileCommand(config, name, nickname, 'vcf', uri, reference, sampleName, sampleId, projectId)).read())
+  except: fail('Failed to attach vcf file to project: ' + str(projectId))
+  if 'message' in data: fail('Failed to attach vcf file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+######
+###### Execute DELETE routes
+######
+
+# Delete a file given a sample id and file id
+def deleteFile(config, projectId, sampleId, fileId):
+  try: data = os.popen(deleteSampleFileCommand(config, projectId, sampleId, fileId))
+  except: fail('Failed to delete file from project: ' + str(projectId))
+  if 'message' in data: fail('Failed to delete file from project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+#################
+#################
+################# Following are the API routes for variant filters (mirrors the API docs)
+#################
+#################
+
 # This contains API routes for samples (mirrors the API docs)
 
 ######
@@ -7,7 +42,7 @@
 ######
 
 # Get all files associated with a sample in a project
-def getSampleFiles(mosaicConfig, projectId, sampleId, limit, page):
+def getSampleFilesCommand(mosaicConfig, projectId, sampleId, limit, page):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -17,7 +52,7 @@ def getSampleFiles(mosaicConfig, projectId, sampleId, limit, page):
   return command
 
 # Get all sample files in a project
-def getAllSampleFiles(mosaicConfig, projectId, limit, page):
+def getAllSampleFilesCommand(mosaicConfig, projectId, limit, page):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -27,7 +62,7 @@ def getAllSampleFiles(mosaicConfig, projectId, limit, page):
   return command
 
 # Get the url for a sample file
-def getSampleFileUrl(mosaicConfig, projectId, fileId, create):
+def getSampleFileUrlCommand(mosaicConfig, projectId, fileId, create):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -41,7 +76,7 @@ def getSampleFileUrl(mosaicConfig, projectId, fileId, create):
 ######
 
 # Add a file attached to a specific sample
-def postSampleFile(mosaicConfig, name, nickname, fileType, fileUri, reference, sampleName, projectId, sampleId):
+def postSampleFileCommand(mosaicConfig, name, nickname, fileType, fileUri, reference, sampleName, sampleId, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -63,7 +98,7 @@ def postSampleFile(mosaicConfig, name, nickname, fileType, fileUri, reference, s
 ######
 
 # Update a files name
-def putUpdateSampleFileName(mosaicConfig, name, projectId, sampleId, fileId):
+def putUpdateSampleFileNameCommand(mosaicConfig, name, projectId, sampleId, fileId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -74,7 +109,7 @@ def putUpdateSampleFileName(mosaicConfig, name, projectId, sampleId, fileId):
   return command
 
 # Update a files nickname
-def putUpdateSampleFileNickname(mosaicConfig, name, projectId, sampleId, fileId):
+def putUpdateSampleFileNicknameCommand(mosaicConfig, name, projectId, sampleId, fileId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -89,7 +124,7 @@ def putUpdateSampleFileNickname(mosaicConfig, name, projectId, sampleId, fileId)
 ######
 
 # Delete a sample file
-def deleteSampleFile(mosaicConfig, projectId, sampleId, fileId):
+def deleteSampleFileCommand(mosaicConfig, projectId, sampleId, fileId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -97,3 +132,8 @@ def deleteSampleFile(mosaicConfig, projectId, sampleId, fileId):
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/samples/' + str(sampleId) + '/files/' + str(fileId) + '"'
 
   return command
+
+# If the script fails, provide an error message and exit
+def fail(message):
+  print(message, sep = "")
+  exit(1)
