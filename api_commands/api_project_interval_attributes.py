@@ -1,5 +1,48 @@
 #!/usr/bin/python
 
+import json
+import os
+import math
+
+# The first section of this file contains routines to execute the API routes and acts as a layer between the
+# calling script and the Pythonized API routes. This will check for errors, deal with looping over pages of 
+# results etc and return data objects. The API routes themselves occur later in this file
+
+######
+###### Execute GET routes
+######
+
+# Return a dictionary of intervals with the id as the key and the name as a value
+def getIntervalsIdToName(config, projectId):
+  ids = {}
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getProjectIntervalAttributesCommand(config, projectId)).read())
+  except: fail('Failed to get intervals for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get intervals for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for interval in data: ids[interval['id']] = {'name': interval['name']}
+
+  # Return the dictionary of intervals
+  return ids
+
+######
+###### Execute POST routes
+######
+
+# Import an interval attribute to the project
+def postInterval(config, projectId, intervalId):
+  try: data = json.loads(os.popen(postImportProjectIntervalAttributeCommand(config, projectId, intervalId)).read())
+  except: fail('Failed to import interval into project: ' + str(projectId))
+  if 'message' in data: fail('Failed to import interval into project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+#################
+#################
+################# Following are the API routes for variant filters (mirrors the API docs)
+#################
+#################
+
 # This contains API routes for project interval attributes (mirrors the API docs)
 
 ######
@@ -7,7 +50,7 @@
 ######
 
 # Get the project interval attributes for the defined project
-def getProjectIntervalAttributes(mosaicConfig, projectId):
+def getProjectIntervalAttributesCommand(mosaicConfig, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -17,7 +60,7 @@ def getProjectIntervalAttributes(mosaicConfig, projectId):
   return command
 
 # Get all public project interval attributes
-def getPublicProjectIntervalAttributes(mosaicConfig, limit, page):
+def getPublicProjectIntervalAttributesCommand(mosaicConfig, limit, page):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -31,7 +74,7 @@ def getPublicProjectIntervalAttributes(mosaicConfig, limit, page):
 ######
 
 # Create a new project interval attribute
-def postProjectIntervalAttribute(mosaicConfig, name, isPublic, startAttribute, endAttribute, projectId):
+def postProjectIntervalAttributeCommand(mosaicConfig, name, isPublic, startAttribute, endAttribute, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -42,7 +85,7 @@ def postProjectIntervalAttribute(mosaicConfig, name, isPublic, startAttribute, e
   return command
 
 # Import a project interval attribute
-def postImportProjectIntervalAttribute(mosaicConfig, intervalId, projectId):
+def postImportProjectIntervalAttributeCommand(mosaicConfig, projectId, intervalId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -61,7 +104,7 @@ def postImportProjectIntervalAttribute(mosaicConfig, intervalId, projectId):
 ######
 
 # Delete a project interval attribute
-def deleteProjectIntervalAttribute(mosaicConfig, intervalId, projectId):
+def deleteProjectIntervalAttributeCommand(mosaicConfig, intervalId, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -69,3 +112,8 @@ def deleteProjectIntervalAttribute(mosaicConfig, intervalId, projectId):
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/attributes/intervals/' + str(intervalId) + '"'
 
   return command
+
+# If the script fails, provide an error message and exit
+def fail(message):
+  print(message, sep = "")
+  exit(1)

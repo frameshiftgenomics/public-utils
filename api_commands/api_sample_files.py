@@ -19,6 +19,14 @@ def attachVcfFile(config, name, nickname, uri, reference, sampleName, sampleId, 
   except: fail('Failed to attach vcf file to project: ' + str(projectId))
   if 'message' in data: fail('Failed to attach vcf file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
+# Attach a tbi file to a project
+def attachTbiFile(config, name, nickname, uri, reference, sampleName, sampleId, projectId):
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(postSampleFileCommand(config, name, nickname, 'tbi', uri, reference, sampleName, sampleId, projectId)).read())
+  except: fail('Failed to attach vcf file to project: ' + str(projectId))
+  if 'message' in data: fail('Failed to attach vcf file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
 ######
 ###### Execute DELETE routes
 ######

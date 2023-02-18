@@ -73,11 +73,10 @@ def addFile(args):
     if str(sample['name']) == str(args.sample_name): sampleId = sample['id']
   if not sampleId: fail("Sample: " + str(args.sample_name) + " was not found in the project")
 
-  # Add the sample
-  api_sf.attachVcfFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
-  #try: jsonData = json.loads(os.popen(api_sf.postSampleFile(mosaicConfig, args.name, args.nickname, args.type, args.uri, args.reference, args.sample_name, args.project_id, sampleId)).read())
-  #except: fail("Failed to add file")
-  #if "message" in jsonData: print(jsonData)
+  # Add the sample file
+  if args.type == 'vcf': api_sf.attachVcfFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
+  elif args.type == 'tbi': api_sf.attachTbiFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
+  else: fail('Unknown file type: ' + str(args.type))
 
 # If the script fails, provide an error message and exit
 def fail(message):

@@ -34,34 +34,35 @@ def main():
   mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
                     'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'},
                     'MOSAIC_ATTRIBUTES_PROJECT_ID': {'value': args.attributes_project, 'desc': 'The public attribtes project id', 'long': '--attributes_project', 'short': '-a'}}
-  mosaicConfig   = mosaic_config.parseConfig(args.config, mosaicRequired)
+  mosaicConfig   = mosaic_config.mosaicConfigFile(args.config)
+  mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
   # Get all of the available template projects from the Attribute project
-  availableTemplates = getAvailableTemplates(args)
+  availableTemplates, assignedTemplateId = getAvailableTemplates(args)
 
   # If the requested template does not exist, fail
-  templateId = availableTemplates[args.template] if args.template in availableTemplates else fail("Requested template (" + args.template + ") does not exist")
+  templateId = availableTemplates[args.template] if args.template in availableTemplates else fail('Requested template (' + args.template + ') does not exist')
 
   # Get all the information about the template project, including what is pinned to the dashboard
   templateAttributes, templateEvents = getProjectAttributes(templateId)
-  templateIntervals     = getProjectIntervals(templateId)
+  templateIntervals     = api_pia.getIntervalsIdToName(mosaicConfig, templateId)
   templateConversations = getProjectConversations(templateId)
   templateAttributes, templateConversations = dashboard(templateId, templateAttributes, templateConversations)
 
   # Get information about the project to which the template will be applied. This will be used to ensure data is
   # not overwritten as part of the template application
-  projectAttributes, projectEvents = getProjectAttributes(args.project)
-  projectIntervals     = getProjectIntervals(args.project)
-  projectConversations = getProjectConversations(args.project)
-  projectAttributes, projectConversations = dashboard(args.project, projectAttributes, projectConversations)
+  projectAttributes, projectEvents = getProjectAttributes(args.project_id)
+  projectIntervals     = api_pia.getIntervalsIdToName(mosaicConfig, args.project_id)
+  projectConversations = getProjectConversations(args.project_id)
+  projectAttributes, projectConversations = dashboard(args.project_id, projectAttributes, projectConversations)
 
   # Update the project with the information from the template
-  updateAttributes(args.project, templateAttributes, projectAttributes)
-  updateTiming(args.project, templateEvents, templateIntervals, projectEvents, projectIntervals)
-  updateConversations(args.project, templateConversations, projectConversations)
+  updateAttributes(args.project_id, templateAttributes, projectAttributes)
+  updateTiming(args.project_id, templateEvents, templateIntervals, projectEvents, projectIntervals)
+  updateConversations(args.project_id, templateConversations, projectConversations)
 
   # Import the "Assigned Template" project attribute and set the value to Template:version
-  assignTemplateAttribute(args.project, args.template, projectAttributes)
+  assignTemplateAttribute(args.project_id, args.template, projectAttributes, assignedTemplateId)
 
 # Input options
 def parseCommandLine():
@@ -70,7 +71,7 @@ def parseCommandLine():
   parser = argparse.ArgumentParser(description='Process the command line')
 
   # Required arguments
-  parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
+  parser.add_argument('--project_id', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
   parser.add_argument('--template', '-m', required = True, metavar = "string", help = "The template to run")
 
   # Optional pipeline arguments
@@ -97,21 +98,25 @@ def getAvailableTemplates(args):
   availableTemplates = {}
 
   # Get all the project attributes
-  jsonData = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'])).read())
+  data = api_pa.getProjectAttributes(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'])
 
   # Loop over all the attributes and identify the templates
-  for attribute in jsonData:
-    if attribute["name"].startswith("Template "):
-      templateName = attribute["name"].split(" ")[1]
-      attributeId  = attribute["id"]
+  for attribute in data:
+
+    # Look for attributes that point to template projects
+    if attribute['name'].startswith('Template '):
+      templateName = attribute['name'].split(' ')[1]
 
       # Loop over the values for the attribute for the different projects it is in
-      for project in attribute["values"]:
-        if int(project["project_id"]) == int(mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID']):
-          availableTemplates[templateName] = project["value"]
+      for project in attribute['values']:
+        if int(project['project_id']) == int(mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID']): availableTemplates[templateName] = project['value']
+
+    # Also look for an attribute called 'Assigned Template'. For every project where a template is run, this attribute is set to the
+    # name of the executed template
+    elif attribute['name'] == 'Assigned Template': assignedTemplateId = attribute['id']
 
   # Return the available templates
-  return availableTemplates
+  return availableTemplates, assignedTemplateId
 
 # Get all the information about a projects attributes
 def getProjectAttributes(projectId):
@@ -120,13 +125,10 @@ def getProjectAttributes(projectId):
   timingAttributes  = {}
 
   # Get all the attributes
-  data = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, projectId)).read())
+  data = api_pa.getProjectAttributes(mosaicConfig, projectId)
 
   # Store information on the attributes
   for attribute in data:
-    attributeId     = attribute['id']
-    attributeName   = attribute['name']
-    attributePublic = attribute['is_public']
 
     # Get the attribute value associated with this project
     attributeValue = False
@@ -134,48 +136,19 @@ def getProjectAttributes(projectId):
       if value['project_id'] == projectId: attributeValue = value['value']
 
     # Store the information
-    if attribute['value_type'] == "timestamp": timingAttributes[attributeId] = {'name': attributeName, 'value': attributeValue, 'isPublic': attributePublic}
-    else: generalAttributes[attributeId] = {'name': attributeName, 'value': attributeValue, 'isPinned': False, 'isNamePinned': False, 'isPublic': attributePublic}
+    if attribute['value_type'] == 'timestamp': timingAttributes[attribute['id']] = {'name': attribute['name'], 'value': attributeValue, 'isPublic': attribute['is_public']}
+    else: generalAttributes[attribute['id']] = {'name': attribute['name'], 'value': attributeValue, 'isPinned': False, 'isNamePinned': False, 'isPublic': attribute['is_public']}
 
+  # Return the attributes
   return generalAttributes, timingAttributes
-
-# Get all of the timing intervals
-def getProjectIntervals(projectId):
-  global mosaicConfig
-  intervals = {}
-
-  # Get all project intervals
-  data = json.loads(os.popen(api_pia.getProjectIntervalAttributes(mosaicConfig, projectId)).read())
-  for interval in data:
-    intervalId   = interval['id']
-    intervalName = interval['name']
-    intervals[intervalId] = {'name': intervalName}
-
-  # Return the project intervals
-  return intervals
 
 # Get all the existing conversations
 def getProjectConversations(projectId):
   global mosaicConfig
-  conversations = {}
 
-  # Begin by getting all the conversations from the project. The resulting object is paginated, so determine the number of conversations
-  # and consequently the number of pages of conversations that need to be returned
-  data = json.loads(os.popen(api_pc.getCoversations(mosaicConfig, 100, 1, projectId)).read())
-
-  # Determine the number of pages
-  noPages = int( math.ceil( float(data["count"]) / float(100.) ) )
-
-  # Loop over all necessary pages
-  for i in range(0, noPages):
-    data = json.loads(os.popen(api_pc.getCoversations(mosaicConfig, 100, i + 1, projectId)).read())
-
-    # Loop over the conversations from all the templates and create then
-    for conversation in data["data"]: 
-      id          = conversation['id']
-      title       = conversation['title']
-      description = conversation['description']
-      conversations[id] = {'title': title, 'description': description, 'isPinned': False}
+  # Get all the conversations from the project and add the isPinned flag as false
+  conversations = api_pc.getConversationsIdToTitleDesc(mosaicConfig, projectId)
+  for convId in conversations: conversations[convId]['isPinned'] = False
 
   # Return the list of conversations in the project
   return conversations
@@ -185,18 +158,17 @@ def dashboard(projectId, projectAttributes, projectConversations):
   global mosaicConfig
 
   # Get the dashboard information
-  data = json.loads(os.popen(api_d.getDashboard(mosaicConfig, projectId)).read())
-
+  data = api_d.getDashboard(mosaicConfig, projectId)
   for dashboardObject in data:
 
     # Ignore all default items. These can't be modified
-    if not dashboardObject["is_default"]:
+    if not dashboardObject['is_default']:
 
       # For project attributes, update the stored attributes to indicate that they need to be pinned to the dashboard and whether
       # they should be pinned with or without the attribute name.
-      if dashboardObject['type'] == "project_attribute":
+      if dashboardObject['type'] == 'project_attribute':
         attributeId = dashboardObject['attribute_id']
-        if attributeId not in projectAttributes: fail("Project attribute " + str(attributeId) + " was not found in the supplied attributes dictionary for project " + str(projectId))
+        if attributeId not in projectAttributes: fail('Project attribute ' + str(attributeId) + ' was not found in the supplied attributes dictionary for project ' + str(projectId))
 
         # Check if the name should be pinned, then update the attribute
         projectAttributes[attributeId]['isPinned'] = True
@@ -205,9 +177,10 @@ def dashboard(projectId, projectAttributes, projectConversations):
       # For conversations
       elif dashboardObject['type'] == 'conversation':
         conversationId = dashboardObject['project_conversation_id']
-        if conversationId not in projectConversations: fail("Conversation " + str(conversationId) + " was not found in the supplied conversations dictionary for project " + str(projectId))
+        if conversationId not in projectConversations: fail('Conversation ' + str(conversationId) + ' was not found in the supplied conversations dictionary for project ' + str(projectId))
         projectConversations[conversationId]['isPinned'] = True
 
+  # Return the information
   return projectAttributes, projectConversations
 
 # Update the project attributes based on the template
@@ -224,18 +197,13 @@ def updateAttributes(projectId, templateAttributes, projectAttributes):
 
     # Only import the attribute if it doesn't already exist in the project being updated and is public
     if attributeId not in projectAttributes and isPublic:
-      try: importData = json.loads(os.popen(api_pa.postImportProjectAttribute(mosaicConfig, attributeId, value, projectId)).read())
-      except: fail('Couldn\'t add attribute ' + str(name) + ' to the project')
-      if 'message' in importData: fail('Couldn\'t add attribute ' + str(name) + ' to the project. API returned message "' + str(importData['message']) + '"')
+      importData = api_pa.importProjectAttribute(mosaicConfig, projectId, attributeId, value)
 
       # Store the project attribute. This attribute was just imported and so is not currently pinned
       projectAttributes[attributeId] = {'name': name, 'value': value, 'isPinned': False, 'isNamePinned': isNamePinned, 'isPublic': isPublic}
 
     # If the attribute should be pinned, and isn't already pined, pin it
-    if isPinned and not projectAttributes[attributeId]['isPinned']:
-      try: pinData = json.loads(os.popen(api_d.postPinAttribute(mosaicConfig, attributeId, isNamePinned, projectId)).read())
-      except: fail('Couldn\'t pin attribute ' + str(name) + 'to the project')
-      if 'message' in pinData: fail('Couldn\'t pin attribute ' + str(name) + 'to the project. API returned message "' + str(pinData['message']) + '"')
+    if isPinned and not projectAttributes[attributeId]['isPinned']: api_d.pinProjectAttribute(mosaicConfig, projectId, attributeId, isNamePinned)
 
 # Update the timing information for the project
 def updateTiming(projectId, templateEvents, templateIntervals, projectEvents, projectIntervals):
@@ -245,20 +213,19 @@ def updateTiming(projectId, templateEvents, templateIntervals, projectEvents, pr
   for eventId in templateEvents:
     name  = templateEvents[eventId]['name']
     value = templateEvents[eventId]['value']
+    if not value: value = 'null'
 
     # Only add events that are not already in the project
-    if eventId not in projectEvents:
-      try: importData = json.loads(os.popen(api_pa.postImportProjectAttribute(mosaicConfig, eventId, value, projectId)).read())
-      except: fail("Couldn't add event " + str(name) + " to the project")
+    if eventId not in projectEvents: api_pa.importProjectAttribute(mosaicConfig, projectId, eventId, value)
   
   # Now add the intervals
   for intervalId in templateIntervals:
     name = templateIntervals[intervalId]['name']
 
     # Only import intervals that are not already in the project
-    if intervalId not in projectIntervals:
-      try: importData = json.loads(os.popen(api_pia.postImportProjectIntervalAttribute(mosaicConfig, intervalId, projectId)).read())
-      except: fail("Couldn't import interval " + str(name) + " to the project")
+    if intervalId not in projectIntervals: api_pia.postInterval(mosaicConfig, projectId, intervalId)
+      #try: importData = json.loads(os.popen(api_pia.postImportProjectIntervalAttribute(mosaicConfig, intervalId, projectId)).read())
+      #except: fail("Couldn't import interval " + str(name) + " to the project")
 
 # Update the conversations
 def updateConversations(projectId, templateConversations, projectConversations):
@@ -266,13 +233,13 @@ def updateConversations(projectId, templateConversations, projectConversations):
 
   # Get the titles of all conversations that exist in the project being updated
   existingTitles = []
-  for conversationId in projectConversations: existingTitles.append(projectConversations[conversationId]['title'])
+  for convId in projectConversations: existingTitles.append(projectConversations[convId]['title'])
 
   # Loop over the conversations in the template
-  for conversationId in templateConversations:
-    title       = templateConversations[conversationId]['title']
-    description = templateConversations[conversationId]['description']
-    isPinned    = templateConversations[conversationId]['isPinned']
+  for convId in templateConversations:
+    title       = templateConversations[convId]['title']
+    description = templateConversations[convId]['description']
+    isPinned    = templateConversations[convId]['isPinned']
 
     # The description might contain multiple lines which will break the curl command. Replace all newlines with \n
     if description:
@@ -280,38 +247,25 @@ def updateConversations(projectId, templateConversations, projectConversations):
 
     # Only create the conversation if a conversations of the same name does not already exist
     if title not in existingTitles:
-      try: postData = json.loads(os.popen(api_pc.postCoversation(mosaicConfig, title, description, projectId)).read())
-      except: fail("Couldn't create conversation with the title " + str(title))
-
-      # Get the id of the created conversation. This will be required to pin the conversation
-      createdConversationId = postData['id']
+      createdConvId = api_pc.createConversation(mosaicConfig, projectId, title, description)
 
       # Pin the conversation if required
-      if isPinned:
-        try: pinData = json.loads(os.popen(api_d.postPinConversation(mosaicConfig, createdConversationId, projectId)).read())
-        except: fail("Couldn't pin conversations with title " + str(title))
+      if isPinned: api_d.pinConversation(mosaicConfig, projectId, createdConvId)
     
 # Import the "Assigned Template" project attribute and set the value to Template:version
-def assignTemplateAttribute(projectId, templateName, projectAttributes):
+def assignTemplateAttribute(projectId, templateName, projectAttributes, attributeId):
   global mosaicConfig
   global version
 
   # Define the attribute value as Template:version
   value = str(templateName) + ":" + str(version)
 
-  # Get the id of the "Assigned Template" attribute from the public attributes project
-  try: data = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'])).read())
-  except: fail("Couldn't get attributes from the public attributes project")
-  attributeId = False
-  for attribute in data:
-    if attribute['name'] == "Assigned Template": attributeId = attribute['id']
-
-  # If the attribute id was not found, fail
-  if not attributeId: fail("Couldn't find the \"Assigned Template\" attribute in the public attributes project")
+  # If the 'Assigned Template' attribute id was not found, fail
+  if not attributeId: fail('Could not find the "Assigned Template" attribute in the public attributes project')
 
   # If the Assigned Template attribute is not already in the project, import it, otherwise, update the value
-  if attributeId not in projectAttributes: data = json.loads(os.popen(api_pa.postImportProjectAttribute(mosaicConfig, attributeId, value, projectId)).read())
-  else: data = json.loads(os.popen(api_pa.putProjectAttribute(mosaicConfig, value, projectId, attributeId)).read())
+  if attributeId not in projectAttributes: api_pa.importProjectAttribute(mosaicConfig, projectId, attributeId, value)
+  else: api_pa.updateProjectAttribute(mosaicConfig, projectId, attributeId, value)
 
 # If problems are found with the templates, fail
 def fail(text):
@@ -324,7 +278,7 @@ def fail(text):
 mosaicConfig = {}
 
 # Store the version
-version = "1.03"
+version = "1.04"
 
 if __name__ == "__main__":
   main()

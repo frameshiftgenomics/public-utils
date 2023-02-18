@@ -1,5 +1,48 @@
 #!/usr/bin/python
 
+import json
+import os
+import math
+
+# The first section of this file contains routines to execute the API routes and acts as a layer between the
+# calling script and the Pythonized API routes. This will check for errors, deal with looping over pages of 
+# results etc and return data objects. The API routes themselves occur later in this file
+
+######
+###### Execute GET routes
+######
+
+# Get all the dashboard information
+def getDashboard(config, projectId):
+  try: data = json.loads(os.popen(getDashboardCommand(config, projectId)).read())
+  except: fail('Failed to get dashboard for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get dashboard for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return the data
+  return data
+
+######
+###### Execute POST routes
+######
+
+# Pin a project attribute to the dashboard
+def pinProjectAttribute(config, projectId, attId, isNamePinned):
+  try: data = json.loads(os.popen(postPinAttributeCommand(config, attId, isNamePinned, projectId)).read())
+  except: fail('Failed to pin project attribute to the dashboard for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to pin project attribute to the dashboard for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+# Pin a conversation
+def pinConversation(config, projectId, convId):
+  try: data = json.loads(os.popen(postPinConversationCommand(config, convId, projectId)).read())
+  except: fail('Failed to pin conversation to the dashboard for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to pin conversation to the dashboard for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+#################
+#################
+################# Following are the API routes for variant filters (mirrors the API docs)
+#################
+#################
+
 # This contains API routes for dashboards (mirrors the API docs)
 
 ######
@@ -7,9 +50,9 @@
 ######
 
 # Get dashboard information
-def getDashboard(mosaicConfig, projectId):
+def getDashboardCommand(mosaicConfig, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
-  url   = mosaicConfig["url"]
+  url   = mosaicConfig["MOSAIC_URL"]
 
   command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/dashboard' + '"'
@@ -21,7 +64,7 @@ def getDashboard(mosaicConfig, projectId):
 ######
 
 # Pin a chart to the dashboard
-def postPinChart(mosaicConfig, chartId, projectId):
+def postPinChartCommand(mosaicConfig, chartId, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -32,7 +75,7 @@ def postPinChart(mosaicConfig, chartId, projectId):
   return command
 
 # Pin an attribute to the dashboard
-def postPinAttribute(mosaicConfig, attributeId, showName, projectId):
+def postPinAttributeCommand(mosaicConfig, attributeId, showName, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -44,7 +87,7 @@ def postPinAttribute(mosaicConfig, attributeId, showName, projectId):
   return command
 
 # Pin a conversation to the dashboard
-def postPinConversation(mosaicConfig, conversationId, projectId):
+def postPinConversationCommand(mosaicConfig, conversationId, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -61,3 +104,8 @@ def postPinConversation(mosaicConfig, conversationId, projectId):
 ######
 ###### DELETE routes
 ######
+
+# If the script fails, provide an error message and exit
+def fail(message):
+  print(message, sep = "")
+  exit(1)

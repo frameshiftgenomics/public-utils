@@ -14,8 +14,6 @@ import math
 
 # Return all project attribute information for a project
 def getProjectAttributes(config, projectId):
-
-  # Execute the GET route
   try: data = json.loads(os.popen(getProjectAttributesCommand(config, projectId)).read())
   except: fail('Failed to GET project attributes for project: ' + str(projectId))
   if 'message' in data: fail('Failed to GET project attributes for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
@@ -51,10 +49,10 @@ def getPublicProjectAttributesNameIdUid(mosaicConfig):
   return pAtts
 
 ######
-###### Execute the POST routes
+###### Execute POST routes
 ######
 
-# Update a project attribute
+# Import a project attribute
 def importProjectAttribute(config, projectId, attId, value):
   try: data = json.loads(os.popen(postImportProjectAttributeCommand(config, attId, value, projectId)).read())
   except: fail('Failed to import a project attributes for project ' + str(projectId))
@@ -133,7 +131,11 @@ def postImportProjectAttributeCommand(mosaicConfig, attributeId, value, projectI
   url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
-  command += '-d \'{"attribute_id": "' + str(attributeId) + '", "value": "' + str(value) + '"}\' '
+  command += '-d \'{"attribute_id": "' + str(attributeId) + '", "value": '
+
+  # If the value is null, it should not be enclosed in quotation marks
+  if str(value) == 'null': command += 'null}\' '
+  else: command += '"' + str(value) + '"}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/attributes/import' + '"'
 
   return command
