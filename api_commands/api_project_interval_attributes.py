@@ -27,12 +27,29 @@ def getIntervalsIdToName(config, projectId):
   # Return the dictionary of intervals
   return ids
 
+def getIntervalsDictIdNamePrivacy(config, projectId):
+  ids = []
+
+  # Execute route
+  try: data = json.loads(os.popen(getProjectIntervalAttributesCommand(config, projectId)).read())
+  except: fail('Failed to get intervals for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get intervals for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for interval in data:
+    if interval['is_public']: ids.append({'id': interval['id'], 'name': interval['name'], 'privacy': 'public'})
+    else: ids.append({'id': interval['id'], 'name': interval['name'], 'privacy': 'private'})
+
+  # Return the dictionary of intervals
+  return ids
+
 ######
 ###### Execute POST routes
 ######
 
 # Import an interval attribute to the project
 def postInterval(config, projectId, intervalId):
+  print(postImportProjectIntervalAttributeCommand(config, projectId, intervalId))
   try: data = json.loads(os.popen(postImportProjectIntervalAttributeCommand(config, projectId, intervalId)).read())
   except: fail('Failed to import interval into project: ' + str(projectId))
   if 'message' in data: fail('Failed to import interval into project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))

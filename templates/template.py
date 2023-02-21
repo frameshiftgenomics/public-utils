@@ -224,8 +224,6 @@ def updateTiming(projectId, templateEvents, templateIntervals, projectEvents, pr
 
     # Only import intervals that are not already in the project
     if intervalId not in projectIntervals: api_pia.postInterval(mosaicConfig, projectId, intervalId)
-      #try: importData = json.loads(os.popen(api_pia.postImportProjectIntervalAttribute(mosaicConfig, intervalId, projectId)).read())
-      #except: fail("Couldn't import interval " + str(name) + " to the project")
 
 # Update the conversations
 def updateConversations(projectId, templateConversations, projectConversations):
