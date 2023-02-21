@@ -2,10 +2,41 @@
 
 import os
 import json
+import math
 
 # The first section of this file contains routines to execute the API routes and acts as a layer between the
 # calling script and the Pythonized API routes. This will check for errors, deal with looping over pages of 
 # results etc and return data objects. The API routes themselves occur later in this file
+
+######
+###### Execute GET routes
+######
+
+# Get all sample files of a specified type
+def getSampleFiles(config, projectId, sampleId, fileType):
+  limit = 100
+  page  = 1
+  ids   = {}
+
+  # Execute the command
+  try: data = json.loads(os.popen(getSampleFilesCommand(config, projectId, sampleId, limit, page)).read())
+  except: fail('Failed to get sample files for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get sample files for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for sFile in data['data']:
+    if str(sFile['type']) == str(fileType): ids[sFile['id']] = {'name': sFile['name'], 'uri': sFile['uri']}
+
+  # Determine the number of pages
+  noPages = int( math.ceil( float(data['count']) / float(limit) ) )
+
+  # Loop over all necessary pages
+  for page in range(1, noPages):
+    for sFile in data['data']:
+      if str(sFile['type']) == str(fileType): ids[sFile['id']] = {'name': sFile['name'], 'uri': sFile['uri']}
+
+  # Return the sample files
+  return ids
 
 ######
 ###### Execute POST routes
@@ -13,19 +44,21 @@ import json
 
 # Attach a vcf file to a project
 def attachVcfFile(config, name, nickname, uri, reference, sampleName, sampleId, projectId):
-
-  # Execute the GET route
   try: data = json.loads(os.popen(postSampleFileCommand(config, name, nickname, 'vcf', uri, reference, sampleName, sampleId, projectId)).read())
   except: fail('Failed to attach vcf file to project: ' + str(projectId))
   if 'message' in data: fail('Failed to attach vcf file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
 # Attach a tbi file to a project
 def attachTbiFile(config, name, nickname, uri, reference, sampleName, sampleId, projectId):
-
-  # Execute the GET route
   try: data = json.loads(os.popen(postSampleFileCommand(config, name, nickname, 'tbi', uri, reference, sampleName, sampleId, projectId)).read())
-  except: fail('Failed to attach vcf file to project: ' + str(projectId))
-  if 'message' in data: fail('Failed to attach vcf file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+  except: fail('Failed to attach tbi file to project: ' + str(projectId))
+  if 'message' in data: fail('Failed to attach tbi file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+# Attach an alignstats.json file to a project
+def attachAlignstatsFile(config, name, nickname, uri, reference, sampleName, sampleId, projectId):
+  try: data = json.loads(os.popen(postSampleFileCommand(config, name, nickname, 'alignstats.json', uri, reference, sampleName, sampleId, projectId)).read())
+  except: fail('Failed to attach alignstats json file to project: ' + str(projectId))
+  if 'message' in data: fail('Failed to attach alignstats json file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
 ######
 ###### Execute DELETE routes

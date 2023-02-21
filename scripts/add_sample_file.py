@@ -76,6 +76,7 @@ def addFile(args):
   # Add the sample file
   if args.type == 'vcf': api_sf.attachVcfFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
   elif args.type == 'tbi': api_sf.attachTbiFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
+  elif args.type == 'alignstats.json': api_sf.attachAlignstatsFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
   else: fail('Unknown file type: ' + str(args.type))
 
 # If the script fails, provide an error message and exit

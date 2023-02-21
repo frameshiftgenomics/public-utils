@@ -21,6 +21,19 @@ def getProjectAttributes(config, projectId):
   # Return all the data
   return data
 
+# Return a dictionary of project attributes for a project with the name as key, and id, and uid as values
+def getProjectAttributesNameIdUid(config, projectId):
+  atts = {}
+
+  # Get the data
+  try: data = json.loads(os.popen(getProjectAttributesCommand(config, projectId)).read())
+  except: fail('Failed to GET project attributes for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to GET project attributes for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+  for att in data: atts[att['name']] = {'id': att['id'], 'uid': att['uid']}
+
+  # Return all the data
+  return atts
+
 # Loop over all pages of public attributes and return all information
 def getPublicProjectAttributesNameIdUid(mosaicConfig):
   limit = 100
