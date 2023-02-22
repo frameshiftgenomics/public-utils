@@ -37,6 +37,12 @@ def pinConversation(config, projectId, convId):
   except: fail('Failed to pin conversation to the dashboard for project: ' + str(projectId))
   if 'message' in data: fail('Failed to pin conversation to the dashboard for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
+# Pin a chart
+def pinChart(config, projectId, chartId):
+  try: data = json.loads(os.popen(postPinChartCommand(config, chartId, projectId)).read())
+  except: fail('Failed to pin chart to the dashboard for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to pin chart to the dashboard for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
 #################
 #################
 ################# Following are the API routes for variant filters (mirrors the API docs)

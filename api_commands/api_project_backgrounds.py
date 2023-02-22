@@ -1,5 +1,31 @@
 #!/usr/bin/python
 
+import os
+import json
+
+# The first section of this file contains routines to execute the API routes and acts as a layer between the
+# calling script and the Pythonized API routes. This will check for errors, deal with looping over pages of 
+# results etc and return data objects. The API routes themselves occur later in this file
+
+######
+###### Execute POST routes
+######
+
+# Post background data to a project
+def uploadBackgroundData(config, projectId, name):
+  try: data = json.loads(os.popen(postBackgroundsCommand(config, name, projectId)).read())
+  except: fail('Failed to upload background data to project: ' + str(projectId))
+  if 'message' in data: fail('Failed to upload background data to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return the sample id
+  return data['id']
+
+#################
+#################
+################# Following are the API routes for variant filters (mirrors the API docs)
+#################
+#################
+
 # This contains API routes for project backgrounds (mirrors the API docs)
 
 ######
@@ -11,7 +37,7 @@
 ######
 
 # Post background data to a project
-def postBackgrounds(mosaicConfig, filename, projectId):
+def postBackgroundsCommand(mosaicConfig, filename, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -22,7 +48,7 @@ def postBackgrounds(mosaicConfig, filename, projectId):
   return command
 
 # Post a background chart to a project
-def postBackgroundChart(mosaicConfig, name, chartType, attributeId, backgroundId, yLabel, colour, compare, projectId):
+def postBackgroundChartCommand(mosaicConfig, name, chartType, attributeId, backgroundId, yLabel, colour, compare, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
@@ -42,3 +68,8 @@ def postBackgroundChart(mosaicConfig, name, chartType, attributeId, backgroundId
 ######
 ###### DELETE routes
 ######
+
+# If the script fails, provide an error message and exit
+def fail(message):
+  print(message, sep = "")
+  exit(1)
