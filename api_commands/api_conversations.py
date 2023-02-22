@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 # This contains API routes for charts (mirrors the API docs)
 
 ######
