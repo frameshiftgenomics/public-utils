@@ -1,6 +1,3 @@
-#!/usr/bin/python
-
-from __future__ import print_function
 import os
 import json
 import math
@@ -36,6 +33,33 @@ def getProjectAttributesNameIdUid(config, projectId):
   return atts
 
 # Loop over all pages of public attributes and return all information
+def getPublicProjectAttributesNameIdUid(mosaicConfig):
+  limit = 100
+  page  = 1
+  pAtts = []
+
+  # Get the first page of attributes
+  try: data = json.loads(os.popen(getPublicProjectAttributesCommand(mosaicConfig, limit, page)).read())
+  except: fail('Failed to GET public project attributes')
+  if 'message' in data: fail('Failed to GET public project attributes')
+
+  # Store the required data
+  for record in data['data']: pAtts.append({'name': record['name'], 'id': record['id'], 'uid': record['uid']})
+
+  # Calculate the number of pages
+  noPages = math.ceil(int(data['count']) / int(limit))
+
+  # Loop over all pages of public attributes and store information to return
+  for page in range(2, noPages + 1):
+    try: data = json.loads(os.popen(getPublicProjectAttributesCommand(mosaicConfig, limit, page)).read())
+    except: fail('Failed to GET public project attributes')
+    if 'message' in data: fail('Failed to GET public project attributes')
+    for record in data['data']: pAtts.append({'name': record['name'], 'id': record['id'], 'uid': record['uid']})
+
+  # Return the data
+  return pAtts
+
+# Return a list of public attributes, including only the id and name
 def getPublicProjectAttributesNameIdUid(mosaicConfig):
   limit = 100
   page  = 1

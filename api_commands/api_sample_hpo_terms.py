@@ -12,7 +12,7 @@ import json
 ###### Execute the GET routes
 ######
 
-# Return a list of HPO terms for a sample
+# Return a list of details of all HPO terms for a sample
 def getSampleHpo(config, projectId, sampleId):
   hpos = []
 
@@ -23,6 +23,21 @@ def getSampleHpo(config, projectId, sampleId):
 
   # Loop over the returned data object and put the filter ids in a list to return
   for hpo in data: hpos.append({'id': hpo['id'], 'hpoId': hpo['hpo_id'], 'label': hpo['label']})
+
+  # Return the dictionary
+  return hpos
+
+# Return a list of HPO terms for a sample
+def getSampleHpoList(config, projectId, sampleId):
+  hpos = []
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getSampleHpoTermsCommand(config, projectId, sampleId)).read())
+  except: fail('Failed to get sample HPO terms for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get sample HPO terms for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for hpo in data: hpos.append(hpo['hpo_id'])
 
   # Return the dictionary
   return hpos

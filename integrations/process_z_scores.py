@@ -12,8 +12,8 @@ import statistics
 
 import datetime
 from sys import path
-path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-2]) + "/api_commands")
-path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-2]) + "/common_components")
+path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]) + "/api_commands")
+path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]) + "/common_components")
 import mosaic_config
 import api_sample_attributes as api_sa
 import api_samples as api_s
@@ -33,7 +33,8 @@ def main():
   mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
                     'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'},
                     'MOSAIC_ATTRIBUTES_PROJECT_ID': {'value': args.attributes_project, 'desc': 'The public attribtes project id', 'long': '--attributes_project', 'short': '-a'}}
-  mosaicConfig = mosaic_config.parseConfig(args.config, mosaicRequired)
+  mosaicConfig   = mosaic_config.mosaicConfigFile(args.config)
+  mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
   # Check all information on the integration is available
   checkIntegration(args.integration_name)
@@ -131,28 +132,23 @@ def getProjects(collectionId):
   global noFailures
 
   # Get all project information for the collection
-  try: data = json.loads(os.popen(api_p.getCollectionProjects(mosaicConfig, collectionId)).read())
-  except: fail('Could not get collection projects')
-  if 'message' in data: fail('Could not get collection projects. API returned the message' + str(data['message']) + '"')
+  projectsList = api_p.getCollectionProjects(mosaicConfig, collectionId)
 
   # Loop over the collection projects and store the ids
-  for project in data:
-    projectId = project['id']
-    projectIds[projectId] = []
+  for project in projectsList:
+    projectIds[project['id']] = []
 
     # Get all of the samples in the project
-    try: samplesData = json.loads(os.popen(api_s.getSamples(mosaicConfig, projectId)).read())
-    except: fail('Could not get samples for project ' + str(projectId))
-    if 'message' in samplesData: fail('Could not get samples for project ' + str(projectId) + '. API returned the message "' + str(samplesData['message']) + '"')
+    samples = api_s.getSamplesDictIdName(mosaicConfig, project['id'])
 
     # Loop over the samples in the project and attach their ids to the project. Also populate
     # the failures dictionary with all the sample ids. This is used to keep track of all Z-scores
     # outside of the cutoffs for each sample
-    for sample in samplesData:
-      projectIds[projectId].append(sample['id'])
-      sampleNames[sample['id']] = sample['name']
-      failures[sample['id']]    = {}
-      noFailures[sample['id']]  = {}
+    for sampleId in samples:
+      sampleNames[sampleId] = samples[sampleId]
+      projectIds[project['id']].append(sampleId)
+      failures[sampleId]    = {}
+      noFailures[sampleId]  = {}
 
   # This script is only for collections. If there are no sub-projects, fail
   if len(projectIds) == 0: fail('The defined collection_id must be associated with a collection')
@@ -169,15 +165,22 @@ def getIntegrationAttributes():
   nameEnd = '(' + str(integrationName) + ')'
 
   # Get all the sample attribute data for the project connected to this integration
-  try: data = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, integrationProjectId, False)).read())
-  except: fail('Could not get sample attribute from the ' + str(integrationName) + ' project')
-  if 'message' in data: fail('Could not get sample attribute from the ' + str(integrationName) + ' project. API returned message "' + str(data['message']) + '"')
+  integrationAttributes = api_sa.getSampleAttributesDictIdNameType(mosaicConfig, integrationProjectId)
 
-  # Store the attribute ids, ignoring attributes with 'Z-score' in the name
-  for attribute in data:
-    if attribute['name'].endswith(nameEnd) and str('Z-score') not in attribute['name']: integrationAttributes[attribute['id']] = attribute['name']
-    if attribute['name'].startswith('Failed ' + str(integrationName)): failedIntegrationAttributes[attribute['id']] = attribute['name']
- 
+  # Remove attributes that don't have the correct name format
+  toRemove = []
+  for attributeId in integrationAttributes:
+    name = integrationAttributes[attributeId]['name']
+    if not name.endswith(nameEnd): toRemove.append(attributeId)
+    elif str('Z-score') in name: toRemove.append(attributeId)
+    if name.startswith('Failed ' + str(integrationName)): failedIntegrationAttributes[attributeId] = name
+
+    # Also remove all string attributes as Z-scores cannot be calculated for these
+    if integrationAttributes[attributeId]['type'] == 'string' and attributeId not in toRemove: toRemove.append(attributeId)
+
+  # Remove the necessary attributes
+  for attributeId in toRemove: del integrationAttributes[attributeId]
+
 # Parse the json file describing how to subset samples etc.
 def parseJsonInput(jsonFile):
   global cohorts
@@ -240,7 +243,7 @@ def parseJsonInput(jsonFile):
 
     # Loop over the attribute ids available for this integration and check that the supplied attributes are valid
     for attributeId in integrationAttributes:
-      if integrationAttributes[attributeId] in attributeNames: attributeIds[integrationAttributes[attributeId]] = attributeId
+      if integrationAttributes[attributeId]['name'] in attributeNames: attributeIds[integrationAttributes[attributeId]['name']] = attributeId
 
     # If there are any attributes left in the attributeNames list, these are not valid
     if len(attributeNames) != len(attributeIds):
@@ -258,9 +261,7 @@ def buildProjectAttributeCohorts(collectionId):
   global cohorts
 
   # Get information on all of the project attributes associated with the collection
-  try: attributeData = json.loads(os.popen(api_pa.getProjectAttributes(mosaicConfig, collectionId)).read())
-  except: fail('Could not get project attribute data for the collection')
-  if 'message' in attributeData: fail('Could not get project attribute data for the collection. API returned the message "' + str(attributeData['message']) + '"')
+  attributeData = api_pa.getProjectAttributes(mosaicConfig, collectionId)
 
   # Get a list of all the project attribute ids that are listed in the input json files. These will
   # be used to build a list of samples that need to be in each cohort
@@ -381,9 +382,7 @@ def processAllSamples():
   for projectId in projectIds:
 
     # Get all the sample attribute information for the project
-    try: data = json.loads(os.popen(api_sa.getSampleAttributes(mosaicConfig, projectId, True)).read())
-    except: fail('Could not get sample attribute values for project id: ' + str(projectId))
-    if 'message' in data: fail('Could not get sample attribute values for project id: ' + str(projectId) + '. API returned the message "' + data['message'] + '"')
+    data = api_sa.getSampleAttributesWValues(mosaicConfig, projectId)
 
     # Loop over all of the returned attributes and consider only those listed in the attributes dictionary
     noIntegrationAttributes = 0
@@ -516,9 +515,7 @@ def storeFailureCounts(name):
 
         # Create the attribute
         if not attributeId:
-          try: data = json.loads(os.popen(api_sa.postSampleAttribute(mosaicConfig, attributeName, 'float', 'Null', 'true', 'Failed Attributes', 'Sample Count', integrationProjectId)).read())
-          except: fail('Failed to create new attribute: ' + str(zscoreAttribute))
-          if 'message' in data: fail('Failed to create new sample attribute (' + str(zscoreAttribute) + '). API returned message "' + str(data['message']) + '"')
+          api_sa.createPublicSampleAttribute(mosaicConfig, integrationProjectId, attributeName, 'Null', 'float', 'Failed Attributes', 'Sample Count')
           attributeId = data['id']
 
         # If the attribute is already in the project, it will be stored in the failedAttributesInProject dictionary
@@ -535,41 +532,17 @@ def storeFailureCounts(name):
           # Update the number of failed attributes in Mosaic for this sample and cohort
           # If the attribute is not in the project, import it
           if not attributeInProject[attributeId]: 
-            importAttribute(projectId, attributeId, value)
-            addValue(projectId, sampleId, attributeId, value)
+            api_sa.importSampleAttribute(mosaicConfig, projectId, attributeId)
+            api_sa.addSampleAttributeValue(mosaicConfig, projectId, sampleId, attributeId, value)
             attributeInProject[attributeId] = True
 
           # If the attribute is in the project, but this sample does not have a value, POST a value
-          elif projectId not in failedAttributesInProject: addValue(projectId, sampleId, attributeId, value)
-          elif attributeId not in failedAttributesInProject[projectId]: addValue(projectId, sampleId, attributeId, value)
-          elif sampleId not in failedAttributesInProject[projectId][attributeId]: addValue(projectId, sampleId, attributeId, value)
+          elif projectId not in failedAttributesInProject: api_sa.addSampleAttributeValue(mosaicConfig, projectId, sampleId, attributeId, value)
+          elif attributeId not in failedAttributesInProject[projectId]: api_sa.addSampleAttributeValue(mosaicConfig, projectId, sampleId, attributeId, value)
+          elif sampleId not in failedAttributesInProject[projectId][attributeId]: api_sa.addSampleAttributeValue(mosaicConfig, projectId, sampleId, attributeId, value)
 
           # If the sample already has a value, update (PUT) it
-          else: updateValue(projectId, sampleId, attributeId, value)
-
-# Check if a project has a sample attribute and if not, import it
-def importAttribute(projectId, attributeId, zscoreAttribute):
-  global mosaicConfig
-
-  try: data = json.loads(os.popen(api_sa.postImportSampleAttribute(mosaicConfig, attributeId, projectId)).read())
-  except: fail('Failed to import attribute ' + str(zscoreAttribute))
-  if 'message' in data: fail('Failed to import attribute ' + str(zscoreAttribute) + '. API returned message "' + str(data['message']) + '"')
-
-# Add a value for a sample attribute
-def addValue(projectId, sampleId, attributeId, value):
-  global mosaicConfig
-
-  try: data = json.loads(os.popen(api_sa.postUpdateSampleAttribute(mosaicConfig, value, projectId, sampleId, attributeId)).read())
-  except: fail('Failed to update (POST) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId))
-  if 'message' in data: fail('Failed to update (POST) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId) + '. API returned message "' + str(data['message']) + '"')
-
-# Update a value for a sample attribute
-def updateValue(projectId, sampleId, attributeId, value):
-  global mosaicConfig
-
-  try: data = json.loads(os.popen(api_sa.putSampleAttributeValue(mosaicConfig, projectId, sampleId, attributeId, value)).read())
-  except: fail('Failed to update (PUT) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId))
-  if 'message' in data: fail('Failed to update (PUT) sample ' + str(sampleId) + ' with value for attribute ' + str(attributeId) + '. API returned message "' + str(data['message']) + '"')
+          else: api_sa.updateSampleAttributeValue(mosaicConfig, projectId, sampleId, attributeId, value)
 
 # Write out all failure information
 def writeFailures(updateProjectId):
@@ -602,8 +575,6 @@ def updateProjectConversation(projectId, title, description):
   global failures
   global noFailures
   global cohorts
-  global integrationName
-  global integrationAttributes
 
   # Determine the total number of failing attributes by cohort and in total for the project
   noProjectFailures   = {}
@@ -670,9 +641,7 @@ def updateProjectConversation(projectId, title, description):
   if len(projectDescription) > 4999: projectDescription = projectDescription[0:4900] + '...\\n\\nOutput truncated'
 
   # Update the conversation description
-  try: data = json.loads(os.popen(api_pc.putUpdateCoversation(mosaicConfig, str(title), str(projectDescription), str(projectId), conversationId)).read())
-  except: fail('Could not update project conversation with title "' + str(title) + '" in project ' + str(projectId))
-  if 'message' in data: fail('Could not update project conversation with title "' + str(title) + '" in project ' + str(projectId) + '. API returned the message "' + str(data['message']) + '"')
+  api_pc.updateConversation(mosaicConfig, projectId, conversationId, title, projectDescription)
 
 # Print a summary of primary attributes that failed
 def primaryFailures(projectId, projectDescription):
@@ -705,7 +674,7 @@ def primaryFailures(projectId, projectDescription):
         projectDescription += '**Sample ' + str(sampleNames[sampleId]) + '**:\\n'
         for attributeId in failures[sampleId]:
           if attributeId in primaryAttributes:
-            projectDescription += '&nbsp;&nbsp;' + str(integrationAttributes[attributeId]) + ': '
+            projectDescription += '&nbsp;&nbsp;' + str(integrationAttributes[attributeId]['name']) + ': '
             for i, cohort in enumerate(failures[sampleId][attributeId]):
               if i == 0: projectDescription += str(cohorts[cohort]['id']) + ' (' + str(failures[sampleId][attributeId][cohort]) + ')'
               else: projectDescription += ', ' + str(cohorts[cohort]['id']) + ' (' + str(failures[sampleId][attributeId][cohort]) + ')'
@@ -735,7 +704,7 @@ def nonPrimaryFailures(projectId, projectDescription):
       projectDescription += '**Sample ' + str(sampleNames[sampleId]) + '** failed:\\n'
       for attributeId in failures[sampleId]:
         if attributeId not in primaryAttributes:
-          projectDescription += '&nbsp;&nbsp;' + str(integrationAttributes[attributeId]) + ': '
+          projectDescription += '&nbsp;&nbsp;' + str(integrationAttributes[attributeId]['name']) + ': '
           for i, cohort in enumerate(failures[sampleId][attributeId]):
             if i == 0: projectDescription += str(cohorts[cohort]['id']) + ' (' + str(failures[sampleId][attributeId][cohort]) + ')'
             else: projectDescription += ', ' + str(cohorts[cohort]['id']) + ' (' + str(failures[sampleId][attributeId][cohort]) + ')'
@@ -750,43 +719,21 @@ def getConversationId(projectId):
   global integrationName
   conversationId = False
   isNew          = False
-  limit          = 100
   title          = integrationName + ' information'
 
   # All z-score results are posted to a conversation in the project called '<INTEGRATION> information'. If this conversation does
   # not exist, create it
-  try: data = json.loads(os.popen(api_pc.getCoversations(mosaicConfig, limit, 1, projectId)).read())
-  except: fail('Could not get project conversations for project ' + str(projectId))
-  if 'message' in data: fail('Could not get project conversations for project ' + str(projectId) + '. API returned the message "' + str(data['message']) + '"')
-
-  # Get the number of pages of conversations
-  noPages = math.ceil(float(data['count']) / float(limit))
-
-  # Loop over the conversations and look for one with the name '<INTEGRATION> information'
-  for conversation in data['data']:
-    if str(conversation['title']) == str(title):
-      conversationId = conversation['id']
+  conversations = api_pc.getConversationsIdToTitleDesc(mosaicConfig, projectId)
+  for conversation in conversations: 
+    if str(conversations[conversation]['title']) == str(title):
+      conversationId = conversation
       break
-
-  # Loop over remaining pages of files if the conversation has not been found
-  if noPages > 1 and not conversationId:
-    for i in range(1, noPages, 1):
-      try: data = json.loads(os.popen(api_pc.getCoversations(mosaicConfig, limit, i + 1, projectId)).read())
-      except: fail('Could not get project conversations for project ' + str(projectId))
-      if 'message' in data: fail('Could not get project conversations for project ' + str(projectId) + '. API returned the message "' + str(data['message']) + '"')
-      for conversation in data['data']:
-        if str(conversation['title']) == str(title):
-          conversationId = conversation['id']
-          break
 
   # If the conversation doesn't exist, create it
   if not conversationId:
 
     # Create a new conversation with a blank description. This will be populated with information in another routine
-    try: data = json.loads(os.popen(api_pc.postCoversation(mosaicConfig, title, '', projectId)).read())
-    except: fail('Could not create a new conversation')
-    if 'message' in data: fail('Could not create a new conversation. API returned the message "' + str(data['message']) + '"')
-    conversationId = data['id']
+    conversationId = api_pc.createConversation(mosaicConfig, projectId, title, '')
     isNew          = True
 
   # Return the conversation id

@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 from __future__ import print_function
 from os.path import exists
 
@@ -7,6 +5,7 @@ import os
 import argparse
 import json
 import math
+import sys
 
 # Add the path of the common functions and import them
 from sys import path
@@ -26,6 +25,9 @@ import api_sample_attributes as api_sa
 def main():
   global startingAttributes
   global mosaicConfig
+  print('TEST')
+  print(sys.version)
+  exit(0)
 
   # Parse the command line
   args = parseCommandLine()

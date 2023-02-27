@@ -1,6 +1,3 @@
-#!/usr/bin/python
-
-from __future__ import print_function
 import os
 import json
 
@@ -25,6 +22,21 @@ def getSampleIds(config, projectId):
   for sample in data: sIds.append(sample['id'])
 
   # Return the list of variant filter ids
+  return sIds
+
+# Return a dictionary with the sample ids as keys and the sample names as values
+def getSamplesDictIdName(config, projectId):
+  sIds = {}
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getSamplesCommand(config, projectId)).read())
+  except: fail('Failed to GET the sample names and ids for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to GET the sample names and ids for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for sample in data: sIds[sample['id']] = sample['name']
+
+  # Return the dictionary
   return sIds
 
 # Return a dictionary with the sample names as keys and the sample ids as values

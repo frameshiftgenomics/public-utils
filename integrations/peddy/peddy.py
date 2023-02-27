@@ -112,7 +112,9 @@ def checkMosaicFiles(args, samples):
   for sample in samples:
     sampleFiles = api_sf.getSampleFiles(mosaicConfig, args.project_id, sample['id'], 'peddy.html')
     for fileId in sampleFiles:
-      if sampleFiles[fileId]['uri'] not in inputFiles: inputFiles.append(sampleFiles[fileId]['uri'])
+      filename = sampleFiles[fileId]['uri']
+      if filename.startswith('file:/'): filename = filename[6:]
+      if filename not in inputFiles: inputFiles.append(filename)
 
   # If there are no, or more than one peddy html files associated with the project, fail. No files
   # have been set on the command line (or this routine would not be executed), so there must be one
@@ -434,6 +436,11 @@ def buildChart(args, backgroundsId):
 
   # Pin the chart to the dashboard
   api_d.pinChart(mosaicConfig, args.project_id, chartId)
+
+# If the script fails, provide an error message and exit
+def fail(message):
+  print(message, sep = "")
+  exit(1)
 
 # Initialise global variables
 

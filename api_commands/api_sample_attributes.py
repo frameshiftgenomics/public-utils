@@ -1,6 +1,3 @@
-#!/usr/bin/python
-
-from __future__ import print_function
 import os
 import json
 import math
@@ -31,6 +28,19 @@ def getSampleAttributesDictNameId(config, projectId):
   except: fail('Failed to get sample attributes for project: ' + str(projectId))
   if 'message' in data: fail('Failed to get sample attributes for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
   for att in data: atts[att['name']] = att['id']
+
+  # Return all the data
+  return atts
+
+# Return a dictionary with the sample attribute id as key and the name and value_type as values
+def getSampleAttributesDictIdNameType(config, projectId):
+  atts = {}
+
+  # Get the data
+  try: data = json.loads(os.popen(getSampleAttributesCommand(config, projectId, 'false')).read())
+  except: fail('Failed to get sample attributes for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get sample attributes for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+  for att in data: atts[att['id']] = {'name': att['name'], 'type': att['value_type']}
 
   # Return all the data
   return atts
@@ -92,11 +102,27 @@ def importSampleAttribute(config, projectId, attId):
   except: fail('Failed to import sample attribute for project: ' + str(projectId))
   if 'message' in data: fail('Failed to import sample attribute for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
+# Update a sample attribute
+def addSampleAttributeValue(config, projectId, sampleId, attId, value):
+  try: data = json.loads(os.popen(postUpdateSampleAttributeCommand(config, value, projectId, sampleId, attId)).read())
+  except: fail('Failed to update sample attribute for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to update sample attribute for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
 # Upload a tsv file of sample attributes
 def uploadSampleAttributes(config, projectId, tsvFile):
   try: data = os.popen(postUploadSampleAttributesCommand(config, tsvFile, projectId))
   except: fail('Failed to upload tsv file of sample attributes for project: ' + str(projectId))
   if 'message' in data: fail('Failed to upload tsv file of sample attributes for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+######
+###### Execute PUT routes
+######
+
+# Update the value associated with an existing sample attribute
+def updateSampleAttributeValue(config, projectId, sampleId, attId, value):
+  try: data = json.loads(os.popen(putSampleAttributeValueCommand(config, projectId, sampleId, attId, value)).read())
+  except: fail('Failed to update sample attribute for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to update sample attribute for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
 #################
 #################

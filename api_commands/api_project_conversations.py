@@ -55,6 +55,16 @@ def createConversation(config, projectId, title, description):
   # Return the conversation id
   return data['id']
 
+######
+###### Execute PUT routes
+######
+
+# Update a conversation
+def updateConversation(config, projectId, conversationId, title, description):
+  try: data = json.loads(os.popen(putUpdateConversationCommand(config, title, description, projectId, conversationId)).read())
+  except: fail('Failed to update conversation for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to update conversation for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
 #################
 #################
 ################# Following are the API routes for variant filters (mirrors the API docs)
