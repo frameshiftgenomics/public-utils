@@ -106,6 +106,14 @@ def updateProjectAttribute(config, projectId, attId, value):
   except: fail('Failed to update a project attributes for project ' + str(projectId))
   if 'message' in data: fail('Failed to update a project attributes for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
+# Update the predefined list of values for a project attribute
+def updateProjectAttributePredefined(config, projectId, attId, values):
+  print(putProjectAttributePredefinedCommand(config, values, projectId, attId))
+  exit(0)
+  try: data = json.loads(os.popen(putProjectAttributePredefinedCommand(config, values, projectId, attId)).read())
+  except: fail('Failed to update a project attributes for project ' + str(projectId))
+  if 'message' in data: fail('Failed to update a project attributes for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
 #################
 #################
 ################# Following are the API routes for variant filters (mirrors the API docs)
@@ -189,6 +197,21 @@ def putProjectAttributeCommand(mosaicConfig, value, projectId, attributeId):
 
   command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-d \'{"value": "' + str(value) + '"}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/attributes/' + str(attributeId) + '"'
+
+  return command
+
+# Update the predfined values of a project attribute
+def putProjectAttributePredefinedCommand(mosaicConfig, predefinedValues, projectId, attributeId):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"predefined_values": ['
+  for i, value in enumerate(predefinedValues):
+    if i == 0: command += '"' + str(value) + '"'
+    else: command += ', "' + str(value) + '"'
+  command += ']}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/attributes/' + str(attributeId) + '"'
 
   return command
