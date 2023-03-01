@@ -108,8 +108,6 @@ def updateProjectAttribute(config, projectId, attId, value):
 
 # Update the predefined list of values for a project attribute
 def updateProjectAttributePredefined(config, projectId, attId, values):
-  print(putProjectAttributePredefinedCommand(config, values, projectId, attId))
-  exit(0)
   try: data = json.loads(os.popen(putProjectAttributePredefinedCommand(config, values, projectId, attId)).read())
   except: fail('Failed to update a project attributes for project ' + str(projectId))
   if 'message' in data: fail('Failed to update a project attributes for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
