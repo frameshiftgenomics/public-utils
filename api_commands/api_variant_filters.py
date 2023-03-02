@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 from __future__ import print_function
 import os
 import json
@@ -84,6 +82,12 @@ def createVariantFilter(mosaicConfig, projectId, name, category, annotationFilte
 ######
 ###### Execute DELETE routes
 ######
+
+# Delete a variant filter
+def deleteVariantFilter(config, projectId, filterId):
+  try: data = os.popen(deleteVariantFilterCommand(config, projectId, filterId))
+  except: fail('Failed to delete the variant filter with id ' + str(filterId) + ' for project ' + str(projectId))
+  if 'message' in data: fail('Failed to delete the variant filter with id ' + str(filterId) + ' for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
 # Given a project id and a list of filter ids, delete every filter
 def deleteAllVariantFiltersInProject(config, projectId, filterIds):
