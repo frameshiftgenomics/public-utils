@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-from __future__ import print_function
 import json
 import os
 import math
@@ -50,7 +49,6 @@ def getIntervalsDictIdNamePrivacy(config, projectId):
 
 # Import an interval attribute to the project
 def postInterval(config, projectId, intervalId):
-  print(postImportProjectIntervalAttributeCommand(config, projectId, intervalId))
   try: data = json.loads(os.popen(postImportProjectIntervalAttributeCommand(config, projectId, intervalId)).read())
   except: fail('Failed to import interval into project: ' + str(projectId))
   if 'message' in data: fail('Failed to import interval into project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))

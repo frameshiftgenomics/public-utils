@@ -25,9 +25,6 @@ import api_sample_attributes as api_sa
 def main():
   global startingAttributes
   global mosaicConfig
-  print('TEST')
-  print(sys.version)
-  exit(0)
 
   # Parse the command line
   args = parseCommandLine()
