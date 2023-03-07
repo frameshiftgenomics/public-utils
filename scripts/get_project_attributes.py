@@ -28,8 +28,8 @@ def main():
   mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
   # Get all public project attributes
-  attributes = api_pa.getPublicProjectAttributesNameIdUid(mosaicConfig)
-  for attribute in attributes: print(attribute)
+  attributes = api_pa.getProjectAttributes(mosaicConfig, args.project_id)
+  for attribute in attributes: print(attribute['name'], attribute['id'], attribute['uid'], attribute['values'], attribute['value_type'])
 
 # Input options
 def parseCommandLine():
@@ -39,6 +39,9 @@ def parseCommandLine():
   parser.add_argument('--token', '-t', required = False, metavar = 'string', help = 'The Mosaic authorization token')
   parser.add_argument('--url', '-u', required = False, metavar = 'string', help = 'The base url for Mosaic curl commands, up to an including "api". Do NOT include a trailing ')
   parser.add_argument('--config', '-c', required = False, metavar = 'string', help = 'A config file containing token / url information')
+
+  # The project id to which the filter is to be added is required
+  parser.add_argument('--project_id', '-p', required = True, metavar = 'integer', help = 'The Mosaic project id to get HPO terms for')
 
   return parser.parse_args()
 

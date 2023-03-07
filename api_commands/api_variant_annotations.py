@@ -211,7 +211,6 @@ def updateAnnotationCategory(config, projectId, annotationId, category):
 
 # Delete an annotation by id
 def deleteAnnotationById(config, projectId, annId):
-  print(deleteVariantAnnotationCommand(config, projectId, annId))
   try: data = os.popen(deleteVariantAnnotationCommand(config, projectId, annId))
   except: fail('Failed to delete variant annotation in project: ' + str(projectId))
   if 'message' in data: fail('Failed to delete variant annotation in project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))

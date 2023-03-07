@@ -81,6 +81,18 @@ def attachTbiFile(config, name, nickname, uri, reference, sampleName, sampleId, 
   except: fail('Failed to attach tbi file to project: ' + str(projectId))
   if 'message' in data: fail('Failed to attach tbi file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
+# Attach a bam file to a project
+def attachBamFile(config, name, nickname, uri, reference, sampleName, sampleId, projectId):
+  try: data = json.loads(os.popen(postSampleFileCommand(config, name, nickname, 'bam', uri, reference, sampleName, sampleId, projectId)).read())
+  except: fail('Failed to attach bam file to project: ' + str(projectId))
+  if 'message' in data: fail('Failed to attach bam file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+# Attach a bai file to a project
+def attachBaiFile(config, name, nickname, uri, reference, sampleName, sampleId, projectId):
+  try: data = json.loads(os.popen(postSampleFileCommand(config, name, nickname, 'bai', uri, reference, sampleName, sampleId, projectId)).read())
+  except: fail('Failed to attach bai file to project: ' + str(projectId))
+  if 'message' in data: fail('Failed to attach bai file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
 # Attach an alignstats.json file to a project
 def attachAlignstatsFile(config, name, nickname, uri, reference, sampleName, sampleId, projectId):
   try: data = json.loads(os.popen(postSampleFileCommand(config, name, nickname, 'alignstats.json', uri, reference, sampleName, sampleId, projectId)).read())

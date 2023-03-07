@@ -28,8 +28,13 @@ def main():
   mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
   # Get all public project attributes
-  attributes = api_pa.getPublicProjectAttributesNameIdUid(mosaicConfig)
-  for attribute in attributes: print(attribute)
+  attributes = api_pa.getUserPublicProjectAttributes(mosaicConfig)
+  for attributeId in attributes: 
+    if int(attributeId) == int(args.attribute_id):
+      print('Id: ', attributeId, ', name: ', attributes[attributeId]['name'], ', original project id: ', attributes[attributeId]['original_project_id'], sep = '')
+      for projectId in sorted(attributes[attributeId]['projects']): print('  ', projectId, attributes[attributeId]['projects'][projectId])
+      exit(0)
+  print('Attribute was not found')
 
 # Input options
 def parseCommandLine():
@@ -39,6 +44,9 @@ def parseCommandLine():
   parser.add_argument('--token', '-t', required = False, metavar = 'string', help = 'The Mosaic authorization token')
   parser.add_argument('--url', '-u', required = False, metavar = 'string', help = 'The base url for Mosaic curl commands, up to an including "api". Do NOT include a trailing ')
   parser.add_argument('--config', '-c', required = False, metavar = 'string', help = 'A config file containing token / url information')
+
+  # The attribute id to get information on
+  parser.add_argument('--attribute_id', '-a', required = True, metavar = 'integer', help = 'The attribute id to get information on')
 
   return parser.parse_args()
 

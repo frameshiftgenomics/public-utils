@@ -32,7 +32,7 @@ def getProjectAttributesNameIdUid(config, projectId):
   # Return all the data
   return atts
 
-# Loop over all pages of public attributes and return all information
+# Return a list of public attributes, including only the id and name
 def getPublicProjectAttributesNameIdUid(mosaicConfig):
   limit = 100
   page  = 1
@@ -59,31 +59,21 @@ def getPublicProjectAttributesNameIdUid(mosaicConfig):
   # Return the data
   return pAtts
 
-# Return a list of public attributes, including only the id and name
-def getPublicProjectAttributesNameIdUid(mosaicConfig):
-  limit = 100
-  page  = 1
-  pAtts = []
+# Get all attributes that the user has access to
+def getUserPublicProjectAttributes(config):
+  pAtts = {}
 
-  # Get the first page of attributes
-  try: data = json.loads(os.popen(getPublicProjectAttributesCommand(mosaicConfig, limit, page)).read())
-  except: fail('Failed to GET public project attributes')
+  # Get the attributes
+  try: data = json.loads(os.popen(getUserProjectAttributesCommand(config)).read())
+  except: fail('Failed to get public project attributes for the user')
   if 'message' in data: fail('Failed to GET public project attributes')
 
-  # Store the required data
-  for record in data['data']: pAtts.append({'name': record['name'], 'id': record['id'], 'uid': record['uid']})
+  # Loop over all the attributes and return
+  for pAtt in data:
+    if pAtt['is_public']: pAtts[pAtt['id']] = {'uid': pAtt['uid'], 'name': pAtt['name'], 'value_type': pAtt['value_type'], 'original_project_id': pAtt['original_project_id'], 'projects': {}}
+    for project in pAtt['values']: pAtts[pAtt['id']]['projects'][project['project_id']] = project['value']
 
-  # Calculate the number of pages
-  noPages = math.ceil(int(data['count']) / int(limit))
-
-  # Loop over all pages of public attributes and store information to return
-  for page in range(2, noPages + 1):
-    try: data = json.loads(os.popen(getPublicProjectAttributesCommand(mosaicConfig, limit, page)).read())
-    except: fail('Failed to GET public project attributes')
-    if 'message' in data: fail('Failed to GET public project attributes')
-    for record in data['data']: pAtts.append({'name': record['name'], 'id': record['id'], 'uid': record['uid']})
-
-  # Return the data
+  # Return the information
   return pAtts
 
 ######
