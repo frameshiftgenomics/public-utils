@@ -8,7 +8,7 @@ endif
 PUBLIC-UTILS_IMG = frameshiftgenomics/mosaic-public-utils:${GIT_TAG}
 
 build-image:
-        docker build -t $(PUBLIC-UTILS_IMG) .
+	docker build -t $(PUBLIC-UTILS_IMG) .
 
 push-image:
-        docker push $(PUBLIC-UTILS_IMG)
+	docker push $(PUBLIC-UTILS_IMG)
