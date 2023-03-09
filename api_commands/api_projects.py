@@ -9,7 +9,7 @@ import json
 ###### Execute GET routes
 ######
 
-# 
+# Get the ids of all projects in a collection
 def getCollectionProjects(config, projectId):
   ids = []
 
@@ -19,7 +19,22 @@ def getCollectionProjects(config, projectId):
   if 'message' in data: fail('Failed to get projects for collection: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
   # Loop over the returned data object and put the filter ids in a list to return
-  for projectId in data: ids.append(projectId)
+  for project in data: ids.append(project['id'])
+
+  # Return the projectIds
+  return ids
+
+# Get the ids of all projects in a collection
+def getCollectionProjectsDictIdName(config, projectId):
+  ids = {}
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getCollectionProjectsCommand(config, projectId)).read())
+  except: fail('Failed to get projects for collection: ' + str(projectId))
+  if 'message' in data: fail('Failed to get projects for collection: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for project in data: ids[project['id']] = project['name']
 
   # Return the projectIds
   return ids

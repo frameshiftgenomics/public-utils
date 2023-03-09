@@ -124,7 +124,7 @@ def getVariantAnnotationsImportNameIdUid(config, projectId):
   try: data = json.loads(os.popen(getVariantAnnotationsImportCommand(config, projectId, limit, page)).read())
   except: fail('Unable to find annotations available for import for project ' + str(projectId)) 
   if 'message' in data: fail('Unable to find annotations available for import for project ' + str(projectId) + '. API returned the message: ' + str(data['messgage'])) 
-  for ann in data['data']: anns.append({'name': ann['name'], 'id': ann['id'], 'uid': ann['uid']})
+  for ann in data['data']: anns.append({'name': ann['name'], 'id': ann['id'], 'uid': ann['uid'], 'type': ann['value_type']})
                                                                   
   # Determine how many annotations there are and consequently how many pages of annotations
   noPages = math.ceil(int(data['count']) / int(limit))            
@@ -134,7 +134,7 @@ def getVariantAnnotationsImportNameIdUid(config, projectId):
     try: data = json.loads(os.popen(getVariantAnnotationsImportCommand(config, projectId, limit, page)).read())
     except: fail('Unable to find annotations available for import for project ' + str(projectId)) 
     if 'message' in data: fail('Unable to find annotations available for import for project ' + str(projectId) + '. API returned the message: ' + str(data['messgage'])) 
-    for ann in data['data']: anns.append({'name': ann['name'], 'id': ann['id'], 'uid': ann['uid']})
+    for ann in data['data']: anns.append({'name': ann['name'], 'id': ann['id'], 'uid': ann['uid'], 'type': ann['value_type']})
 
   # Return the list
   return anns
