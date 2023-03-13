@@ -181,8 +181,11 @@ def getAttributeIds(args, projectId):
     # Only include custom attributes (e.g. ignore global default attributes like Median Read Coverage that are
     # added to all Mosaic projects
     if str(attribute['is_custom']) == 'True':
-      sampleAttributes[str(attribute['name'])]['id']  = attribute['id']
-      sampleAttributes[str(attribute['name'])]['uid'] = attribute['uid']
+
+      # Ignore attributes that begin with 'Failed Peddy'. These are attributes created as part of Z-score calculations
+      if not attribute['name'].startswith('Failed Peddy'):
+        sampleAttributes[str(attribute['name'])]['id']  = attribute['id']
+        sampleAttributes[str(attribute['name'])]['uid'] = attribute['uid']
 
 # Read through the peddy html and pull out the data json
 def readPeddyHtml(samples, inputFile):
