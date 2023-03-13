@@ -135,18 +135,18 @@ def getProjects(collectionId):
   projectsList = api_p.getCollectionProjects(mosaicConfig, collectionId)
 
   # Loop over the collection projects and store the ids
-  for project in projectsList:
-    projectIds[project['id']] = []
+  for projectId in projectsList:
+    projectIds[projectId] = []
 
     # Get all of the samples in the project
-    samples = api_s.getSamplesDictIdName(mosaicConfig, project['id'])
+    samples = api_s.getSamplesDictIdName(mosaicConfig, projectId)
 
     # Loop over the samples in the project and attach their ids to the project. Also populate
     # the failures dictionary with all the sample ids. This is used to keep track of all Z-scores
     # outside of the cutoffs for each sample
     for sampleId in samples:
       sampleNames[sampleId] = samples[sampleId]
-      projectIds[project['id']].append(sampleId)
+      projectIds[projectId].append(sampleId)
       failures[sampleId]    = {}
       noFailures[sampleId]  = {}
 
@@ -304,7 +304,7 @@ def buildBooleanProjectCohort(attributeValues, cohort, attributeId, value):
   # Check that the number of projects in the collection - len(projectsIds) - is equal to the number of projects that have values in
   # this collection - len(attributeValues). If these values are different, not all projects in the collection have values for this
   # project attribute, and so the cohort cannot be build
-  if len(projectIds) != len(attributeValues): fail('Not all projects in the collection have values for project id ' + str(attributeId))
+  if len(projectIds) != len(attributeValues): fail('Not all projects in the collection have values for attribute id ' + str(attributeId))
 
   # Loop over all of the projects with values (i.e. all projects in the collection), check that the value for that project is a
   # Boolean and add them to the cohort if it is the correct value
