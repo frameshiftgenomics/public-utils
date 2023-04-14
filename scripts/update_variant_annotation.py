@@ -23,11 +23,12 @@ def main():
 
   # Parse the mosaic configuration file
   mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
-                    'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'}
-  mosaicConfig = mosaic_config.parseConfig(args.config, mosaicRequired)
+                    'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'}}
+  mosaicConfig   = mosaic_config.mosaicConfigFile(args.config)
+  mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
   # If the annotation id is not provided, get all annotations ids from the project and display
-  if not args.annotation_id: getAnnotations(args.project)
+  if not args.annotation_id: getAnnotations(args.project_id)
 
   # Update the annotation
   updateAnnotation(args)
@@ -42,7 +43,7 @@ def parseCommandLine():
   parser.add_argument('--url', '-u', required = False, metavar = "string", help = "The base url for Mosaic curl commands, up to an including \"api\". Do NOT include a trailing /")
 
   # The project id to which the filter is to be added is required
-  parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
+  parser.add_argument('--project_id', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
 
   # Arguments related to the event
   parser.add_argument('--annotation_id', '-a', required = False, metavar = "string", help = 'The id of the annotation to update. If not provided, a list of available annotations for the project will be shown')
@@ -57,10 +58,7 @@ def getAnnotations(projectId):
   global mosaicConfig
 
   # Get all of the project attributes
-  data = json.loads(os.popen(api_va.getVariantAnnotations(mosaicConfig, projectId)).read())
-
-  # If a message is returned instead of data, check that the user has access to the project
-  if 'message' in data: fail("No annotation data returned. Check you have access to the project")
+  data = api_va.getAnnotations(mosaicConfig, projectId)
 
   # Loop over all attributes and output the applicable attribute (e.g. timestamps)
   print("Available annotations:")
@@ -102,8 +100,9 @@ def updateAnnotation(args):
   if len(fields) == 0: fail("Some fields must be provided to be updated")
 
   # Update the annotation
-  try: data = json.loads(os.popen(api_va.updateVariantAnnotation(mosaicConfig, args.project, fields, args.annotation_id)).read())
-  except: fail("Couldn't update variant annotation")
+  data = api_va.updateAnnotation(mosaicConfig, args.project_id, args.annotation_id, fields)
+  #try: data = json.loads(os.popen(api_va.updateVariantAnnotation(mosaicConfig, args.project, fields, args.annotation_id)).read())
+  #except: fail("Couldn't update variant annotation")
 
 # If the script fails, provide an error message and exit
 def fail(message):

@@ -13,6 +13,18 @@ import math
 ###### Execute the GET routes
 ######
 
+# Return a list of all annotations with all their data
+def getAnnotations(config, projectId):
+  ids = []
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getVariantAnnotationsCommand(config, projectId)).read())
+  except: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return the list of annotation ids
+  return data
+
 # Return a list of annotation ids
 def getAnnotationIds(config, projectId):
   ids = []
@@ -192,6 +204,18 @@ def uploadAnnotations(config, projectId, tsv, allowDeletion):
 ######
 ###### Execute the PUT routes
 ######
+
+# Update an annotation if provided with a dictionary of values
+def updateAnnotation(config, projectId, annotationId, fields):
+
+  # The update command expects a list of fields to update. Set the category to update
+  #fields = {}
+  #fields['category'] = category
+
+  # Update the annotation
+  try: data = json.loads(os.popen(updateVariantAnnotationCommand(config, projectId, fields, annotationId)).read())
+  except: fail('Failed to update the variant annotation in project: ' + str(projectId))
+  if 'message' in data: fail('Failed to update the variant annotation in project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
 # Update an annotation category
 def updateAnnotationCategory(config, projectId, annotationId, category):
