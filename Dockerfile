@@ -1,5 +1,5 @@
-FROM alpine:3.17.1
+FROM ubuntu:22.04
 
-RUN apk add --no-cache curl python3
+RUN apt-get update && apt-get install -y python 3.7.3 curl
 
-COPY . /public-utils
+cp . /public-utils
