@@ -19,6 +19,17 @@ def getProjectAttributes(config, projectId):
   # Return all the data
   return data
 
+# Return a dictionary of all project attribute information for a project keyed by the id
+def getProjectAttributes(config, projectId):
+  ids = {}
+  try: data = json.loads(os.popen(getProjectAttributesCommand(config, projectId)).read())
+  except: fail('Failed to GET project attributes for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to GET project attributes for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+  for attribute in data: ids[attribute['id']] = attribute
+
+  # Return all the data
+  return ids
+
 # Return a dictionary of project attributes for a project with the name as key, and id, and uid as values
 def getProjectAttributesNameIdUid(config, projectId):
   atts = {}
@@ -28,6 +39,19 @@ def getProjectAttributesNameIdUid(config, projectId):
   except: fail('Failed to GET project attributes for project: ' + str(projectId))
   if 'message' in data: fail('Failed to GET project attributes for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
   for att in data: atts[att['name']] = {'id': att['id'], 'uid': att['uid']}
+
+  # Return all the data
+  return atts
+
+# Return a dictionary of project attributes for a project with the id as key, and name, and uid as values
+def getProjectAttributesIdNameUid(config, projectId):
+  atts = {}
+
+  # Get the data
+  try: data = json.loads(os.popen(getProjectAttributesCommand(config, projectId)).read())
+  except: fail('Failed to GET project attributes for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to GET project attributes for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+  for att in data: atts[att['id']] = {'name': att['name'], 'uid': att['uid']}
 
   # Return all the data
   return atts
@@ -80,6 +104,15 @@ def getUserPublicProjectAttributes(config):
 ###### Execute POST routes
 ######
 
+# Create a project attribute
+def createProjectAttribute(config, projectId, name, value, valueType, isPublic):
+  try: data = json.loads(os.popen(postProjectAttributeCommand(config, name, valueType, value, isPublic, projectId)).read())
+  except: fail('Failed to create a project attribute for project ' + str(projectId))
+  if 'message' in data: fail('Failed to create a project attribute for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return the id of the new project attribute
+  return data['id']
+
 # Import a project attribute
 def importProjectAttribute(config, projectId, attId, value):
   try: data = json.loads(os.popen(postImportProjectAttributeCommand(config, attId, value, projectId)).read())
@@ -101,6 +134,16 @@ def updateProjectAttributePredefined(config, projectId, attId, values):
   try: data = json.loads(os.popen(putProjectAttributePredefinedCommand(config, values, projectId, attId)).read())
   except: fail('Failed to update a project attributes for project ' + str(projectId))
   if 'message' in data: fail('Failed to update a project attributes for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+######
+###### Execute the DELETE route
+######
+
+# Delete a project attribute
+def deleteProjectAttribute(config, projectId, attributeId):
+  try: data = os.popen(deleteProjectAttributeCommand(config, projectId, attributeId)).read()
+  except: fail('Failed to delete project attribute ' + str(attributeId) + ' for project ' + str(projectId))
+  if 'message' in data: fail('Failed to delete project attribute ' + str(attributeId) + ' for project ' + str(projectId) + '. API returned the message: ' + str(json.loads(data)['message']))
 
 #################
 #################

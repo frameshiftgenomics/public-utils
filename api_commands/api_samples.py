@@ -69,6 +69,23 @@ def getSampleNameId(config, projectId):
   # Return the dictionary
   return sIds
 
+# Return a dictionary of samples with their name as the key, and the id and kindred id
+def getSamplesDictNameIdKindred(config, projectId):
+  sIds = {}
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getSamplesCommand(config, projectId)).read())
+  except: fail('Failed to GET the sample names and ids for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to GET the sample names and ids for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for sample in data:
+    if len(sample['pedigree']) > 0: sIds[sample['name']] = {'id': sample['id'], 'kindredId': sample['pedigree']['kindred_id']}
+    else: sIds[sample['name']] = {'id': sample['id'], 'kindredId': False}
+
+  # Return the dictionary
+  return sIds
+
 ######
 ###### Execute POST routes
 ######
