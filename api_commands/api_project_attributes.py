@@ -19,8 +19,30 @@ def getProjectAttributes(config, projectId):
   # Return all the data
   return data
 
+# Return all project attribute information for a project as a dictionary keyed on the name
+def getProjectAttributesDictName(config, projectId):
+  atts = {}
+  try: data = json.loads(os.popen(getProjectAttributesCommand(config, projectId)).read())
+  except: fail('Failed to GET project attributes for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to GET project attributes for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+  for att in data: atts[att['name']] = att
+
+  # Return all the data
+  return atts
+
+# Return project attribute ids for a project as a dictionary keyed on the name
+def getProjectAttributesDictNameId(config, projectId):
+  atts = {}
+  try: data = json.loads(os.popen(getProjectAttributesCommand(config, projectId)).read())
+  except: fail('Failed to GET project attributes for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to GET project attributes for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+  for att in data: atts[att['name']] = att['id']
+
+  # Return all the data
+  return atts
+
 # Return a dictionary of all project attribute information for a project keyed by the id
-def getProjectAttributes(config, projectId):
+def getProjectAttributesDictId(config, projectId):
   ids = {}
   try: data = json.loads(os.popen(getProjectAttributesCommand(config, projectId)).read())
   except: fail('Failed to GET project attributes for project: ' + str(projectId))
@@ -105,8 +127,11 @@ def getUserPublicProjectAttributes(config):
 ######
 
 # Create a project attribute
-def createProjectAttribute(config, projectId, name, value, valueType, isPublic):
-  try: data = json.loads(os.popen(postProjectAttributeCommand(config, name, valueType, value, isPublic, projectId)).read())
+def createProjectAttribute(config, projectId, name, description, value, valueType, isPublic):
+
+  # Check that the description is under 255 characters as this is the max allowed
+  if len(description) > 255: fail('Description for attribute "' + str(name) + '" is greater than the maximum of 255 characters')
+  try: data = json.loads(os.popen(postProjectAttributeCommand(config, name, description, valueType, value, isPublic, projectId)).read())
   except: fail('Failed to create a project attribute for project ' + str(projectId))
   if 'message' in data: fail('Failed to create a project attribute for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
@@ -132,8 +157,8 @@ def updateProjectAttribute(config, projectId, attId, value):
 # Update the predefined list of values for a project attribute
 def updateProjectAttributePredefined(config, projectId, attId, values):
   try: data = json.loads(os.popen(putProjectAttributePredefinedCommand(config, values, projectId, attId)).read())
-  except: fail('Failed to update a project attributes for project ' + str(projectId))
-  if 'message' in data: fail('Failed to update a project attributes for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+  except: fail('Failed to update project attribute (' + str(attId) + ') for project ' + str(projectId))
+  if 'message' in data: fail('Failed to update project attribute (' + str(attId) + ') for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
 ######
 ###### Execute the DELETE route
@@ -192,12 +217,13 @@ def getUserProjectAttributesCommand(mosaicConfig):
 ######
 
 # Create a new project attribute
-def postProjectAttributeCommand(mosaicConfig, name, valueType, value, isPublic, projectId):
+def postProjectAttributeCommand(mosaicConfig, name, description, valueType, value, isPublic, projectId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
-  command += '-d \'{"name": "' + str(name) + '", "value_type": "' + str(valueType) + '", "value": "' + str(value) + '", "is_public": "' + str(isPublic) + '"}\' '
+  command += '-d \'{"name": "' + str(name) + '", "value_type": "' + str(valueType) + '", "value": "' + str(value) + '", "is_public": "' + str(isPublic)
+  command += '", "description": "' + str(description) + '"}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/attributes' + '"'
 
   return command

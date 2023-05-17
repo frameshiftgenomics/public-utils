@@ -40,44 +40,26 @@ def main():
   templateId = getExistingTemplates(name)
 
   # Get all of the sample and projects attributes in the public attributes project and in the template project
-  sampleAttributes  = api_sa.getSampleAttributes(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'])
-  projectAttributes = api_pa.getProjectAttributesNameIdUid(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'])
-  templateProjectAttributes = api_pa.getProjectAttributes(mosaicConfig, templateId)
+  sampleAttributes  = api_sa.getSampleAttributesDictNameId(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'])
+  projectAttributes = api_pa.getProjectAttributesDictNameId(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'])
+  templateSampleAttributes  = api_sa.getSampleAttributesDictNameId(mosaicConfig, templateId)
+  templateProjectAttributes = api_pa.getProjectAttributesDictNameId(mosaicConfig, templateId)
 
   # Get information on the template project dashboard
   dashboard = api_d.getDashboard(mosaicConfig, templateId)
 
   # Loop over all of the sample and project attributes listed in the json and check if they exist in the public
-  # attributes project. If so, import them into the template. If not, create the attributes in the public
-  # attributes project and import them
+  # attributes project. If so, import them into the template (unless they are already present in the template project).
+  # If not, create the attributes in the public attributes project and import them
+  for attribute in templateData['sample_attributes']:
+    if attribute not in sampleAttributes: attributeId = createAttribute('sample', attribute, templateData['sample_attributes'][attribute])
+    else: attributeId = sampleAttributes[attribute]
+    if attribute not in templateSampleAttributes: api_sa.importSampleAttribute(mosaicConfig, templateId, attributeId)
   for attribute in templateData['project_attributes']:
-    if attribute not in projectAttributes: attributeId = createProjectAttribute(attribute, templateData['project_attributes'][attribute])
-    else: attributeId = projectAttributes[attribute]['id']
+    if attribute not in projectAttributes: attributeId = createAttribute('project', attribute, templateData['project_attributes'][attribute])
+    else: attributeId = projectAttributes[attribute]
+    if attribute not in templateProjectAttributes: api_pa.importProjectAttribute(mosaicConfig, templateId, attributeId, templateData['project_attributes'][attribute]['value'])
     importProjectAttribute(templateId, templateProjectAttributes, dashboard, attribute, attributeId, templateData['project_attributes'][attribute])
-
-# Import a public project attribute into the template project and pin to the dashboard if required
-def importProjectAttribute(templateId, templateAttributes, dashboard, attribute, attributeId, attributeInfo):
-  global mosaicConfig
-
-  # Get the value to apply as the default for the project attribute in the template as well as whether
-  # this attribute needs to be pinned to the dashboard
-  value  = attributeInfo['value']
-  pinned = attributeInfo['pinned'] if 'pinned' in attributeInfo else False
-
-  # Check if the attribute has already been imported into the template and import if necessary. If the attribute is
-  # already in the template project, check if it has been pinned to the dashboard. If it has, we do not want to pin
-  # it again
-  isPinned = False
-  if attributeId not in templateAttributes: api_pa.importProjectAttribute(mosaicConfig, templateId, attributeId, value)
-  else:
-    for record in dashboard:
-      if record['type'] == 'project_attribute' and record['attribute_id'] == attributeId and record['is_active']: isPinned = True
-
-  # Pin the attribute if required. First check if the attribute is already pinned
-  if pinned and not isPinned:
-    if str(pinned) == 'value': api_d.pinProjectAttribute(mosaicConfig, templateId, attributeId, 'false')
-    elif str(pinned) == 'name_value': api_d.pinProjectAttribute(mosaicConfig, templateId, attributeId, 'true')
-    else: fail('Project attribute "' + str(attribute) + '" has value "' + str(pinned) + '" for its pinned status. Allowed values are "value" and "name_value"')
 
 # Input options
 def parseCommandLine():
@@ -122,24 +104,53 @@ def getExistingTemplates(name):
     if template.startswith('Template '): existingTemplates[template] = existingProjects[template]
 
   # Check if the requested template exists. If not, create the template and store the id
+
+########################
+########################
+######################## IF CREATING TEMPLATE - NEED TO ADD ATTRIBUTE TO PUBLIC ATTRIBUTES
+########################
+########################
   if templateName in existingTemplates: templateId = existingTemplates[templateName]
-  else: templateId = api_p.createProject(mosaicConfig, name, 'GRCh38')
+  else: templateId = api_p.createProject(mosaicConfig, name, 'Template project', 'GRCh38', 'protected')
 
   # Return the template id
   return templateId
 
 # Create a new public project attribute
-def createProjectAttribute(attribute, attributeInfo):
+def createAttribute(attributeType, attribute, attributeInfo):
   global mosaicConfig
 
   # Create the new attribute
-  value     = attributeInfo['value']
-  valueType = str(attributeInfo['type'])
+  description = str(attributeInfo['description'])
+  value       = attributeInfo['value']
+  valueType   = str(attributeInfo['type'])
   if (valueType != 'string') and (valueType != 'float'): fail('Project attribute ' + str(attribute) + ' has type "' + valueType + '". Allowed values are "string", "float"')
-  attributeId = api_pa.createProjectAttribute(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'], attribute, value, valueType, 'true')
+  if attributeType == 'sample': return api_sa.createPublicSampleAttribute(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'], attribute, value, valueType, '', '')
+  elif attributeType == 'project': return api_pa.createProjectAttribute(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'], attribute, description, value, valueType, 'true')
 
-  # Return the id of the created attribute
-  return attributeId
+# Import a public project attribute into the template project and pin to the dashboard if required
+def importProjectAttribute(templateId, templateAttributes, dashboard, attribute, attributeId, attributeInfo):
+  global mosaicConfig
+
+  # Get the value to apply as the default for the project attribute in the template as well as whether
+  # this attribute needs to be pinned to the dashboard
+  value  = attributeInfo['value']
+  pinned = attributeInfo['pinned'] if 'pinned' in attributeInfo else False
+
+  # Check if the attribute has already been imported into the template and import if necessary. If the attribute is
+  # already in the template project, check if it has been pinned to the dashboard. If it has, we do not want to pin
+  # it again
+  isPinned = False
+  #if attributeId not in templateAttributes: api_pa.importProjectAttribute(mosaicConfig, templateId, attributeId, value)
+  #else:
+  for record in dashboard:
+    if record['type'] == 'project_attribute' and record['attribute_id'] == attributeId and record['is_active']: isPinned = True
+
+  # Pin the attribute if required. First check if the attribute is already pinned
+  if pinned and not isPinned:
+    if str(pinned) == 'value': api_d.pinProjectAttribute(mosaicConfig, templateId, attributeId, 'false')
+    elif str(pinned) == 'name_value': api_d.pinProjectAttribute(mosaicConfig, templateId, attributeId, 'true')
+    else: fail('Project attribute "' + str(attribute) + '" has value "' + str(pinned) + '" for its pinned status. Allowed values are "value" and "name_value"')
 
 # If the script fails, provide an error message and exit
 def fail(message):

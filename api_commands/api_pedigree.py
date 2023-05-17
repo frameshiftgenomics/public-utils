@@ -12,11 +12,7 @@ import json
 ###### Execute the GET routes
 ######
 
-######
-###### Execute POST routes
-######
-
-# 
+# Get the samples in the pedigree
 def getPedigree(config, projectId, sampleId):
   samples = []
 
@@ -28,6 +24,39 @@ def getPedigree(config, projectId, sampleId):
   
   # Return the pedigree information
   return samples
+
+######
+###### Execute PUT routes
+######
+
+# Update pedigree information about a sample
+def updateSamplePedigree(mosaicConfig, projectId, sampleId, kindred, affected, maternalId, paternalId, sex):
+  print(putPedigreeCommand(mosaicConfig, projectId, sampleId, kindred, affected, maternalId, paternalId, sex))
+  try: data = json.loads(os.popen(putPedigreeCommand(mosaicConfig, projectId, sampleId, kindred, affected, maternalId, paternalId, sex)).read())
+  except: fail('Failed to add pedigree information for sample: ' + str(sampleId))
+  if 'message' in data: fail('Failed to add pedigree information for sample: ' + str(sampleId) + '. API returned the message: ' + str(data['message']))
+
+######
+###### Execute POST routes
+######
+
+# Create pedigree information about a sample
+def addSampleToPedigree(mosaicConfig, projectId, sampleId, kindred, affected, maternalId, paternalId, sex):
+  try: data = json.loads(os.popen(postPedigreeCommand(mosaicConfig, projectId, sampleId, kindred, affected, maternalId, paternalId, sex)).read())
+  except: fail('Failed to add pedigree information for sample: ' + str(sampleId))
+  if 'message' in data: fail('Failed to add pedigree information for sample: ' + str(sampleId) + '. API returned the message: ' + str(data['message']))
+
+# Create pedigree information about a sample
+def uploadPedigree(mosaicConfig, projectId, filename):
+  try: data = json.loads(os.popen(postUploadPedigreeCommand(mosaicConfig, projectId, filename)).read())
+  except: fail('Failed to upload pedigree information for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to upload pedigree to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+# Create pedigree information about a sample
+def addSampleToPedigree(mosaicConfig, projectId, sampleId, kindred, affected, maternalId, paternalId, sex):
+  try: data = json.loads(os.popen(postPedigreeCommand(mosaicConfig, projectId, sampleId, kindred, affected, maternalId, paternalId, sex)).read())
+  except: fail('Failed to add pedigree information for sample: ' + str(sampleId))
+  if 'message' in data: fail('Failed to add pedigree information for sample: ' + str(sampleId) + '. API returned the message: ' + str(data['message']))
 
 #################
 #################
@@ -52,8 +81,47 @@ def getPedigreeCommand(mosaicConfig, projectId, sampleId):
   return command
 
 ######
+###### PUT routes
+######
+
+# Update pedigree information for a sample
+def putPedigreeCommand(mosaicConfig, projectId, sampleId, kindred, affected, maternalId, paternalId, sex):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"kindred_id": "' + str(kindred) + '", "affection_status": ' + str(affected) + ', "maternal_id": "'
+  command += str(maternalId) + '", "paternal_id": "' + str(paternalId) + '", "sex": ' + str(sex) + '}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/samples/' + str(sampleId) + '/pedigree"'
+
+  return command
+
+######
 ###### POST routes
 ######
+
+# Generate and add pedigree information to a project for a sample
+def postPedigreeCommand(mosaicConfig, projectId, sampleId, kindred, affected, maternalId, paternalId, sex):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"kindred_id": "' + str(kindred) + '", "affection_status": ' + str(affected) + ', "maternal_id": "'
+  command += str(maternalId) + '", "paternal_id": "' + str(paternalId) + '", "sex": ' + str(sex) + '}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/samples/' + str(sampleId) + '/pedigree"'
+
+  return command
+
+# Generate and add pedigree information to a project for a sample
+def postUploadPedigreeCommand(mosaicConfig, projectId, filename):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-F "file=@' + str(filename) + '" '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/pedigree"'
+
+  return command
 
 ######
 ###### PUT routes

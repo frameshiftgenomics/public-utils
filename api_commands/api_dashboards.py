@@ -44,6 +44,12 @@ def pinChart(config, projectId, chartId):
   except: fail('Failed to pin chart to the dashboard for project: ' + str(projectId))
   if 'message' in data: fail('Failed to pin chart to the dashboard for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
+# Pin the pedigree
+def pinPedigree(config, projectId):
+  try: data = json.loads(os.popen(postPinPedigreeCommand(config, projectId)).read())
+  except: fail('Failed to pin pedigree to the dashboard for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to pin pedigree to the dashboard for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
 #################
 #################
 ################# Following are the API routes for variant filters (mirrors the API docs)
@@ -100,6 +106,17 @@ def postPinConversationCommand(mosaicConfig, conversationId, projectId):
 
   command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-d \'{"type": "conversation", "project_conversation_id": "' + str(conversationId) + '", "is_active": "true"}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/dashboard' + '"'
+
+  return command
+
+# Pin the pedigree to the dashboard
+def postPinPedigreeCommand(mosaicConfig, projectId):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"type": "pedigree_graph", "is_active": "true"}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/dashboard' + '"'
 
   return command

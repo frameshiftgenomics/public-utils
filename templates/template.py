@@ -43,10 +43,11 @@ def main():
   templateId = availableTemplates[args.template] if args.template in availableTemplates else fail('Requested template (' + args.template + ') does not exist')
 
   # Get all the information about the template project, including what is pinned to the dashboard
-  templateAttributes, templateEvents = getProjectAttributes(templateId)
-  templateIntervals     = api_pia.getIntervalsIdToName(mosaicConfig, templateId)
+  templateProjectAttributes, templateEvents = getProjectAttributes(templateId)
+  templateIntervals        = api_pia.getIntervalsIdToName(mosaicConfig, templateId)
+  templateSampleAttributes = api_sa. getSampleAttributesDictName(mosaicConfig, templateId)
   templateConversations = getProjectConversations(templateId)
-  templateAttributes, templateConversations = dashboard(templateId, templateAttributes, templateConversations)
+  templateProjectAttributes, templateConversations = dashboard(templateId, templateProjectAttributes, templateConversations)
 
   # Get information about the project to which the template will be applied. This will be used to ensure data is
   # not overwritten as part of the template application
@@ -54,9 +55,11 @@ def main():
   projectIntervals     = api_pia.getIntervalsIdToName(mosaicConfig, args.project_id)
   projectConversations = getProjectConversations(args.project_id)
   projectAttributes, projectConversations = dashboard(args.project_id, projectAttributes, projectConversations)
+  sampleAttributes     = api_sa.getSampleAttributesIdList(mosaicConfig, args.project_id)
 
   # Update the project with the information from the template
-  updateAttributes(args.project_id, templateAttributes, projectAttributes)
+  updateSampleAttributes(args.project_id, templateSampleAttributes, sampleAttributes)
+  updateProjectAttributes(args.project_id, templateProjectAttributes, projectAttributes)
   updateTiming(args.project_id, templateEvents, templateIntervals, projectEvents, projectIntervals)
   updateConversations(args.project_id, templateConversations, projectConversations)
 
@@ -104,7 +107,9 @@ def getAvailableTemplates(args):
 
     # Look for attributes that point to template projects
     if attribute['name'].startswith('Template '):
-      templateName = attribute['name'].split(' ')[1]
+
+      # Remove the 'Template' from the name
+      templateName = ' '.join(attribute['name'].split(' ')[1:])
 
       # Loop over the values for the attribute for the different projects it is in
       for project in attribute['values']:
@@ -182,8 +187,21 @@ def dashboard(projectId, projectAttributes, projectConversations):
   # Return the information
   return projectAttributes, projectConversations
 
+# Update the sample attributes
+def updateSampleAttributes(projectId, templateAttributes, sampleAttributes):
+  global mosaicConfig
+
+  # Loop over all of the template sample attributes
+  for attribute in templateAttributes:
+
+    # Ignore all attributes that are not public and check if any of these remaining attributes
+    # are present in the current project
+    if templateAttributes[attribute]['is_public']:
+      attributeId = templateAttributes[attribute]['id']
+      if attributeId not in sampleAttributes: api_sa.importSampleAttribute(mosaicConfig, projectId, attributeId)
+
 # Update the project attributes based on the template
-def updateAttributes(projectId, templateAttributes, projectAttributes):
+def updateProjectAttributes(projectId, templateAttributes, projectAttributes):
   global mosaicConfig
 
   # Loop over all of the template attributes
@@ -275,7 +293,7 @@ def fail(text):
 mosaicConfig = {}
 
 # Store the version
-version = "1.04"
+version = "1.05"
 
 if __name__ == "__main__":
   main()

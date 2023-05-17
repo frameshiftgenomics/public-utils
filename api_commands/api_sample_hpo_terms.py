@@ -59,6 +59,16 @@ def getProjectHpo(config, projectId):
   # Return the dictionary
   return hpos
 
+######
+###### Execute the POST routes
+######
+
+# Post an HPO term to a sample
+def addSampleHpo(config, projectId, sampleId, hpoTerm):
+  try: data = json.loads(os.popen(postSampleHpoTermsCommand(config, projectId, sampleId, hpoTerm)).read())
+  except: fail('Failed to add HPO term ' + str(hpoTerm) + ' to project: ' + str(projectId))
+  if 'message' in data: fail('Failed to add HPO term to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
 #################
 #################
 ################# Following are the API routes for HPO Terms (mirrors the API docs)
@@ -94,6 +104,17 @@ def getProjectHpoTermsCommand(mosaicConfig, projectId):
 ######
 ###### POST routes
 ######
+
+# Post an HPO term to a sample
+def postSampleHpoTermsCommand(mosaicConfig, projectId, sampleId, hpo):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"hpo_id": "' + str(hpo) + '"}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/samples/' + str(sampleId) + '/hpo-terms" '
+
+  return command
 
 ######
 ###### PUT routes

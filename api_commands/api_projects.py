@@ -10,7 +10,36 @@ import json
 ###### Execute GET routes
 ######
 
-# Get
+# Get all Mosaic projects as a dictionary keyed on the name
+def getProjectsDictName(config):
+  limit = 100
+  page  = 1
+  projects = {}
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getProjectsCommand(config, limit, page)).read())
+  except: fail('Failed to get projects')
+  if 'message' in data: fail('Failed to get projects for collection: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Store the project ids, indexed by the name
+  for project in data['data']: projects[project['name']] = project
+
+  # Determine how many annotations there are and consequently how many pages of annotations
+  noPages = math.ceil(int(data['count']) / int(limit))
+
+  # Loop over remainig pages of annotations
+  for page in range(2, noPages + 1):
+    try: data = json.loads(os.popen(getProjectsCommand(config, limit, page)).read())
+    except: fail('Unable to get projects')
+    if 'message' in data: fail('Unable to get projects. API returned the message: ' + str(data['messgage']))
+
+    # Store the project ids, indexed by the name
+    for project in data['data']: projects[project['name']] = project
+
+  # Return the data
+  return projects
+
+# Get all Mosaic projects as a dictionary keyed on the name with the id as value
 def getProjectsDictNameId(config):
   limit = 100
   page  = 1
@@ -74,10 +103,28 @@ def getCollectionProjectsDictIdName(config, projectId):
 ######
 
 # Create a new project
-def createProject(config, name, reference):
-  try: data = json.loads(os.popen(postProjectCommand(config, name, reference)).read())
+def createProject(config, name, description, reference, privacy):
+  try: data = json.loads(os.popen(postProjectCommand(config, name, description, reference, privacy, 'false')).read())
   except: fail('Failed to create project with name: ' + str(name))
   if 'message' in data: fail('Failed to create projects with name: ' + str(name) + '. API returned the message: ' + str(data['message']))
+
+  # Return the projectIds
+  return data['id']
+
+# Create a new collection
+def createCollection(config, name, description, privacy):
+  try: data = json.loads(os.popen(postProjectCommand(config, name, description, 'null', privacy, 'true')).read())
+  except: fail('Failed to create project with name: ' + str(name))
+  if 'message' in data: fail('Failed to create projects with name: ' + str(name) + '. API returned the message: ' + str(data['message']))
+
+  # Return the projectIds
+  return data['id']
+
+# Add a project to a collection
+def addProjectToCollection(config, projectId, projects, roleTypeId):
+  try: data = json.loads(os.popen(postSubProjectCommand(config, projectId, projects, roleTypeId)).read())
+  except: fail('Failed to add project ' + str(projectId) + ' to the collection')
+  if 'message' in data: fail('Failed to add project ' + str(projectId) + ' to the collection. API returned the message: ' + str(data['message']))
 
   # Return the projectIds
   return data['id']
@@ -139,13 +186,36 @@ def getCollectionProjectsCommand(mosaicConfig, projectId):
 ######
 
 # Create a project
-def postProjectCommand(mosaicConfig, name, reference):
+def postProjectCommand(mosaicConfig, name, description, reference, privacy, isCollection):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  # Check that the privacy level is allowed
+  allowedPrivacy = []
+  allowedPrivacy.append('public')
+  allowedPrivacy.append('protected')
+  allowedPrivacy.append('private')
+  if privacy not in allowedPrivacy: fail('Privacy level (' + str(privacy) + ') is not recognised. Project could not be created')
+
+  command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"name": "' + str(name) + '", "description": "' + str(description) + '", "reference": "' + str(reference)
+  command += '", "privacy_level": "' + str(privacy) + '", "is_collection": "' + str(isCollection) + '"}\' '
+  command += '"' + str(url) + 'api/v1/projects' + '"'
+
+  return command
+
+# Add a project to a collection
+def postSubProjectCommand(mosaicConfig, projectId, projects, roleTypeId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
-  command += '-d \'{"name": "' + str(name) + '", "reference": "' + str(reference) + '"}\' '
-  command += '"' + str(url) + 'api/v1/projects' + '"'
+  command += '-d \'{"collection_projects": [' 
+  for i, project in enumerate(projects):
+    if i == 0: command += str(project)
+    else: command += ',' + str(project)
+  command += '], "role_type_id": ' + str(roleTypeId) + '}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/sub-projects"'
 
   return command
 

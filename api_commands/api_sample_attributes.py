@@ -19,6 +19,19 @@ def getSampleAttributes(config, projectId):
   # Return all the data
   return data
 
+# Return a dictionary with the sample attribute name as key and all values
+def getSampleAttributesDictName(config, projectId):
+  atts = {}
+
+  # Get the data
+  try: data = json.loads(os.popen(getSampleAttributesCommand(config, projectId, 'false')).read())
+  except: fail('Failed to get sample attributes for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get sample attributes for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+  for att in data: atts[att['name']] = att
+
+  # Return all the data
+  return atts
+
 # Return a dictionary with the sample attribute name as key and id as value
 def getSampleAttributesDictNameId(config, projectId):
   atts = {}
@@ -31,6 +44,19 @@ def getSampleAttributesDictNameId(config, projectId):
 
   # Return all the data
   return atts
+
+# Return a list of sample ids
+def getSampleAttributesIdList(config, projectId):
+  attributeIds = []
+
+  # Get the data
+  try: data = json.loads(os.popen(getSampleAttributesCommand(config, projectId, 'false')).read())
+  except: fail('Failed to get sample attributes for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get sample attributes for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+  for att in data: attributeIds.append(att['id'])
+
+  # Return all the data
+  return attributeIds
 
 # Return a dictionary with the sample attribute id as key and the name and value_type as values
 def getSampleAttributesDictIdNameType(config, projectId):
@@ -80,6 +106,26 @@ def getSampleAttributesWValues(config, projectId):
   # Return all the data
   return data
 
+# Get attributes for a sample in the project
+def getAttributesForSample(config, projectId, sampleId):
+  try: data = json.loads(os.popen(getAttributesForSampleCommand(config, projectId, sampleId)).read())
+  except: fail('Failed to get sample attributes for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get sample attributes for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return all the data
+  return data
+
+# Get attributes for a sample in the project as a dictionary with the id as key
+def getAttributesForSampleDictId(config, projectId, sampleId):
+  attributes = {}
+  try: data = json.loads(os.popen(getAttributesForSampleCommand(config, projectId, sampleId)).read())
+  except: fail('Failed to get sample attributes for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get sample attributes for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+  for attribute in data: attributes[attribute['id']] = attribute
+
+  # Return all the data
+  return attributes
+
 ######
 ###### Execute POST routes
 ######
@@ -90,11 +136,17 @@ def createPublicSampleAttribute(config, projectId, name, value, valueType, xLabe
   except: fail('Failed to create public sample attribute for project: ' + str(projectId))
   if 'message' in data: fail('Failed to create public sample attribute for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
+  # Return the id of the created attribute
+  return data['id']
+
 # Create a new private sample attribute
 def createPrivateSampleAttribute(config, projectId, name, value, valueType, xLabel, yLabel):
   try: data = json.loads(os.popen(postSampleAttributeCommand(config, name, valueType, value, 'false', xLabel, yLabel, projectId)).read())
   except: fail('Failed to create private sample attribute for project: ' + str(projectId))
   if 'message' in data: fail('Failed to create private sample attribute for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return the id of the created attribute
+  return data['id']
 
 # Import a sample attribute
 def importSampleAttribute(config, projectId, attId):
