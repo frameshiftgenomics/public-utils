@@ -30,6 +30,12 @@ def getProjectReference(config, projectId):
 ######
 
 # Set the default variant annotations
+def setDefaultTableAndCharts(mosaicConfig, projectId, columnIds, chartIds):
+  try: data = json.loads(os.popen(setDefaultTableAndChartsCommand(mosaicConfig, projectId, columnIds, chartIds)).read())
+  except: fail('Failed to set the default variant annotations for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to set the default variant annotations for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+# Set the default variant annotations
 def setDefaultVariantAnnotations(mosaicConfig, projectId, annIds):
   try: data = json.loads(os.popen(putDefaultAnnotationsCommand(mosaicConfig, projectId, annIds)).read())
   except: fail('Failed to set the default variant annotations for project: ' + str(projectId))
@@ -74,6 +80,18 @@ def getProjectSettingsCommand(mosaicConfig, projectId):
 ######
 ###### PUT routes
 ######
+
+# Set both the default column ids for the Samples table and the default chart ids
+def setDefaultTableAndChartsCommand(mosaicConfig, projectId, columnIds, chartIds):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"selected_sample_attribute_chart_data": {"chart_ids": ' + str(chartIds) + ', "chart_data": {}}, '
+  command += '"selected_sample_attribute_column_ids": ' + str(columnIds) + '}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/settings' + '"'
+
+  return command
 
 # Set a variant annotation as a default
 def putDefaultAnnotationsCommand(mosaicConfig, projectId, annotationIds):

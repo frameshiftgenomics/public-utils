@@ -1,6 +1,3 @@
-#!/usr/bin/python
-
-from __future__ import print_function
 import os
 import json
 
@@ -11,6 +8,17 @@ import json
 ######
 ###### Execute GET routes
 ######
+
+# Return all chart data
+def getChartsAllData(config, projectId):
+
+  # Get the chart info
+  try: data = json.loads(os.popen(getProjectChartsCommand(config, projectId)).read())
+  except: fail('Failed to get chart information for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get chart information for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return the sample id
+  return data
 
 # Return a list of charts, including the name, id, and background project id
 def getCharts(config, projectId):
