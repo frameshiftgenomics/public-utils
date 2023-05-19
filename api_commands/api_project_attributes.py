@@ -141,7 +141,7 @@ def createProjectAttribute(config, projectId, name, description, value, valueTyp
 # Import a project attribute
 def importProjectAttribute(config, projectId, attId, value):
   try: data = json.loads(os.popen(postImportProjectAttributeCommand(config, attId, value, projectId)).read())
-  except: fail('Failed to import a project attributes for project ' + str(projectId))
+  except: fail('Failed to import a project attribute for project ' + str(projectId))
   if 'message' in data: fail('Failed to import a project attributes for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
 ######
@@ -151,7 +151,7 @@ def importProjectAttribute(config, projectId, attId, value):
 # Update a project attribute
 def updateProjectAttribute(config, projectId, attId, value):
   try: data = json.loads(os.popen(putProjectAttributeCommand(config, value, projectId, attId)).read())
-  except: fail('Failed to update a project attributes for project ' + str(projectId))
+  except: fail('Failed to update a project attribute for project ' + str(projectId))
   if 'message' in data: fail('Failed to update a project attributes for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
 # Update the predefined list of values for a project attribute
@@ -222,8 +222,9 @@ def postProjectAttributeCommand(mosaicConfig, name, description, valueType, valu
   url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
-  command += '-d \'{"name": "' + str(name) + '", "value_type": "' + str(valueType) + '", "value": "' + str(value) + '", "is_public": "' + str(isPublic)
-  command += '", "description": "' + str(description) + '"}\' '
+  command += '-d \'{"name": "' + str(name) + '", "value_type": "' + str(valueType) + '", "description": "' + str(description) + '", "is_public": "' + str(isPublic)
+  if value == 'null': command += '", "value": null}\' '
+  else: command += '", "value": "' + str(value) + '"}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/attributes' + '"'
 
   return command
@@ -237,7 +238,7 @@ def postImportProjectAttributeCommand(mosaicConfig, attributeId, value, projectI
   command += '-d \'{"attribute_id": "' + str(attributeId) + '", "value": '
 
   # If the value is null, it should not be enclosed in quotation marks
-  if str(value) == 'null': command += 'null}\' '
+  if value == 'null': command += 'null}\' '
   else: command += '"' + str(value) + '"}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/attributes/import' + '"'
 
@@ -253,7 +254,8 @@ def putProjectAttributeCommand(mosaicConfig, value, projectId, attributeId):
   url   = mosaicConfig['MOSAIC_URL']
 
   command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
-  command += '-d \'{"value": "' + str(value) + '"}\' '
+  if value == 'null': command += '-d \'{"value": null}\' '
+  else: command += '-d \'{"value": "' + str(value) + '"}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/attributes/' + str(attributeId) + '"'
 
   return command
@@ -266,8 +268,9 @@ def putProjectAttributePredefinedCommand(mosaicConfig, predefinedValues, project
   command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-d \'{"predefined_values": ['
   for i, value in enumerate(predefinedValues):
-    if i == 0: command += '"' + str(value) + '"'
-    else: command += ', "' + str(value) + '"'
+    text = 'null' if value == 'null' else '"' + str(value) + '"'
+    if i == 0: command += str(text)
+    else: command += ', ' + str(text)
   command += ']}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/attributes/' + str(attributeId) + '"'
 

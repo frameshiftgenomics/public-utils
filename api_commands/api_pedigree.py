@@ -26,17 +26,6 @@ def getPedigree(config, projectId, sampleId):
   return samples
 
 ######
-###### Execute PUT routes
-######
-
-# Update pedigree information about a sample
-def updateSamplePedigree(mosaicConfig, projectId, sampleId, kindred, affected, maternalId, paternalId, sex):
-  print(putPedigreeCommand(mosaicConfig, projectId, sampleId, kindred, affected, maternalId, paternalId, sex))
-  try: data = json.loads(os.popen(putPedigreeCommand(mosaicConfig, projectId, sampleId, kindred, affected, maternalId, paternalId, sex)).read())
-  except: fail('Failed to add pedigree information for sample: ' + str(sampleId))
-  if 'message' in data: fail('Failed to add pedigree information for sample: ' + str(sampleId) + '. API returned the message: ' + str(data['message']))
-
-######
 ###### Execute POST routes
 ######
 
@@ -57,6 +46,23 @@ def addSampleToPedigree(mosaicConfig, projectId, sampleId, kindred, affected, ma
   try: data = json.loads(os.popen(postPedigreeCommand(mosaicConfig, projectId, sampleId, kindred, affected, maternalId, paternalId, sex)).read())
   except: fail('Failed to add pedigree information for sample: ' + str(sampleId))
   if 'message' in data: fail('Failed to add pedigree information for sample: ' + str(sampleId) + '. API returned the message: ' + str(data['message']))
+
+######
+###### Execute PUT routes
+######
+
+# Update pedigree information about a sample
+def updateSamplePedigree(mosaicConfig, projectId, sampleId, kindred, affected, maternalId, paternalId, sex):
+  print(putPedigreeCommand(mosaicConfig, projectId, sampleId, kindred, affected, maternalId, paternalId, sex))
+  try: data = json.loads(os.popen(putPedigreeCommand(mosaicConfig, projectId, sampleId, kindred, affected, maternalId, paternalId, sex)).read())
+  except: fail('Failed to add pedigree information for sample: ' + str(sampleId))
+  if 'message' in data: fail('Failed to add pedigree information for sample: ' + str(sampleId) + '. API returned the message: ' + str(data['message']))
+
+# Update the kindred id associated with a pedigree
+def updateKindredId(mosaicConfig, projectId, sampleId, kindredId):
+  try: data = json.loads(os.popen(putPedigreeKindredCommand(mosaicConfig, projectId, sampleId, kindredId)).read())
+  except: fail('Failed to update kindred id for pedigree in project: ' + str(projectId))
+  if 'message' in data: fail('Failed to update kindred id for pedigree in project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
 #################
 #################
@@ -126,6 +132,17 @@ def postUploadPedigreeCommand(mosaicConfig, projectId, filename):
 ######
 ###### PUT routes
 ######
+
+# Generate and add pedigree information to a project for a sample
+def putPedigreeKindredCommand(mosaicConfig, projectId, sampleId, kindredId):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"kindred_id": "' + str(kindredId) + '"}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/samples/' + str(sampleId) + '/pedigree"'
+
+  return command
 
 ######
 ###### DELETE routes

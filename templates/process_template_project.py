@@ -1,4 +1,8 @@
-#!/usr/bin/python
+######################
+######################
+###################### TODO items - When template created - add attribute with project id to public attributes project
+######################
+######################
 
 from __future__ import print_function
 from os.path import exists
@@ -15,6 +19,7 @@ path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]
 import mosaic_config
 import api_dashboards as api_d
 import api_projects as api_p
+import api_project_interval_attributes as api_pi
 import api_project_attributes as api_pa
 import api_sample_attributes as api_sa
 
@@ -44,6 +49,7 @@ def main():
   projectAttributes = api_pa.getProjectAttributesDictNameId(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'])
   templateSampleAttributes  = api_sa.getSampleAttributesDictNameId(mosaicConfig, templateId)
   templateProjectAttributes = api_pa.getProjectAttributesDictNameId(mosaicConfig, templateId)
+  templateIntervals         = api_pi.getIntervalsDictNameId(mosaicConfig, templateId)
 
   # Get information on the template project dashboard
   dashboard = api_d.getDashboard(mosaicConfig, templateId)
@@ -60,6 +66,25 @@ def main():
     else: attributeId = projectAttributes[attribute]
     if attribute not in templateProjectAttributes: api_pa.importProjectAttribute(mosaicConfig, templateId, attributeId, templateData['project_attributes'][attribute]['value'])
     importProjectAttribute(templateId, templateProjectAttributes, dashboard, attribute, attributeId, templateData['project_attributes'][attribute])
+
+  # Project events are all timestamps, so add the type to these. Store the event ids to use in creating intervals, then create
+  # all of the intervals
+  eventIds = {}
+  for event in templateData['project_events']:
+    templateData['project_events'][event]['type'] = 'timestamp'
+    if event not in projectAttributes: eventId = createAttribute('project', event, templateData['project_events'][event])
+    else: eventId = projectAttributes[event]
+    eventIds[event] = eventId
+    if event not in templateProjectAttributes: api_pa.importProjectAttribute(mosaicConfig, templateId, eventId, 'null')
+  for interval in templateData['project_intervals']:
+    try: startEvent = templateData['project_intervals'][interval]['start_event']
+    except: fail('The template json does not contain a start_event for interval: ' + str(interval))
+    try: endEvent = templateData['project_intervals'][interval]['end_event']
+    except: fail('The template json does not contain a end_event for interval: ' + str(interval))
+    if interval not in templateIntervals:
+      startId = eventIds[startEvent] if startEvent in eventIds else fail('Inteval ' + str(interval) + ' uses event ' + str(startEvent) + ', but no id is associated with this event attribute')
+      endId   = eventIds[endEvent] if endEvent in eventIds else fail('Inteval ' + str(interval) + ' uses event ' + str(endEvent) + ', but no id is associated with this event attribute')
+      intervalId = api_pi.createInterval(mosaicConfig, templateId, interval, startId, endId, 'true')
 
 # Input options
 def parseCommandLine():
@@ -124,7 +149,7 @@ def createAttribute(attributeType, attribute, attributeInfo):
   description = str(attributeInfo['description'])
   value       = attributeInfo['value']
   valueType   = str(attributeInfo['type'])
-  if (valueType != 'string') and (valueType != 'float'): fail('Project attribute ' + str(attribute) + ' has type "' + valueType + '". Allowed values are "string", "float"')
+  if (valueType != 'string') and (valueType != 'float') and (valueType != 'timestamp'): fail('Project attribute ' + str(attribute) + ' has type "' + valueType + '". Allowed values are "string", "float", "timestamp"')
   if attributeType == 'sample': return api_sa.createPublicSampleAttribute(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'], attribute, value, valueType, '', '')
   elif attributeType == 'project': return api_pa.createProjectAttribute(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'], attribute, description, value, valueType, 'true')
 
@@ -141,8 +166,6 @@ def importProjectAttribute(templateId, templateAttributes, dashboard, attribute,
   # already in the template project, check if it has been pinned to the dashboard. If it has, we do not want to pin
   # it again
   isPinned = False
-  #if attributeId not in templateAttributes: api_pa.importProjectAttribute(mosaicConfig, templateId, attributeId, value)
-  #else:
   for record in dashboard:
     if record['type'] == 'project_attribute' and record['attribute_id'] == attributeId and record['is_active']: isPinned = True
 

@@ -99,6 +99,16 @@ def createSample(config, projectId, name):
   # Return the sample id
   return data['id']
 
+######
+###### Execute PUT routes
+######
+
+# Update the name of a sample
+def updateSampleName(config, projectId, sampleId, name):
+  try: data = json.loads(os.popen(putSampleNameCommand(config, projectId, sampleId, name)).read())
+  except: fail('Failed to update sample name in project: ' + str(projectId))
+  if 'message' in data: fail('Failed to update sample name in project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
 #################
 #################
 ################# Following are the API routes for variant filters (mirrors the API docs)
@@ -139,6 +149,17 @@ def postSampleCommand(mosaicConfig, projectId, name):
 ######
 ###### PUT routes
 ######
+
+# Update a sample name
+def putSampleNameCommand(mosaicConfig, projectId, sampleId, name):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"name": "' + str(name) + '"}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/samples/' + str(sampleId) + '"'
+
+  return command
 
 ######
 ###### DELETE routes

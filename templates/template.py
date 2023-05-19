@@ -212,6 +212,9 @@ def updateProjectAttributes(projectId, templateAttributes, projectAttributes):
     isPinned     = templateAttributes[attributeId]['isPinned']
     isNamePinned = 'true' if templateAttributes[attributeId]['isNamePinned'] else 'false'
 
+    # If there is no value, set it to null
+    if not value: value = 'null'
+
     # Only import the attribute if it doesn't already exist in the project being updated and is public
     if attributeId not in projectAttributes and isPublic:
       importData = api_pa.importProjectAttribute(mosaicConfig, projectId, attributeId, value)
@@ -240,7 +243,7 @@ def updateTiming(projectId, templateEvents, templateIntervals, projectEvents, pr
     name = templateIntervals[intervalId]['name']
 
     # Only import intervals that are not already in the project
-    if intervalId not in projectIntervals: api_pia.postInterval(mosaicConfig, projectId, intervalId)
+    if intervalId not in projectIntervals: api_pia.importInterval(mosaicConfig, projectId, intervalId)
 
 # Update the conversations
 def updateConversations(projectId, templateConversations, projectConversations):

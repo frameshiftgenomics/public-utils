@@ -12,6 +12,21 @@ import math
 ###### Execute GET routes
 ######
 
+# Return a dictionary of intervals with the name as the key and the id as a value
+def getIntervalsDictNameId(config, projectId):
+  names = {}
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getProjectIntervalAttributesCommand(config, projectId)).read())
+  except: fail('Failed to get intervals for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get intervals for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for interval in data: names[interval['name']] = interval['id']
+
+  # Return the dictionary of intervals
+  return names
+
 # Return a dictionary of intervals with the id as the key and the name as a value
 def getIntervalsIdToName(config, projectId):
   ids = {}
@@ -47,8 +62,17 @@ def getIntervalsDictIdNamePrivacy(config, projectId):
 ###### Execute POST routes
 ######
 
+# Create an interval attribute
+def createInterval(config, projectId, name, startId, endId, isPublic):
+  try: data = json.loads(os.popen(postProjectIntervalAttributeCommand(config, name, isPublic, startId, endId, projectId)).read())
+  except: fail('Failed to create interval in project: ' + str(projectId))
+  if 'message' in data: fail('Failed to create interval in project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return the id of the created interval
+  return data['id']
+
 # Import an interval attribute to the project
-def postInterval(config, projectId, intervalId):
+def importInterval(config, projectId, intervalId):
   try: data = json.loads(os.popen(postImportProjectIntervalAttributeCommand(config, projectId, intervalId)).read())
   except: fail('Failed to import interval into project: ' + str(projectId))
   if 'message' in data: fail('Failed to import interval into project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
