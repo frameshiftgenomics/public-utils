@@ -83,7 +83,7 @@ def getCollectionProjects(config, projectId):
   # Return the projectIds
   return ids
 
-# Get the ids of all projects in a collection
+# Get a dictionary of the ids of all projects in a collection, with the name as value
 def getCollectionProjectsDictIdName(config, projectId):
   ids = {}
 
@@ -97,6 +97,21 @@ def getCollectionProjectsDictIdName(config, projectId):
 
   # Return the projectIds
   return ids
+
+# Get a dictionary of the names of all projects in a collection, with the id as value
+def getCollectionProjectsDictNameId(config, projectId):
+  names = {}
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getCollectionProjectsCommand(config, projectId)).read())
+  except: fail('Failed to get projects for collection: ' + str(projectId))
+  if 'message' in data: fail('Failed to get projects for collection: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for project in data: names[project['name']] = project['id']
+
+  # Return the projectIds
+  return names
 
 ######
 ###### Execute POST routes

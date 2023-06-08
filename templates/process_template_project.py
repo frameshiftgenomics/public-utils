@@ -1,6 +1,8 @@
 ######################
 ######################
-###################### TODO items - When template created - add attribute with project id to public attributes project
+###################### TODO items 
+###################### - When template created - add attribute with project id to public attributes project
+###################### - Predefined values for sample attributes
 ######################
 ######################
 
@@ -60,10 +62,12 @@ def main():
   for attribute in templateData['sample_attributes']:
     if attribute not in sampleAttributes: attributeId = createAttribute('sample', attribute, templateData['sample_attributes'][attribute])
     else: attributeId = sampleAttributes[attribute]
+    #setPredefinedValues('sample')
     if attribute not in templateSampleAttributes: api_sa.importSampleAttribute(mosaicConfig, templateId, attributeId)
   for attribute in templateData['project_attributes']:
     if attribute not in projectAttributes: attributeId = createAttribute('project', attribute, templateData['project_attributes'][attribute])
     else: attributeId = projectAttributes[attribute]
+    setPredefinedValues('project', attributeId, templateData['project_attributes'][attribute])
     if attribute not in templateProjectAttributes: api_pa.importProjectAttribute(mosaicConfig, templateId, attributeId, templateData['project_attributes'][attribute]['value'])
     importProjectAttribute(templateId, templateProjectAttributes, dashboard, attribute, attributeId, templateData['project_attributes'][attribute])
 
@@ -152,6 +156,17 @@ def createAttribute(attributeType, attribute, attributeInfo):
   if (valueType != 'string') and (valueType != 'float') and (valueType != 'timestamp'): fail('Project attribute ' + str(attribute) + ' has type "' + valueType + '". Allowed values are "string", "float", "timestamp"')
   if attributeType == 'sample': return api_sa.createPublicSampleAttribute(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'], attribute, value, valueType, '', '')
   elif attributeType == 'project': return api_pa.createProjectAttribute(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'], attribute, description, value, valueType, 'true')
+
+# If predefined values were specified for this attribute, attach them
+def setPredefinedValues(attributeType, attributeId, attributeInfo):
+  global mosaiConfig
+
+  # Get the list of predefined values for this attribute
+  if attributeInfo['available_values']:
+
+    # Update the attribute with the list of predefined values
+    if attributeType == 'sample': pass
+    elif attributeType == 'project': api_pa.updateProjectAttributePredefined(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'], attributeId, attributeInfo['available_values'])
 
 # Import a public project attribute into the template project and pin to the dashboard if required
 def importProjectAttribute(templateId, templateAttributes, dashboard, attribute, attributeId, attributeInfo):

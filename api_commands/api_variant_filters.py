@@ -79,6 +79,15 @@ def createVariantFilter(mosaicConfig, projectId, name, category, annotationFilte
   # Return the filter id
   return data['id']
 
+# Create a variant filter with specified columns and sort in a project and return the id of the created filter
+def createVariantFilterWithDisplay(mosaicConfig, projectId, name, category, columnIds, sortColumnId, sortDirection, annotationFilters):
+  try: data = json.loads(os.popen(postVariantFilterWithDisplayCommand(mosaicConfig, name, category, columnIds, sortColumnId, sortDirection, annotationFilters, projectId)).read())
+  except: fail('Failed to POST a new variant filter for project ' + str(projectId))
+  if 'message' in data: fail('Failed to POST a new variant for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return the filter id
+  return data['id']
+
 ######
 ###### Execute DELETE routes
 ######
@@ -130,6 +139,29 @@ def postVariantFilterCommand(mosaicConfig, name, category, annotationFilters, pr
   command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-d \'{"name": "' + str(name) + '", '
   if category: command += '"category": "' + str(category) + '", '
+  command += '"filter": ' + json.dumps(annotationFilters) + '}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/variants/filters' + '"'
+
+  return command
+
+# Post a new variant filter with display columns and sort applied
+def postVariantFilterWithDisplayCommand(mosaicConfig, name, category, columnIds, sortColumnId, sortDirection, annotationFilters, projectId):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  # Define the direction of the sort
+  if sortDirection == 'ASC': direction = 'ASC'
+  elif sortDirection == 'ascending': direction = 'ASC'
+  elif sortDirection == 'DESC': direction = 'DESC'
+  elif sortDirection == 'descending': direction = 'DESC'
+  else: fail('Unknown sort direction (' + str(sortDirection) + ') in api_variant_filters.py > postVariantFilterWithDisplayCommand')
+
+  command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"name": "' + str(name) + '", '
+  if category: command += '"category": "' + str(category) + '", '
+  command += '"selected_variant_column_uids": [' + ', '.join(str(cId) for cId in columnIds) + '], '
+  command += '"sort_by_column_uid": "' + str(sortColumnId) + '", '
+  command += '"sort_dir": "' + str(direction) + '", '
   command += '"filter": ' + json.dumps(annotationFilters) + '}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/variants/filters' + '"'
 

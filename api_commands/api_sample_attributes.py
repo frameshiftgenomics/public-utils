@@ -106,6 +106,17 @@ def getSampleAttributesWValues(config, projectId):
   # Return all the data
   return data
 
+# Return a dictionary of all sample attribute information, including values, for a project keyed on the attributeId
+def getSampleAttributesDictIdWithValues(config, projectId):
+  attributeIds = {}
+  try: data = json.loads(os.popen(getSampleAttributesCommand(config, projectId, 'true')).read())
+  except: fail('Failed to get sample attributes for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get sample attributes for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+  for attribute in data: attributeIds[attribute['id']] = attribute
+
+  # Return all the data
+  return attributeIds
+
 # Get attributes for a sample in the project
 def getAttributesForSample(config, projectId, sampleId):
   try: data = json.loads(os.popen(getAttributesForSampleCommand(config, projectId, sampleId)).read())
@@ -154,7 +165,7 @@ def importSampleAttribute(config, projectId, attId):
   except: fail('Failed to import sample attribute for project: ' + str(projectId))
   if 'message' in data: fail('Failed to import sample attribute for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
-# Update a sample attribute
+# Add a sample attribute to a sample
 def addSampleAttributeValue(config, projectId, sampleId, attId, value):
   try: data = json.loads(os.popen(postUpdateSampleAttributeCommand(config, value, projectId, sampleId, attId)).read())
   except: fail('Failed to update sample attribute for project: ' + str(projectId))

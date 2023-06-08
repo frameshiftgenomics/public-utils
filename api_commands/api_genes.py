@@ -35,13 +35,33 @@ def getGeneSetsDictName(mosaicConfig, projectId):
 ######
 
 # Create a gene set based on a list of gene ids or names
-def postGeneSetByName(mosaicConfig, projectId, name, description, genes):
-  try: data = json.loads(os.popen(postGeneSetByNameCommand(mosaicConfig, projectId, name, description, genes)).read())
+def postGeneSetByName(mosaicConfig, projectId, name, description, genes, organism):
+  genesToAdd  = []
+  genesToSkip = []
+
+  # Loop over the supplied list of genes and determine if they exist in Mosaic. A list of failed genes will be
+  # returned
+  for gene in genes:
+    data = os.popen(getGeneSearchCommand(mosaicConfig, gene)).read()
+
+    # Loop over the search results and check for an exact match. If the result of the search is a failure, the
+    # resulting data object with be html code. Skip these
+    isMatch = False
+    if data and not data.startswith('<html'):
+      for existingGene in json.loads(data)['data']:
+        if existingGene['gene_name'] == gene and existingGene['organism'] == organism:
+          isMatch = True
+          break
+      if isMatch: genesToAdd.append(gene)
+      else: genesToSkip.append(gene)
+
+  # Add the existing genes to the gene set
+  try: data  = json.loads(os.popen(postGeneSetByNameCommand(mosaicConfig, projectId, name, description, genesToAdd)).read())
   except: fail('Failed to create the gene set: ' + str(name))
   if 'message' in data: fail('Failed to create the gene set: ' + str(name) + '. API returned the message: ' + str(data['message']))
 
   # Return all the data
-  return data['id']
+  return data['id'], genesToSkip
 
 ######
 ###### Execute the PUT routes
@@ -62,6 +82,16 @@ def postGeneSetByName(mosaicConfig, projectId, name, description, genes):
 ######
 ###### GET routes
 ######
+
+# Search for a specific gene
+def getGeneSearchCommand(mosaicConfig, gene):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X GET -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" ' 
+  command += '"' + str(url) + 'api/v1/genes?search=' + str(gene) + '"'
+
+  return command
 
 # Get all gene sets
 def getGeneSetsCommand(mosaicConfig, projectId):
@@ -102,5 +132,5 @@ def postGeneSetByNameCommand(mosaicConfig, projectId, name, description, genes):
 
 # If the script fails, provide an error message and exit
 def fail(message):
-  print(message, sep = "")
+  print(message, sep = '')
   exit(1)

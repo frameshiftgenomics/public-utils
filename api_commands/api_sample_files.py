@@ -99,7 +99,7 @@ def attachAlignstatsFile(config, name, nickname, uri, reference, sampleName, sam
   except: fail('Failed to attach alignstats json file to project: ' + str(projectId))
   if 'message' in data: fail('Failed to attach alignstats json file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
-# Attach a peddy.htlp file to a project
+# Attach a peddy.html file to a project
 def attachPeddyFile(config, name, nickname, uri, reference, sampleName, sampleId, projectId):
   try: data = json.loads(os.popen(postSampleFileCommand(config, name, nickname, 'peddy.html', uri, reference, sampleName, sampleId, projectId)).read())
   except: fail('Failed to attach alignstats json file to project: ' + str(projectId))

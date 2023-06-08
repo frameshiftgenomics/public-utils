@@ -253,6 +253,12 @@ def putProjectAttributeCommand(mosaicConfig, value, projectId, attributeId):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
 
+  # Check if the value contains a ' or " character. Some values are comments that may reasonably contain these, but they
+  # will break the curl command, so they should be escaped. Timestamps should not be checked, only string attributes
+  if type(value) == str:
+    if "'" in value: value = value.replace("'", "'\\''")
+    elif '"' in value: value = value.replace('"', '\\"')
+
   command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
   if value == 'null': command += '-d \'{"value": null}\' '
   else: command += '-d \'{"value": "' + str(value) + '"}\' '

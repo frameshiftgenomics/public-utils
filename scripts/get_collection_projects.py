@@ -26,10 +26,12 @@ def main():
   mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
                     'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'},
                     'MOSAIC_ATTRIBUTES_PROJECT_ID': {'value': args.attributes_project, 'desc': 'The public attribtes project id', 'long': '--attributes_project', 'short': '-a'}}
-  mosaicConfig = mosaic_config.parseConfig(args.config, mosaicRequired)
+  mosaicConfig   = mosaic_config.mosaicConfigFile(args.config)
+  mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
   # Get the collection projects
-  getProjects(args)
+  projects = api_p.getCollectionProjectsDictNameId(mosaicConfig, args.collection_id)
+  for project in projects: print(project)
 
 # Input options
 def parseCommandLine():
@@ -50,22 +52,6 @@ def parseCommandLine():
   parser.add_argument('--version', '-v', action="version", version='Get files version: ' + str(version))
 
   return parser.parse_args()
-
-# Get the projects
-def getProjects(args):
-  global mosaicConfig
-  projects       = []
-
-  # Get all project information for the collection
-  try: data = json.loads(os.popen(api_p.getCollectionProjects(mosaicConfig, args.collection_id)).read())
-  except: fail('Could not get collection projects')
-  if 'message' in data: fail('Could not get collection projects. API returned the message' + str(data['message']) + '"')
-  for project in data:
-    projectId = project['id']
-    projects.append(projectId)
-
-  # Print out the projects
-  print(projects)
 
 # If the script fails, provide an error message and exit
 def fail(message):
