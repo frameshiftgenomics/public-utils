@@ -47,6 +47,12 @@ def updateAllProjectsTableDefaults(mosaicConfig, collectionId, attributeNames, a
   except: fail('Failed to update projects table defaults in collection')
   if 'message' in data: fail('Failed to update projects table defaults in collection. API returned the message: ' + str(data['message']))
 
+# Update the default charts
+def updateChartsDefaults(mosaicConfig, collectionId, chartIds):
+  try: data = json.loads(os.popen(putDefaultChartsCommand(mosaicConfig, collectionId, chartIds)).read())
+  except: fail('Failed to update default charts in collection')
+  if 'message' in data: fail('Failed to update default charts in collection. API returned the message: ' + str(data['message']))
+
 ######
 ###### Execute DELETE routes
 ######
@@ -129,6 +135,17 @@ def putProjectsTableAllColumnsCommand(mosaicConfig, collectionId, attributeNames
     if i == 0: command += str('"' + name + '"')
     else: command += str(', "' + name + '"')
   command += '], "selected_collection_attributes": [' + str(','.join(map(str,attributeIds))) + ']}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(collectionId) + '/settings' + '"'
+
+  return command
+
+# Set the default chart ids
+def putDefaultChartsCommand(mosaicConfig, collectionId, chartIds):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"selected_sample_attribute_chart_data": {"chart_ids": ' + str(chartIds) + ', "chart_data": {}}}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(collectionId) + '/settings' + '"'
 
   return command

@@ -52,6 +52,7 @@ def parseCommandLine():
   parser.add_argument('--uri', '-i', required = True, metavar = "string", help = "The file location")
   parser.add_argument('--sample_name', '-s', required = True, metavar = "string", help = "The sample id to attach the file to")
   parser.add_argument('--vcf_sample_name', '-v', required = False, metavar = "string", help = "The sample name in the vcf file. Only required if adding a vcf file")
+#  parser.add_argument('--size', '-z', required = True, metavar = "int", help = "The size of the file in bytes")
 
   return parser.parse_args()
 

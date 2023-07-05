@@ -42,7 +42,7 @@ def parseCommandLine():
   parser.add_argument('--attributes_project', '-a', required = False, metavar = "string", help = "The project id for the public attributes project")
 
   # Arguments related to the ClinVar annotations
-  parser.add_argument('--privacy_level', '-r', required = False, metavar = "string", help = 'The privacy level of the project - "public" or "private"')
+  parser.add_argument('--privacy_level', '-r', required = False, metavar = "string", help = 'The privacy level of the annotation - "public" or "private"')
   parser.add_argument('--display_type', '-d', required = False, metavar = "string", help = 'Can be "text", "badge", or "percent"')
   parser.add_argument('--name', '-n', required = True, metavar = "string", help = 'The annotation name')
 

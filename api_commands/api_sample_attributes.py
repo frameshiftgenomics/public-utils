@@ -206,7 +206,7 @@ def getSampleAttributesCommand(mosaicConfig, projectId, includeValues):
 
   command  = 'curl -S -s -X GET -H "Authorization: Bearer ' + str(token) + '" '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/samples/attributes'
-  if includeValues: command += '?include_values=true'
+  command += '?include_values=' + str(includeValues)
   command += '"'
 
   return command
@@ -221,7 +221,7 @@ def getSpecifiedSampleAttributesCommand(mosaicConfig, projectId, includeValues, 
   for i, attributeId in enumerate(attributeIds):
     if i == 0: command += 'attribute_ids[]=' + str(attributeId)
     else: command += '?attribute_ids[]=' + str(attributeId)
-  if includeValues: command += '&include_values=true'
+  command += '&include_values=' + str(includeValues)
   command += '"'
 
   return command

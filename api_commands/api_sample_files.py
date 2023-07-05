@@ -26,7 +26,7 @@ def getSampleVcfs(config, projectId, sampleId):
 
   # Loop over the returned data object and put the filter ids in a list to return
   for sFile in data['data']:
-    if str(sFile['type']) == 'vcf': ids[sFile['id']] = {'name': sFile['name'], 'uri': sFile['uri']}
+    if str(sFile['type']) == 'vcf': ids[sFile['id']] = {'name': sFile['name'], 'uri': sFile['uri'], 'vcf_sample_name': sFile['vcf_sample_name']}
 
   # Determine the number of pages
   noPages = int( math.ceil( float(data['count']) / float(limit) ) )
