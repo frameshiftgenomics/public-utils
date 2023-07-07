@@ -65,6 +65,30 @@ def getSampleFiles(config, projectId, sampleId, fileType):
   # Return the sample files
   return ids
 
+# Get all sample files
+def getAllSampleFiles(config, projectId, sampleId):
+  limit = 100
+  page  = 1
+  ids   = {}
+
+  # Execute the command
+  try: data = json.loads(os.popen(getSampleFilesCommand(config, projectId, sampleId, limit, page)).read())
+  except: fail('Failed to get sample files for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get sample files for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for sFile in data['data']: ids[sFile['id']] = {'name': sFile['name'], 'uri': sFile['uri'], 'vcf_sample_name': sFile['vcf_sample_name']}
+
+  # Determine the number of pages
+  noPages = int( math.ceil( float(data['count']) / float(limit) ) )
+
+  # Loop over all necessary pages
+  for page in range(1, noPages):
+    for sFile in data['data']: ids[sFile['id']] = {'name': sFile['name'], 'uri': sFile['uri'], 'vcf_sample_name': sFile['vcf_sample_name']}
+
+  # Return the sample files
+  return ids
+
 ######
 ###### Execute POST routes
 ######

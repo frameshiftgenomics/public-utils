@@ -25,10 +25,11 @@ def main():
   mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
                     'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'},
                     'MOSAIC_ATTRIBUTES_PROJECT_ID': {'value': args.attributes_project, 'desc': 'The public attribtes project id', 'long': '--attributes_project', 'short': '-a'}}
-  mosaicConfig = mosaic_config.parseConfig(args.config, mosaicRequired)
+  mosaicConfig   = mosaic_config.mosaicConfigFile(args.config)
+  mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
   # Add the event
-  addEvent(args)
+  getAnnotations(args.project_id)
 
 # Input options
 def parseCommandLine():
@@ -38,26 +39,23 @@ def parseCommandLine():
   parser.add_argument('--config', '-c', required = False, metavar = "string", help = "A config file containing token / url information")
   parser.add_argument('--token', '-t', required = False, metavar = "string", help = "The Mosaic authorization token")
   parser.add_argument('--url', '-u', required = False, metavar = "string", help = "The base url for Mosaic curl commands, up to an including \"api\". Do NOT include a trailing /")
+  parser.add_argument('--attributes_project', '-a', required = False, metavar = "integer", help = "The Mosaic project id that contains public attributes")
 
   # The project id to which the filter is to be added is required
-  parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
-
-  # Arguments related to the event
-  #parser.add_argument('--name', '-n', required = True, metavar = "string", help = "The name to give to the saved filter")
-  #parser.add_argument('--value', '-v', required = False, metavar = "string", help = "The timestamp to apply")
-  #parser.add_argument('--public', '-b', required = False, action = "store_true", help = "If not set, the created event will be private")
+  parser.add_argument('--project_id', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
 
   return parser.parse_args()
 
 # Add the event
-def addEvent(args):
+def getAnnotations(projectId):
   global mosaicConfig
 
-  try: jsonData = json.loads(os.popen(api_va.getVariantAnnotations(mosaicConfig, args.project)).read())
-  except: fail("Couldn't get variant annotations")
-
-  for annotation in jsonData:
-    print(annotation)
+  # Get all the project annotations
+  annotations = api_va.getAnnotations(mosaicConfig, projectId)
+  for annotation in annotations:
+    print(annotation['name'])
+    for field in annotation:
+      if field != 'name': print('  ', field, ': ', annotation[field], sep = '')
 
 # If the script fails, provide an error message and exit
 def fail(message):

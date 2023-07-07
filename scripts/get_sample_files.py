@@ -14,6 +14,7 @@ from sys import path
 path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]) + "/common_components")
 path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]) + "/api_commands")
 import mosaic_config
+import api_samples as api_s
 import api_sample_files as api_sf
 
 def main():
@@ -28,7 +29,8 @@ def main():
   mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
                     'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'},
                     'MOSAIC_ATTRIBUTES_PROJECT_ID': {'value': args.attributes_project, 'desc': 'The public attribtes project id', 'long': '--attributes_project', 'short': '-a'}}
-  mosaicConfig = mosaic_config.parseConfig(args.config, mosaicRequired)
+  mosaicConfig   = mosaic_config.mosaicConfigFile(args.config)
+  mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
   # Get the files from a project
   getFiles(args)
@@ -56,25 +58,16 @@ def parseCommandLine():
 # Get the files
 def getFiles(args):
   global mosaicConfig
-  global sampleFiles
-  limit = 100
-  page  = 1
 
-  try: data = json.loads(os.popen(api_sf.getAllSampleFiles(mosaicConfig, args.project_id, limit, page)).read()) 
-  except: fail('Couldn\'t get files')
-  for sampleFile in data['data']: sampleFiles[sampleFile['id']] = {'name': sampleFile['name'], 'nickname': sampleFile['nickname'], 'uri': sampleFile['uri']}
-
-  # Determine how many annotations there are and consequently how many pages of annotations
-  noPages = math.ceil(int(data['count']) / int(limit))
-
-  # Loop over remainig pages of annotations
-  for page in range(2, noPages + 1):
-    try: data = json.loads(os.popen(api_sf.getAllSampleFiles(mosaicConfig, args.project_id, limit, page)).read()) 
-    except: fail('Couldn\'t get files')
-    for sampleFile in data['data']: sampleFiles[sampleFile['id']] = {'name': sampleFile['name'], 'nickname': sampleFile['nickname'], 'uri': sampleFile['uri']}
-
-  # Print out the files
-  for sampleFile in sampleFiles: print(sampleFile, sampleFiles[sampleFile])
+  sampleIds = api_s.getSampleIds(mosaicConfig, args.project_id)
+  for sampleId in sampleIds:
+    print('Sample id: ', sampleId, sep = '')
+    data = api_sf.getAllSampleFiles(mosaicConfig, args.project_id, sampleId)
+    for fileId in data:
+      print('  File: ', fileId, sep = '')
+      print('    Name: ', data[fileId]['name'], sep = '')
+      print('    URI:  ', data[fileId]['uri'], sep = '')
+      print('    VCF sample name: ', data[fileId]['vcf_sample_name'], sep = '')
 
 # If the script fails, provide an error message and exit
 def fail(message):

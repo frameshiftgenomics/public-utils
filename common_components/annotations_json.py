@@ -42,29 +42,32 @@ def readAnnotationsJson(jsonFilename):
 # annotations need to be created, updated, or left alone
 def annotationStatus(mosaicConfig, api_va, annotationsInfo, publicAnnotations):
   for annotation in annotationsInfo['annotations']:
-    if annotation not in publicAnnotations: createAnnotation(mosaicConfig, api_va, annotation, annotationsInfo['annotations'][annotation])
+    if annotation not in publicAnnotations: annotationId, annotationUid = createAnnotation(mosaicConfig, api_va, annotation, annotationsInfo['annotations'][annotation])
     else:
       update = False
       category    = annotationsInfo['annotations'][annotation]['category']
       displayType = annotationsInfo['annotations'][annotation]['display_type'] if annotationsInfo['annotations'][annotation]['display_type'] else 'text'
       severity    = annotationsInfo['annotations'][annotation]['severity']
 
+      # Check if the category needs updating
       if category and publicAnnotations[annotation]['category'] and category != publicAnnotations[annotation]['category']: update = True
       elif category and not publicAnnotations[annotation]['category']: update = True
       elif not category and publicAnnotations[annotation]['category']: update = True
 
+      # Check if the display type needs updating
       if displayType and publicAnnotations[annotation]['display_type'] and displayType != publicAnnotations[annotation]['display_type']: update = True
       elif displayType and not publicAnnotations[annotation]['display_type']: update = True
       elif not displayType and publicAnnotations[annotation]['display_type']: update = True
 
+      # Check if the severity needs updating
       if severity and publicAnnotations[annotation]['severity'] and severity != publicAnnotations[annotation]['severity']: update = True
       elif severity and not publicAnnotations[annotation]['severity']: update = True
       elif not severity and publicAnnotations[annotation]['severity']: update = True
 
-#      if category and category != publicAnnotations[annotation]['category']: update = True
-#      if displayType != publicAnnotations[annotation]['display_type']: update = True
-#      if severity != publicAnnotations[annotation]['severity']: update = True
       if update: updateAnnotation(mosaicConfig, api_va, annotation, annotationsInfo['annotations'][annotation], publicAnnotations[annotation])
+      else:
+        annotationId  = publicAnnotations[annotation]['id']
+        annotationUid = publicAnnotations[annotation]['uid']
 
 # Create a new public annotation
 def createAnnotation(mosaicConfig, api_va, name, annotation):

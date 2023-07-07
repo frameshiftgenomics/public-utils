@@ -15,7 +15,6 @@ import math
 
 # Return a list of all annotations with all their data
 def getAnnotations(config, projectId):
-  ids = []
 
   # Execute the GET route
   try: data = json.loads(os.popen(getVariantAnnotationsCommand(config, projectId)).read())
