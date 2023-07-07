@@ -64,7 +64,10 @@ def annotationStatus(mosaicConfig, api_va, annotationsInfo, publicAnnotations):
       elif severity and not publicAnnotations[annotation]['severity']: update = True
       elif not severity and publicAnnotations[annotation]['severity']: update = True
 
-      if update: updateAnnotation(mosaicConfig, api_va, annotation, annotationsInfo['annotations'][annotation], publicAnnotations[annotation])
+      # If updating an annotation, use the original_project_id to ensure the update occurs
+      if update:
+        originalProjectId = publicAnnotations[annotation]['original_project_id']
+        updateAnnotation(mosaicConfig, api_va, originalProjectId, annotation, annotationsInfo['annotations'][annotation], publicAnnotations[annotation])
       else:
         annotationId  = publicAnnotations[annotation]['id']
         annotationUid = publicAnnotations[annotation]['uid']
@@ -82,8 +85,7 @@ def createAnnotation(mosaicConfig, api_va, name, annotation):
   return annotationId, annotationUid
 
 # Update an existing public annotation
-def updateAnnotation(mosaicConfig, api_va, name, annotation, publicAnnotation):
-  projectId    = mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID']
+def updateAnnotation(mosaicConfig, api_va, projectId, name, annotation, publicAnnotation):
   valueType    = annotation['type']
   category     = annotation['category']
   severity     = annotation['severity'] if annotation['severity'] else None
