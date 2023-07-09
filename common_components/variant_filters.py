@@ -122,8 +122,8 @@ def getFilters(filtersInfo, categories, filters, samples, sampleMap, annotations
 
               # Check the column to sort on is a valid uid, or is defined in the annotation map
               if filtersInfo['filters'][name]['display'][field]['column_uid'] not in uids:
-                if filtersInfo['filters'][name]['display'][field]['column_uid'] in annotationMap: uid = annotationMap[uid]
-                else fail('public_utils/common_components/variant_filters.py: Unknown uid (' + str(uid) + ') in "display" > "sort" > "column_uid" for variant filter ' + str(name))
+                if filtersInfo['filters'][name]['display'][field]['column_uid'] in annotationMap: uid = annotationMap[filtersInfo['filters'][name]['display'][field]['column_uid']]
+                else: fail('public_utils/common_components/variant_filters.py: Unknown uid (' + str(uid) + ') in "display" > "sort" > "column_uid" for variant filter ' + str(name))
               else: uid = filtersInfo['filters'][name]['display'][field]['column_uid']
               filters[name]['sortColumnUid'] = uid 
 
