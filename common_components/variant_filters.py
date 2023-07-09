@@ -25,7 +25,6 @@ def createAnnotationMap(annotations):
     # ClinVar can be regurlarly updated, so the filter can include the term 'clinvar_latest'. If this is
     # encountered, the filter should use the clinVar annotation available in the project
     if 'clinvar' in annotation.lower(): clinVar.append(annotation)
-  #annotationMap['clinvar_latest'] = mosaicInfo['resources']['clinVar']['annotations']['CLNSIG']['uid']
 
   # If there is a single available clinVar annotation use this
   if len(clinVar) == 1: annotationMap['clinvar_latest'] = annotations[clinVar[0]]['uid']
@@ -110,14 +109,25 @@ def getFilters(filtersInfo, categories, filters, samples, sampleMap, annotations
             if field == 'column_uids':
               filters[name]['columnUids'] = filtersInfo['filters'][name]['display'][field]
               for uid in filters[name]['columnUids']: 
-                if uid not in uids: fail('public_utils/common_components/variant_filters.py: Unknown uid (' + str(uid) + ') in "display" > "column_uids" for variant filter ' + str(name))
+                if uid not in uids:
+                  if uid in annotationMap:
+                    filters[name]['columnUids'].remove(uid)
+                    filters[name]['columnUids'].append(annotationMap[uid])
+                  else: fail('public_utils/common_components/variant_filters.py: Unknown uid (' + str(uid) + ') in "display" > "column_uids" for variant filter ' + str(name))
 
             # Process the "sort" field which defines the annotation to sort the table on
             elif field == 'sort':
               if 'column_uid' not in filtersInfo['filters'][name]['display']['sort']: fail('public_utils/common_components/variant_filters.py: Field "column_uid" is missing from the "display" > "sort" section for filter ' + str(name))
               if 'direction' not in filtersInfo['filters'][name]['display']['sort']: fail('public_utils/common_components/variant_filters.py: Field "direction" is missing from the "display" > "sort" section for filter ' + str(name))
-              uid = filtersInfo['filters'][name]['display'][field]['column_uid'] 
-              filters[name]['sortColumnUid'] = uid if uid in uids else fail('public_utils/common_components/variant_filters.py: Unknown uid (' + str(uid) + ') in "display" > "sort" > "column_uid" for variant filter ' + str(name))
+
+              # Check the column to sort on is a valid uid, or is defined in the annotation map
+              if filtersInfo['filters'][name]['display'][field]['column_uid'] not in uids:
+                if filtersInfo['filters'][name]['display'][field]['column_uid'] in annotationMap: uid = annotationMap[uid]
+                else fail('public_utils/common_components/variant_filters.py: Unknown uid (' + str(uid) + ') in "display" > "sort" > "column_uid" for variant filter ' + str(name))
+              else: uid = filtersInfo['filters'][name]['display'][field]['column_uid']
+              filters[name]['sortColumnUid'] = uid 
+
+              # Check that the sort direction is valid
               filters[name]['sortDirection'] = filtersInfo['filters'][name]['display'][field]['direction']
               if filters[name]['sortDirection'] != 'ascending' and filters[name]['sortDirection'] != 'descending': fail('public_utils/common_components/variant_filters.py: Sort direction must be "ascending" or "descending" for filter ' + str(name))
 
