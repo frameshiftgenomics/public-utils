@@ -37,6 +37,17 @@ def getCharts(config, projectId):
 ###### Execute POST routes
 ######
 
+# Create a new saved chart (no background data)
+def postChart(config, projectId, name, chartType, attributeId, ylabel, colorId, compareId):
+  print(postChartCommand(config, name, chartType, attributeId, ylabel, colorId, compareId, projectId))
+  exit(0)
+  try: data = json.loads(os.popen(postChartCommand(config, name, chartType, attributeId, ylabel, colorId, compareId, projectId)).read())
+  except: fail('Failed to get chart information for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get chart information for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return the id of the chart
+  return data['id']
+
 # Create a new scatterplot chart with background data
 def createScatterChartWithBackgrounds(config, projectId, name, attId, backgroundsId, ylabel, colourId, compareId):
   try: data = json.loads(os.popen(postProjectBackgroundChartCommand(config, name, 'scatterplot', attId, backgroundsId, ylabel, colourId, compareId, projectId)).read())
@@ -81,6 +92,26 @@ def getProjectChartsCommand(mosaicConfig, projectId):
 ######
 ###### POST routes
 ######
+
+# Post a chart
+def postChartCommand(mosaicConfig, name, chartType, attributeId, ylabel, colorId, compareId, projectId):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{'
+  comammd += '"name": "' + str(name) + '", '
+  command += '"chart_type": "' + str(chartType) + '", '
+  command += '"attribute_id": "' + str(attributeId) + '", '
+  command += '"saved_chart_data": {'
+  command += '"x_axis": "attribute", '
+  command += '"y_label": "' + str(ylabel) + '", '
+  command += '"color_by": "attribute", "color_by_attribute_id": "' + str(colorId) + '", '
+  command += '"compare_to_attribute_id": "' + str(compareId) + '"'
+  command += '}}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/charts' + '"'
+
+  return command
 
 # Post a chart with background data
 def postProjectBackgroundChartCommand(mosaicConfig, name, chartType, attributeId, backgroundId, ylabel, colorId, compareId, projectId):

@@ -72,28 +72,14 @@ def parseCommandLine():
   parser = argparse.ArgumentParser(description='Process the command line')
 
   # Required arguments
-  #parser.add_argument('--data_directory', '-d', required = True, metavar = 'string', help = 'The path to the directory where the resources live')
-  #parser.add_argument('--tools_directory', '-s', required = False, metavar = 'string', help = 'The path to the directory where the tools to use live')
-  #parser.add_argument('--utils_directory', '-l', required = True, metavar = 'string', help = 'The path to the public-utils directory')
-  #parser.add_argument('--input_vcf', '-i', required = False, metavar = 'string', help = 'The input vcf file to annotate')
-  #parser.add_argument('--ped', '-e', required = False, metavar = 'string', help = 'The pedigree file for the family. Not required for singletons')
   parser.add_argument('--project_id', '-p', required = True, metavar = 'string', help = 'The project id that variants will be uploaded to')
   parser.add_argument('--config', '-c', required = True, metavar = 'string', help = 'The config file for Mosaic')
   parser.add_argument('--variant_filters', '-f', required = True, metavar = 'string', help = 'The json file describing the variant filters to apply to each project')
-
-  # Optional pipeline arguments
-  #parser.add_argument('--reference', '-r', required = False, metavar = 'string', help = 'The reference genome to use. Allowed values: ' + ', '.join(allowedReferences))
-  #parser.add_argument('--resource_json', '-j', required = False, metavar = 'string', help = 'The json file describing the annotation resources')
-#  parser.add_argument('--no_comp_het', '-n', required = False, action = "store_true", help = "If set, comp het determination will be skipped")
-
-  # Optional argument to handle HPO terms
-  #parser.add_argument('--hpo', '-o', required = False, metavar = "string", help = "A comma separate list of hpo ids for the proband")
 
   # Optional mosaic arguments
   parser.add_argument('--token', '-t', required = False, metavar = "string", help = "The Mosaic authorization token")
   parser.add_argument('--url', '-u', required = False, metavar = "string", help = "The base url for Mosaic")
   parser.add_argument('--attributes_project', '-a', required = False, metavar = "integer", help = "The Mosaic project id that contains public attributes")
-  #parser.add_argument('--mosaic_json', '-m', required = False, metavar = 'string', help = 'The json file describing the Mosaic parameters')
 
   # Version
   parser.add_argument('--version', '-v', action="version", version='Calypso annotation pipeline version: ' + str(version))

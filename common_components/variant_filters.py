@@ -79,10 +79,24 @@ def getFilters(filtersInfo, categories, filters, samples, sampleMap, annotations
 
   # Now check that all of the filters defined for each category are described in detail in the "filters" section of the json
   if 'filters' not in filtersInfo: fail('public-utils/common_components/variant_filters.py: The json file describing variant filters is missing the "filters" section')
+
+  # Loop over all of the filters in the category and add them to the filterNames list. Check if any of the filters in
+  # the categories section do not have a description in the 'filters' section
+  filterNames = []
   for category in categories:
     for position in categories[category]:
       name = categories[category][position]
       if name not in filtersInfo['filters']: fail('public-utils/common_components/variant_filters.py: Filter "' + str(name) + '" appears in filter category "' + str(category) + '", but is not described in the "filters" section')
+      filterNames.append(categories[category][position])
+
+  # If there are any filters that are uncategorized, throw an error
+  for name in filtersInfo['filters']:
+    if name not in filterNames: fail('public-utils/common_components/variant_filters.py: Filter "' + str(name) + '" is not included in any category. Please include in a category')
+
+  # Loop over the filters are process
+  for category in categories:
+    for position in categories[category]:
+      name = categories[category][position]
 
       # Check if this filter has any requirements, for example, does it require that the case has parents (for e.g. de novo filters)    
       filters[name]['useFilter'] = checkRequirements(filtersInfo['filters'][name], sampleMap)
@@ -107,13 +121,16 @@ def getFilters(filtersInfo, categories, filters, samples, sampleMap, annotations
 
             # Process the "columns" field. This must contain a list of available annotation uids
             if field == 'column_uids':
+
+              # Create a new list as some uids will need to be replaced in the list, but the order needs to be preserved
+              orderedUids = []
               filters[name]['columnUids'] = filtersInfo['filters'][name]['display'][field]
               for uid in filters[name]['columnUids']: 
                 if uid not in uids:
-                  if uid in annotationMap:
-                    filters[name]['columnUids'].remove(uid)
-                    filters[name]['columnUids'].append(annotationMap[uid])
+                  if uid in annotationMap: orderedUids.append(annotationMap[uid])
                   else: fail('public_utils/common_components/variant_filters.py: Unknown uid (' + str(uid) + ') in "display" > "column_uids" for variant filter ' + str(name))
+                else: orderedUids.append(uid)
+              filters[name]['columnUids'] = orderedUids
 
             # Process the "sort" field which defines the annotation to sort the table on
             elif field == 'sort':
