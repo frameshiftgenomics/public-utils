@@ -2,6 +2,33 @@ from os.path import exists
 import json
 import os
 
+# Set up the variant filters for a project
+def setVariantFilters(mosaicConfig, api_ps, api_va, api_vf, projectId, filtersJson, samples):
+
+  # Get all of the annotations in the current project. When creating a filter, the project will be checked to ensure that it has all of the
+  # required annotations before creating the filter
+  annotations    = {}
+  annotationUids = {}
+  annotationData = api_va.getAnnotations(mosaicConfig, projectId)
+  for annotation in annotationData: annotations[annotation['name']] = {'id': annotation['id'], 'uid': annotation['uid'], 'type': annotation['type'], 'privacy_level': annotation['privacy_level']}
+  for annotation in annotations: annotationUids[annotations[annotation]['uid']] = {'name': annotation, 'type': annotations[annotation]['type']}
+
+  # Determine all of the variant filters that are to be added; remove any filters that already exist with the same name; fill out variant
+  # filter details not in the json (e.g. the uids of private annotations); create the filters; and finally update the project settings to
+  # put the filters in the correct category and sort order. Note that the filters to be applied depend on the family structure. E.g. de novo
+  # filters won't be added to projects without parents
+  sampleMap                 = createSampleMap(samples)
+  annotationMap             = createAnnotationMap(annotations)
+  filtersInfo               = readVariantFiltersJson(filtersJson)
+  filterCategories, filters = getFilterCategories(filtersInfo)
+  filters                   = getFilters(filtersInfo, filterCategories, filters, samples, sampleMap, annotations, annotationMap, annotationUids)
+
+  # Get all of the filters that exist in the project, and check which of these share a name with a filter to be created
+  deleteFilters(mosaicConfig, api_vf, projectId, filters)
+
+  # Create all the required filters and update their categories and sort order in the project settings
+  createFilters(mosaicConfig, api_ps, api_vf, projectId, annotations, filterCategories, filters)
+
 # Create a mapping from the sample relation to a Mosaic sample id. The json file describing the filter
 # can include fields for requiring specific genotypes for family members, e.g. Proband must be an alt,
 # in order to be general for any project. These need to be converted to sample ids for Mosaic
@@ -25,6 +52,9 @@ def createAnnotationMap(annotations):
     # ClinVar can be regurlarly updated, so the filter can include the term 'clinvar_latest'. If this is
     # encountered, the filter should use the clinVar annotation available in the project
     if 'clinvar' in annotation.lower(): clinVar.append(annotation)
+
+    # Private annotations will be referred to in the json by name, so these need to be included in the map
+    if annotations[annotation]['privacy_level'] == 'private': annotationMap[annotation] = annotations[annotation]['uid']
 
   # If there is a single available clinVar annotation use this
   if len(clinVar) == 1: annotationMap['clinvar_latest'] = annotations[clinVar[0]]['uid']

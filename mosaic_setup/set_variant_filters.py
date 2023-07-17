@@ -42,29 +42,8 @@ def main():
   samples = sam.getMosaicSamples(mosaicConfig, api_s, api_sa, args.project_id)
   proband = sam.getProband(mosaicConfig, samples)
 
-  # Get all of the annotations in the current project. When creating a filter, the project will be checked to ensure that it has all of the
-  # required annotations before creating the filter
-  annotations    = {}
-  annotationUids = {}
-  data           = api_va.getAnnotations(mosaicConfig, args.project_id)
-  for annotation in data: annotations[annotation['name']] = {'id': annotation['id'], 'uid': annotation['uid'], 'type': annotation['type']}
-  for annotation in annotations: annotationUids[annotations[annotation]['uid']] = {'name': annotation, 'type': annotations[annotation]['type']}
-
-  # Determine all of the variant filters that are to be added; remove any filters that already exist with the same name; fill out variant
-  # filter details not in the json (e.g. the uids of private annotations); create the filters; and finally update the project settings to
-  # put the filters in the correct category and sort order. Note that the filters to be applied depend on the family structure. E.g. de novo
-  # filters won't be added to projects without parents
-  sampleMap                 = vFilters.createSampleMap(samples)
-  annotationMap             = vFilters.createAnnotationMap(annotations)
-  filtersInfo               = vFilters.readVariantFiltersJson(args.variant_filters)
-  filterCategories, filters = vFilters.getFilterCategories(filtersInfo)
-  filters                   = vFilters.getFilters(filtersInfo, filterCategories, filters, samples, sampleMap, annotations, annotationMap, annotationUids)
-
-  # Get all of the filters that exist in the project, and check which of these share a name with a filter to be created
-  vFilters.deleteFilters(mosaicConfig, api_vf, args.project_id, filters)
-
-  # Create all the required filters and update their categories and sort order in the project settings
-  vFilters.createFilters(mosaicConfig, api_ps, api_vf, args.project_id, annotations, filterCategories, filters)
+  # Set up the filters
+  vFilters.setVariantFilters(mosaicConfig, api_ps, api_va, api_vf, args.project_Id, args.variant_filters, samples)
 
 # Input options
 def parseCommandLine():
