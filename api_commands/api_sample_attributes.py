@@ -187,6 +187,16 @@ def updateSampleAttributeValue(config, projectId, sampleId, attId, value):
   except: fail('Failed to update sample attribute for project: ' + str(projectId))
   if 'message' in data: fail('Failed to update sample attribute for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
+# Update the value associated with an existing sample attribute
+def setSampleAttributePredefinedValues(config, projectId, attributeId, values):
+
+  # Check that the values are supplied as an array
+  if type(values) != list: fail('Failed to update sample attribute\'s predefined values. The values were not supplied as a list')
+  command = putSetPredefinedValuesCommand(config, projectId, attributeId, values)
+  try: data = json.loads(os.popen(putSetPredefinedValuesCommand(config, projectId, attributeId, values)).read())
+  except: fail('Failed to update sample attribute\'s predefined values for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to update sample attribute\'s predefined values for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
 #################
 #################
 ################# Following are the API routes for variant filters (mirrors the API docs)
@@ -311,6 +321,21 @@ def putSampleAttributeCommand(mosaicConfig, fields, projectId, attributeId):
     command += '"' + str(field) + '": "' + str(fields[field]) + '"'
     if int(i) + 1 != len(fields): command += ', '
   command += '}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/samples/attributes/' + str(attributeId) + '"'
+
+  return command
+
+# Set predefined values for a sample attribute
+def putSetPredefinedValuesCommand(mosaicConfig, projectId, attributeId, values):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"predefined_values": ['
+  for i, value in enumerate(values):
+    if i == 0: command += '"' + str(value) + '"'
+    else: command += ',"' + str(value) + '"'
+  command += ']}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/samples/attributes/' + str(attributeId) + '"'
 
   return command
