@@ -1,0 +1,438 @@
+{
+	"categories": {
+		"Inheritance" : {
+			"High quality de novo": "1",
+			"All other de novo": "2"
+		},
+		"Pathogenicity" : {
+			"ClinVar with HPO overlaps": "1",
+			"ClinVar": "2"
+		},
+		"Splice variants": {
+			"High": "1",
+			"Extended": "2"
+		},
+		"Phenotypic": {
+			"HPO Overlaps": "1"
+		},
+		"Functional consequence": {
+			"Frameshift or nonsense": "1",
+			"Missense - high REVEL": "2",
+			"Missense - high MutScore": "3"
+		}
+	},
+	"filters": {
+		"High quality de novo": {
+			"requires_mother": true,
+			"requires_father": true,
+			"genotypes": {
+				"ref_samples": ["mother", "father"],
+				"alt_samples": ["proband"],
+				"het_samples": false,
+				"hom_samples": false
+			},
+			"filters": {
+				"annotation_filters": [
+					{
+						"uid": "gene_impact_GRCh38",
+						"values": [
+							"HIGH",
+							"MODERATE"
+						],
+						"include_nulls": false
+					},
+					{
+						"name": "GQ Proband",
+						"min": "60",
+						"include_nulls": false
+					},
+					{
+						"name": "GQ Mother",
+						"min": "60",
+						"include_nulls": false
+					},
+					{
+						"name": "GQ Father",
+						"min": "60",
+						"include_nulls": false
+					}
+				]
+			},
+                        "display": {
+                                "column_uids": [
+                                        "gene_symbol_GRCh38",
+                                        "gene_consequence_GRCh38",
+                                        "genotype_per_sample",
+                                        "clinvar_latest",
+                                        "HPO Labels",
+                                        "gnomad_popmax_af__v2_1_1_genomes__c14fd0d2",
+                                        "gnomad_popmax_af__v3_1_2_genomes__3e5ec14b",
+                                        "pli_grh38_cca06295",
+                                        "revel_grch38_4b79421f",
+                                        "mutscore_grch38_d287fd72",
+                                        "HGVSp"
+                                ],
+                                "sort": {
+                                        "column_uid": "clinvar_latest",
+                                        "direction": "ascending"
+                                }
+                        }       
+		},
+		"All other de novo": {
+			"requires_mother": true,
+			"requires_father": true,
+			"genotypes": {
+				"ref_samples": ["mother", "father"],
+				"alt_samples": ["proband"],
+				"het_samples": false,
+				"hom_samples": false
+			},
+			"filters": {
+				"annotation_filters": [
+					{
+						"name": "GQ Proband",
+						"min": "40",
+						"include_nulls": false
+					},
+					{
+						"name": "GQ Mother",
+						"min": "40",
+						"include_nulls": false
+					},
+					{
+						"name": "GQ Father",
+						"min": "40",
+						"include_nulls": false
+					}
+				]
+			},
+                        "display": {
+                                "column_uids": [
+                                        "gene_symbol_GRCh38",
+                                        "gene_consequence_GRCh38",
+                                        "genotype_per_sample",
+                                        "clinvar_latest",
+                                        "HPO Labels",
+                                        "gnomad_popmax_af__v2_1_1_genomes__c14fd0d2",
+                                        "gnomad_popmax_af__v3_1_2_genomes__3e5ec14b",
+                                        "pli_grh38_cca06295",
+                                        "revel_grch38_4b79421f",
+                                        "mutscore_grch38_d287fd72",
+                                        "HGVSp"
+                                ],
+                                "sort": {
+                                        "column_uid": "clinvar_latest",
+                                        "direction": "ascending"
+                                }
+                        }
+		},
+		"ClinVar with HPO overlaps": {
+			"genotypes": {
+				"ref_samples": false,
+				"alt_samples": ["proband"],
+				"het_samples": false,
+				"hom_samples": false
+			},
+			"filters": {
+				"annotation_filters": [
+					{
+						"name": "clinvar_latest",
+						"privacy": "public",
+						"values": [
+							"Pathogenic",
+							"Pathogenic/Likely_pathogenic",
+							"Likely_pathogenic",
+							"Uncertain_significance"
+						],
+						"include_nulls": false
+					},
+					{
+						"name": "HPO Overlaps",
+						"min": "1",
+						"include_nulls": false
+					}
+				]
+			},
+                        "display": {
+                                "column_uids": [
+                                        "gene_symbol_GRCh38",
+                                        "gene_consequence_GRCh38",
+                                        "genotype_per_sample",
+                                        "clinvar_latest",
+                                        "HPO Labels",
+                                        "HPO Overlaps",
+                                        "gnomad_popmax_af__v2_1_1_genomes__c14fd0d2",
+                                        "gnomad_popmax_af__v3_1_2_genomes__3e5ec14b",
+                                        "pli_grh38_cca06295",
+                                        "HGVSp"
+                                ],
+                                "sort": {
+                                        "column_uid": "clinvar_latest",
+                                        "direction": "ascending"
+                                }
+                        }
+		},
+		"ClinVar": {
+			"genotypes": {
+				"ref_samples": false,
+				"alt_samples": ["proband"],
+				"het_samples": false,
+				"hom_samples": false
+			},
+			"filters": {
+				"annotation_filters": [
+					{
+						"name": "clinvar_latest",
+						"privacy": "public",
+						"values": [
+							"Pathogenic",
+							"Pathogenic/Likely_pathogenic",
+							"Likely_pathogenic"
+						],
+						"include_nulls": false
+					}
+				]
+			},
+                        "display": {
+                                "column_uids": [
+                                        "gene_symbol_GRCh38",
+                                        "gene_consequence_GRCh38",
+                                        "genotype_per_sample",
+                                        "clinvar_latest",
+                                        "HPO Labels",
+                                        "gnomad_popmax_af__v2_1_1_genomes__c14fd0d2",
+                                        "gnomad_popmax_af__v3_1_2_genomes__3e5ec14b",
+                                        "pli_grh38_cca06295"
+                                ],
+                                "sort": {
+                                        "column_uid": "clinvar_latest",
+                                        "direction": "ascending"
+                                }
+                        }
+		},
+		"High": {
+			"genotypes": {
+				"ref_samples": false,
+				"alt_samples": ["proband"],
+				"het_samples": false,
+				"hom_samples": false
+			},
+			"filters": {
+				"annotation_filters": [
+					{
+						"uid": "gene_consequence_GRCh38",
+						"values": [
+							"splice_donor",
+							"splice_acceptor"
+						],
+						"include_nulls": false
+					},
+					{
+						"uid": "spliceai_max_score_dc965c66",
+						"min": "0.2",
+						"include_nulls": false
+					}
+				]
+			},
+                        "display": {
+                                "column_uids": [
+                                        "gene_symbol_GRCh38",
+                                        "gene_consequence_GRCh38",
+                                        "genotype_per_sample",
+					"spliceai_max_score_dc965c66",
+                                        "gnomad_popmax_af__v2_1_1_genomes__c14fd0d2",
+                                        "gnomad_popmax_af__v3_1_2_genomes__3e5ec14b",
+                                        "pli_grh38_cca06295"
+                                ],
+                                "sort": {
+                                        "column_uid": "spliceai_max_score_dc965c66",
+                                        "direction": "descending"
+                                }
+                        }
+		},
+		"Extended": {
+			"genotypes": {
+				"ref_samples": false,
+				"alt_samples": ["proband"],
+				"het_samples": false,
+				"hom_samples": false
+			},
+			"filters": {
+				"annotation_filters": [
+					{
+						"uid": "gene_consequence_GRCh38",
+						"values": [
+							"splice_region",
+							"splice_donor_5th_base",
+							"splice_donor_region",
+							"splice_polypyrimidine_tract"
+						],
+						"include_nulls": false
+					},
+					{
+						"uid": "spliceai_max_score_dc965c66",
+						"min": "0.2",
+						"include_nulls": false
+					}
+				]
+			},
+                        "display": {
+                                "column_uids": [
+                                        "gene_symbol_GRCh38",
+                                        "gene_consequence_GRCh38",
+                                        "genotype_per_sample",
+					"spliceai_max_score_dc965c66",
+                                        "gnomad_popmax_af__v2_1_1_genomes__c14fd0d2",
+                                        "gnomad_popmax_af__v3_1_2_genomes__3e5ec14b",
+                                        "pli_grh38_cca06295"
+                                ],
+                                "sort": {
+                                        "column_uid": "spliceai_max_score_dc965c66",
+                                        "direction": "descending"
+                                }
+                        }
+		},
+		"HPO Overlaps": {
+			"genotypes": {
+				"ref_samples": false,
+				"alt_samples": ["proband"],
+				"het_samples": false,
+				"hom_samples": false
+			},
+			"filters": {
+				"annotation_filters": [
+					{
+						"name": "HPO Overlaps",
+						"min": "1",
+						"include_nulls": false
+					}
+				]
+			},
+                        "display": {
+                                "column_uids": [
+                                        "gene_symbol_GRCh38",
+                                        "gene_consequence_GRCh38",
+                                        "genotype_per_sample",
+                                        "HPO Labels",
+                                        "HPO Overlaps",
+                                        "clinvar_latest",
+                                        "gnomad_popmax_af__v2_1_1_genomes__c14fd0d2",
+                                        "gnomad_popmax_af__v3_1_2_genomes__3e5ec14b"
+                                ],                      
+                                "sort": {               
+                                        "column_uid": "HPO Overlaps",
+                                        "direction": "descending"
+                                }               
+                        } 
+		},
+		"Frameshift or nonsense": {
+			"genotypes": {
+				"ref_samples": false,
+				"alt_samples": ["proband"],
+				"het_samples": false,
+				"hom_samples": false
+			},
+			"filters": {
+				"annotation_filters": [
+					{
+						"uid": "gene_consequence_GRCh38",
+						"values": [
+							"frameshift",
+							"stop_gained"
+						],
+						"include_nulls": false
+					}
+				]
+			},              
+                        "display": {    
+                                "column_uids": [
+                                        "gene_symbol_GRCh38",
+                                        "gene_consequence_GRCh38",
+                                        "genotype_per_sample",
+                                        "clinvar_latest",
+                                        "pli_grh38_cca06295",
+                                        "gnomad_popmax_af__v2_1_1_genomes__c14fd0d2",
+                                        "gnomad_popmax_af__v3_1_2_genomes__3e5ec14b"
+                                ],
+                                "sort": {
+                                        "column_uid": "gnomad_popmax_af__v3_1_2_genomes__3e5ec14b",
+                                        "direction": "ascending"
+                                }       
+                        } 
+		},
+		"Missense - high REVEL": {
+			"genotypes": {
+				"ref_samples": false,
+				"alt_samples": ["proband"],
+				"het_samples": false,
+				"hom_samples": false
+			},
+			"filters": {
+				"annotation_filters": [
+					{
+						"uid": "gene_consequence_GRCh38",
+						"values": [
+							"missense"
+						],
+						"include_nulls": false
+					},
+					{
+						"uid": "revel_grch38_4b79421f",
+						"min": "0.7",
+						"include_nulls": false
+					}
+				
+				]
+			},
+                        "display": {
+                                "column_uids": [
+                                        "gene_symbol_GRCh38",
+                                        "gene_consequence_GRCh38",
+                                        "genotype_per_sample",
+                                        "revel_grch38_4b79421f",
+                                ],
+                                "sort": {
+                                        "column_uid": "revel_grch38_4b79421f",
+                                        "direction": "descending"
+                                }
+                        }
+		},
+		"Missense - high MutScore": {
+			"genotypes": {
+				"ref_samples": false,
+				"alt_samples": ["proband"],
+				"het_samples": false,
+				"hom_samples": false
+			},
+			"filters": {
+				"annotation_filters": [
+					{
+						"uid": "gene_consequence_GRCh38",
+						"values": [
+							"missense"
+						],
+						"include_nulls": false
+					},
+					{
+						"uid": "mutscore_grch38_d287fd72",
+						"min": "0.85",
+						"include_nulls": false
+					}
+				
+				]
+			},
+			"display": {
+				"column_uids": [
+					"gene_symbol_GRCh38",
+					"gene_consequence_GRCh38",
+					"genotype_per_sample",
+					"mutscore_grch38_d287fd72"
+				],
+				"sort": {
+					"column_uid": "mutscore_grch38_d287fd72",
+					"direction": "descending"
+				}
+			}
+		}
+	}
+}

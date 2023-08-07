@@ -87,6 +87,7 @@ mosaicConfig = {}
 
 # The available display types
 allowedMethods = ["allele"]
+allowedMethods = ["no-validation"]
 
 if __name__ == "__main__":
   main()

@@ -1,0 +1,327 @@
+{
+	"version": "0.0.1",
+	"annotations": {
+		"CADD Raw": {
+			"type": "float",
+			"category": "Scores",
+			"display_type": "text",
+			"severity": ""
+		},
+		"CADD Phred": {
+			"type": "float",
+			"category": "Scores",
+			"display_type": "text",
+			"severity": ""
+		},
+		"CCR": {
+			"type": "float",
+			"category": "Scores",
+			"display_type": "text",
+			"severity": ""
+		},
+		"ClinVar 2023-03-26" : {
+			"type": "string",
+			"category": "ClinVar",
+			"display_type": "badge",
+			"severity": {
+				"Pathogenic": 1,
+				"Pathogenic/Likely_pathogenic": 1,
+				"Likely_pathogenic": 2,
+				"Established risk allele": 3,
+				"association": 4,
+				"Conflicting_floaterpretations_of_pathogenicity": 4,
+				"Likely_risk_allele": 4,
+				"Uncertain_significance": 4,
+				"Uncertain_risk_allele": 5,
+				"Likely_benign": 7,
+				"Benign": 8,
+				"Benign/Likely_benign": 8,
+				"protective": 9
+			}
+		},
+		"EVE": {
+			"type": "float",
+			"category": "Scores",
+			"display_type": "text",
+			"severity": ""
+		},
+		"Gene Consequence GRCh38": {
+			"type": "text",
+			"category": "Gene Annotations",
+			"display_type": "badge",
+			"severity": {
+				"splice_acceptor": 1,
+				"splice_donor": 1,
+				"stop_gained": 1,
+				"stop_lost": 1,
+				"frameshift": 1,
+				"start_lost": 1,
+				"splice_acceptor_variant": 1,
+				"frameshift_variant": 1,
+				"splice_donor_variant": 1,
+				"transcript_ablation": 1,
+				"transcript_amplification_variant": 1,
+				"transcript_ablation": 1,
+				"transcript_amplification": 1,
+				"regulatory_region_ablation": 2,
+				"inframe_deletion": 2,
+				"protein_altering": 2,
+				"inframe_insertion": 2,
+				"missense": 2,
+				"missense_variant": 2,
+				"inframe_insertion": 2,
+				"protein_altering_variant": 2,
+				"regulatory_region_ablation": 2,
+				"intron": 3,
+				"intron_variant": 3,
+				"intergenic": 3,
+				"3_prime_UTR": 3,
+				"5_prime_UTR": 3,
+				"mature_miRNA": 3,
+				"TFBS_ablation": 3,
+				"upstream_gene": 3,
+				"NMD_transcript": 3,
+				"TF_binding_site": 3,
+				"coding_sequence": 3,
+				"downstream_gene": 3,
+				"regulatory_region": 3,
+				"TFBS_amplification": 3,
+				"feature_elongation": 3,
+				"feature_truncation": 3,
+				"non_coding_transcript": 3,
+				"non_coding_transcript_exon": 3,
+				"regulatory_region_amplification": 3,
+				"intergenic_variant": 3,
+				"3_prime_UTR_variant": 3,
+				"5_prime_UTR_variant": 3,
+				"mature_miRNA_variant": 3,
+				"upstream_gene_variant": 3,
+				"NMD_transcript_variant": 3,
+				"TF_binding_site_variant": 3,
+				"coding_sequence_variant": 3,
+				"downstream_gene_variant": 3,
+				"regulatory_region_variant": 3,
+				"TFBS_amplification_variant": 3,
+				"feature_elongation_variant": 3,
+				"feature_truncation_variant": 3,
+				"non_coding_transcript_variant": 3,
+				"non_coding_transcript_exon_variant": 3,
+				"regulatory_region_amplification_variant": 3,
+				"synonymous": 4,
+				"splice_region": 4,
+				"stop_retained": 4,
+				"start_retained": 4,
+				"splice_donor_region": 4,
+				"splice_donor_5th_base": 4,
+				"incomplete_terminal_codon": 4,
+				"splice_polypyrimidine_tract": 4,
+				"synonymous_variant": 4,
+				"splice_region_variant": 4,
+				"stop_retained_variant": 4,
+				"start_retained_variant": 4,
+				"splice_donor_region_variant": 4,
+				"splice_donor_5th_base_variant": 4,
+				"incomplete_terminal_codon_variant": 4,
+				"splice_polypyrimidine_tract_variant": 4
+			}
+		},
+		"gnomAD v2.1.1 Exomes Allele Count": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v2.1.1 Exomes Allele Number": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v2.1.1 Exomes Allele Frequency": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "percent",
+			"severity": ""
+		},
+		"gnomAD v2.1.1 Exomes Popmax Allele Frequency": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "percent",
+			"severity": ""
+		},
+		"gnomAD v2.1.1 Exomes Homozygotes": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v2.1.1 Exomes Depth": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v2.1.1 Genomes Depth": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v2.1.1 Genomes Allele Count": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v2.1.1 Genomes Allele Number": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v2.1.1 Genomes Allele Frequency": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "percent",
+			"severity": ""
+		},
+		"gnomAD v2.1.1 Genomes Popmax Allele Frequency": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "percent",
+			"severity": ""
+		},
+		"gnomAD v2.1.1 Genomes Homozygotes": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v2.1.1 Genomes Depth": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v3.1.2 Genomes Allele Count": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v3.1.2 Genomes Allele Number": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v3.1.2 Genomes Allele Frequency": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "percent",
+			"severity": ""
+		},
+		"gnomAD v3.1.2 Genomes Popmax Allele Frequency": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "percent",
+			"severity": ""
+		},
+		"gnomAD v3.1.2 Genomes Homozygotes": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v3.1.2 Genomes Depth": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "text",
+			"severity": ""
+		},
+		"MutScore": {
+			"type": "float",
+			"category": "Scores",
+			"display_type": "percent",
+			"severity": ""
+		},
+		"OMIM Inheritance": {
+			"type": "string",
+			"category": "Phenotype Information",
+			"display_type": "text",
+			"severity": ""
+		},
+		"OMIM Phenotype": {
+			"type": "string",
+			"category": "Phenotype Information",
+			"display_type": "text",
+			"severity": ""
+		},
+		"pLI": {
+			"type": "float",
+			"category": "Gene Annotations",
+			"display_type": "percent",
+			"severity": {".1": 9, ".10001": 9, ".9": 5}
+		},
+		"REVEL": {
+			"type": "float",
+			"category": "Scores",
+			"display_type": "percent",
+			"severity": {".5": 8, ".9": 1, ".75": 3}
+		},
+		"SpliceAI Max Score": {
+			"type": "float",
+			"category": "Splice AI",
+			"display_type": "percent",
+			"severity": ""
+		},
+		"SpliceAI Acceptor Loss Score": {
+			"type": "float",
+			"category": "Splice AI",
+			"display_type": "percent",
+			"severity": ""
+		},
+		"SpliceAI Acceptor Loss Position": {
+			"type": "float",
+			"category": "Splice AI",
+			"display_type": "text",
+			"severity": ""
+		},
+		"SpliceAI Donor Loss Score": {
+			"type": "float",
+			"category": "Splice AI",
+			"display_type": "percent",
+			"severity": ""
+		},
+		"SpliceAI Donor Loss Position": {
+			"type": "float",
+			"category": "Splice AI",
+			"display_type": "text",
+			"severity": ""
+		},
+		"SpliceAI Acceptor Gain Score": {
+			"type": "float",
+			"category": "Splice AI",
+			"display_type": "percent",
+			"severity": ""
+		},
+		"SpliceAI Acceptor Gain Position": {
+			"type": "float",
+			"category": "Splice AI",
+			"display_type": "text",
+			"severity": ""
+		},
+		"SpliceAI Donor Gain Score": {
+			"type": "float",
+			"category": "Splice AI",
+			"display_type": "percent",
+			"severity": ""
+		},
+		"SpliceAI Donor Gain Position": {
+			"type": "float",
+			"category": "Splice AI",
+			"display_type": "text",
+			"severity": ""
+		}
+	}
+}

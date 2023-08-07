@@ -33,6 +33,7 @@ def setVariantFilters(mosaicConfig, api_ps, api_va, api_vf, projectId, filtersJs
 # can include fields for requiring specific genotypes for family members, e.g. Proband must be an alt,
 # in order to be general for any project. These need to be converted to sample ids for Mosaic
 def createSampleMap(samples):
+
   sampleMap = {}
   for sample in samples: sampleMap[samples[sample]['relation'].lower()] = samples[sample]['id']
 
@@ -65,6 +66,7 @@ def createAnnotationMap(annotations):
 
 # Process the json file describing the filters to apply
 def readVariantFiltersJson(variantFiltersJson):
+
 
   # Check that the file defining the filters exists
   if not exists(variantFiltersJson): fail('Could not find the json file ' + str(variantFiltersJson))
@@ -134,9 +136,9 @@ def getFilters(filtersInfo, categories, filters, samples, sampleMap, annotations
       # If this filter is not to be applied to the project, the rest of the filter information can be ignored - e.g. if this is a
       # filter that requires the parents to be present, but they are not
       if filters[name]['useFilter']:
+        filters[name]['info'] = filtersInfo['filters'][name]
 
         # Check the genotype information for the filter
-        filters[name]['info'] = filtersInfo['filters'][name]
         if 'genotypes' in filters[name]['info']: filters[name]['info'] = checkGenotypeFilters(filters[name]['info'], name, list(samples.keys()), sampleMap)
 
         # Check all of the annotation filters

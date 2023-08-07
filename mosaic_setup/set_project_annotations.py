@@ -35,7 +35,7 @@ def main():
   mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
   # Read the Mosaic json and validate its contents
-  annotationsInfo   = ann.readAnnotationsJson(args.json)
+  annotationsInfo = ann.readAnnotationsJson(args.json)
 
   # Get all the public annotations in the Mosaic Public Attributes project
   publicAnnotations = api_va.getVariantAnnotationsImportName(mosaicConfig, mosaicConfig['MOSAIC_ATTRIBUTES_PROJECT_ID'])

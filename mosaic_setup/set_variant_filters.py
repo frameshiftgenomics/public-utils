@@ -38,12 +38,16 @@ def main():
   mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
   # Get information on the sample available in the Mosaic project. Some variant filters require filtering on genotype. The variant filter
-  # description will contain terms like "Proband": "alt". Therefore, the term Proband needs to be converted to a Mosaic sample id
-  samples = sam.getMosaicSamples(mosaicConfig, api_s, api_sa, args.project_id)
-  proband = sam.getProband(mosaicConfig, samples)
+  # description will contain terms like "Proband": "alt". Therefore, the term Proband needs to be converted to a Mosaic sample id. If
+  # ggenotype based filters are being omitted, this can be skipped
+  samples = {}
+  proband = False
+  if not args.no_genotype_filters: 
+    samples = sam.getMosaicSamples(mosaicConfig, api_s, api_sa, args.project_id)
+    proband = sam.getProband(mosaicConfig, samples)
 
   # Set up the filters
-  vFilters.setVariantFilters(mosaicConfig, api_ps, api_va, api_vf, args.project_Id, args.variant_filters, samples)
+  vFilters.setVariantFilters(mosaicConfig, api_ps, api_va, api_vf, args.project_id, args.variant_filters, samples)
 
 # Input options
 def parseCommandLine():
@@ -59,6 +63,7 @@ def parseCommandLine():
   parser.add_argument('--token', '-t', required = False, metavar = "string", help = "The Mosaic authorization token")
   parser.add_argument('--url', '-u', required = False, metavar = "string", help = "The base url for Mosaic")
   parser.add_argument('--attributes_project', '-a', required = False, metavar = "integer", help = "The Mosaic project id that contains public attributes")
+  parser.add_argument('--no_genotype_filters', '-n', required = False, action = "store_true", help = 'If set, all filters that include genotypes will be omitted')
 
   # Version
   parser.add_argument('--version', '-v', action="version", version='Calypso annotation pipeline version: ' + str(version))
