@@ -232,9 +232,14 @@ def importAnnotation(config, annId, projectId):
 
 # Upload variant annotations
 def uploadAnnotations(config, projectId, tsv, allowDeletion):
-  try: data = os.popen(postUploadVariantAnnotationsCommand(config, tsv, allowDeletion, projectId))
-  except: fail('Failed to upload annotations to project: ' + str(projectId))
-  if 'message' in data: fail('Failed to upload annotations to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+  try: data = json.loads(os.popen(postUploadVariantAnnotationsCommand(config, tsv, allowDeletion, projectId)).read())
+  except: fail('Failed to upload annotations from ' + str(tsv) + ' to project: ' + str(projectId))
+
+  # If the upload was successful, the message should be as expected
+  if 'message' in data:
+    if data['message'] != 'The file has been received and the data will be processed in the next few minutes.':
+      fail('Failed to upload annotations from ' + str(tsv) + ' to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+  else: fail('Failed to upload annotations from ' + str(tsv) + ' to project: ' + str(projectId))
 
 ######
 ###### Execute the PUT routes
@@ -415,7 +420,6 @@ def updateVariantAnnotationCommand(mosaicConfig, projectId, fields, annotationId
     if int(i) + 1 != len(fields): command += ', '
   command += '}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/variants/annotations/' + str(annotationId) + '"'
-  print(command)
 
   return command
 
