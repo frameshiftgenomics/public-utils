@@ -253,10 +253,21 @@ def checkAnnotationFilters(data, name, annotations, annotationMap, uids):
     if 'uid' in aFilter: uid = aFilter['uid']
     elif 'name' in aFilter:
 
-      # Check if this name is in the annotationMap and if so, use the mapped uid
-      if aFilter['name'] in annotationMap:
-        aFilter['uid'] = annotationMap[aFilter['name']]
+      # Loop over the annotations in the annotation map and see if the requested annotation name is the beginning of any
+      # available annotations. For example, the filter could include an annotation name of "GQ Proband", but the project
+      # will have an annotation of the name "GQ Proband SAMPLE_NAME". As long as only a single annotation matches, this
+      # will be the annotation to use
+      matchedAnnotations = []
+      for annotation in annotationMap:
+        if aFilter['name'] in annotation: matchedAnnotations.append(annotation)
+      if len(matchedAnnotations) == 1:
+        aFilter['uid'] = annotationMap[matchedAnnotations[0]]
         del aFilter['name']
+
+      ## Check if this name is in the annotationMap and if so, use the mapped uid
+      #if aFilter['name'] in annotationMap:
+      #  aFilter['uid'] = annotationMap[aFilter['name']]
+      #  del aFilter['name']
 
       # If the name is not in the annotationMap, check if a private annotation with this name exists in the project
       else:
