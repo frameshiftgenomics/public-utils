@@ -36,10 +36,10 @@ def parseCommandLine():
   parser = argparse.ArgumentParser(description='Process the command line arguments')
 
   # Arguments related to the config file
-  parser.add_argument('--config', '-c', required = False, metavar = "string", help = "A config file containing token / url information")
-  parser.add_argument('--token', '-t', required = False, metavar = "string", help = "The Mosaic authorization token")
-  parser.add_argument('--url', '-u', required = False, metavar = "string", help = "The base url for Mosaic curl commands, up to an including \"api\". Do NOT include a trailing /")
-  parser.add_argument('--attributes_project', '-a', required = False, metavar = "integer", help = "The Mosaic project id that contains public attributes")
+  parser.add_argument('--config', '-c', required = False, metavar = 'string', help = 'A config file containing token / url information')
+  parser.add_argument('--token', '-t', required = False, metavar = 'string', help = 'The Mosaic authorization token')
+  parser.add_argument('--url', '-u', required = False, metavar = 'string', help = 'The base url for Mosaic curl commands, up to an including "api". Do NOT include a trailing ')
+  parser.add_argument('--attributes_project', '-a', required = False, metavar = 'integer', help = 'The Mosaic project id that contains public attributes')
 
   # The project id to which the filter is to be added is required
   parser.add_argument('--project_id', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
