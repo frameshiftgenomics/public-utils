@@ -10,8 +10,8 @@ import json
 from random import random
 
 from sys import path
-path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]) + "/api_commands")
-path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]) + "/common_components")
+path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]) + "/../api_commands")
+path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]) + "/../common_components")
 import mosaic_config
 import api_project_attributes as api_pa
 
@@ -24,7 +24,7 @@ def main():
   # Parse the mosaic configuration file
   mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
                     'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'},
-                    'MOSAIC_ATTRIBUTES_PROJECT_ID': {'value': args.attributes_project, 'desc': 'The public attribtes project id', 'long': '--attributes_project', 'short': '-a'}}
+                    'MOSAIC_ATTRIBUTES_PROJECT_ID': {'value': args.attributes_project, 'desc': 'The public attributes project id', 'long': '--attributes_project', 'short': '-a'}}
   mosaicConfig   = mosaic_config.mosaicConfigFile(args.config)
   mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
@@ -57,7 +57,6 @@ def addEvent(args):
   global mosaicConfig
 
   # Define the value to apply and default to private if not specifically set to public
-  #value = "2022/01/01" if not args.value else args.value
   isPublic = 'true' if args.public else 'false'
   description = args.description if args.description else 'No description provided'
   attributeId = api_pa.createProjectAttribute(mosaicConfig, args.project_id, args.name, description, 'null', 'timestamp', isPublic)

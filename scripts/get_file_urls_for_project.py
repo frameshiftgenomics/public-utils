@@ -32,6 +32,9 @@ def main():
   mosaicConfig   = mosaic_config.mosaicConfigFile(args.config)
   mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
+  # Check file type
+  checkType(args.file_type)
+
   # Get the files from a project
   getFiles(args)
 
@@ -42,7 +45,8 @@ def parseCommandLine():
   parser = argparse.ArgumentParser(description='Process the command line arguments')
 
   # Required arguments
-  parser.add_argument('--project_id', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
+  parser.add_argument('--project_id', '-p', required = True, metavar = 'integer', help = 'The Mosaic project id to upload attributes to')
+  parser.add_argument('--file_type', '-f', required = True, metavar = 'string', help = 'The file type to get urls for. Allowed values: vcf, tbi')
 
   # Optional mosaic arguments
   parser.add_argument('--config', '-c', required = False, metavar = "string", help = "The config file for Mosaic")
@@ -55,20 +59,37 @@ def parseCommandLine():
 
   return parser.parse_args()
 
+# Check the file type
+def checkType(fileType):
+  global allowedTypes
+
+  # Check if the requested file type is allowed
+  if fileType not in allowedTypes: fail('The requested file type (' + str(fileType) + ') is not recognised. The allowed types are:\n  ' + '\n  '.join(allowedTypes))
+
 # Get the files
 def getFiles(args):
   global mosaicConfig
+  observedFiles = []
 
+  # Get all the sample ids in the project
   sampleIds = api_s.getSampleIds(mosaicConfig, args.project_id)
+
+  # Loop over all the samples and get the vcf files for them
   for sampleId in sampleIds:
-    print('Sample id: ', sampleId, sep = '')
-    data = api_sf.getAllSampleFiles(mosaicConfig, args.project_id, sampleId)
-    for fileId in data:
-      print('  File: ', fileId, sep = '')
-      print('    Name: ', data[fileId]['name'], sep = '')
-      print('    URI:  ', data[fileId]['uri'], sep = '')
-      print('    VCF sample name: ', data[fileId]['vcf_sample_name'], sep = '')
-      print(data); exit(0)
+    data = api_sf.getAllSampleFilesData(mosaicConfig, args.project_id, sampleId)
+    for fileInfo in data:
+
+      # Only extract vcf files
+      if fileInfo['type'] == args.file_type:
+        fileId = fileInfo['id']
+        name   = fileInfo['name']
+
+        # The same file can be associated with multiple samples, but we only want to process each unique file once.
+        # Check if we've already seen a file with this name and only get the url for new files
+        if name not in observedFiles:
+          url = api_sf.getFileUrl(mosaicConfig, args.project_id, fileId, 'false')
+          observedFiles.append(name)
+          print(url)
 
 # If the script fails, provide an error message and exit
 def fail(message):
@@ -80,8 +101,10 @@ def fail(message):
 # Store mosaic info, e.g. the token, url etc.
 mosaicConfig = {}
 
-# Store info on the files
-sampleFiles = {}
+# The allowed file types
+allowedTypes = []
+allowedTypes.append('vcf')
+allowedTypes.append('tbi')
 
 # Store the version
 version = "0.0.1"

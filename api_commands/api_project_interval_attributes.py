@@ -77,6 +77,16 @@ def importInterval(config, projectId, intervalId):
   except: fail('Failed to import interval into project: ' + str(projectId))
   if 'message' in data: fail('Failed to import interval into project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
+######
+###### Execute DELETE routes
+######
+
+# Delete an interval attribute
+def deleteInterval(config, projectId, intervalId):
+  try: data = os.popen(deleteProjectIntervalAttributeCommand(config, intervalId, projectId)).read()
+  except: fail('Failed to delete interval ' + str(intervalId) + ' from project: ' + str(projectId))
+  if 'message' in data: fail('Failed to delete interval ' + str(intervalId) + ' from project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
 #################
 #################
 ################# Following are the API routes for variant filters (mirrors the API docs)

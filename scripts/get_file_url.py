@@ -24,8 +24,10 @@ def main():
 
   # Parse the mosaic configuration file
   mosaicRequired = {'MOSAIC_TOKEN': {'value': args.token, 'desc': 'An access token', 'long': '--token', 'short': '-t'},
-                    'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'}}
-  mosaicConfig = mosaic_config.parseConfig(args.config, mosaicRequired)
+                    'MOSAIC_URL': {'value': args.url, 'desc': 'The api url', 'long': '--url', 'short': '-u'},
+                    'MOSAIC_ATTRIBUTES_PROJECT_ID': {'value': args.attributes_project, 'desc': 'The public attribtes project id', 'long': '--attributes_project', 'short': '-a'}}
+  mosaicConfig   = mosaic_config.mosaicConfigFile(args.config)
+  mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
   # If no file id was supplied, show all the files for the project
   if not args.file_id: getFileIds(args)
@@ -41,9 +43,10 @@ def parseCommandLine():
   parser.add_argument('--config', '-c', required = False, metavar = "string", help = "A config file containing token / url information")
   parser.add_argument('--token', '-t', required = False, metavar = "string", help = "The Mosaic authorization token")
   parser.add_argument('--url', '-u', required = False, metavar = "string", help = "The base url for Mosaic curl commands, up to an including \"api\". Do NOT include a trailing /")
+  parser.add_argument('--attributes_project', '-a', required = False, metavar = "integer", help = "The Mosaic project id that contains public attributes")
 
   # The project id to which the filter is to be added is required
-  parser.add_argument('--project', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
+  parser.add_argument('--project_id', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
 
   # Optional arguments
   parser.add_argument('--file_type', '-l', required = False, metavar = "string", help = 'The file type to get ids for')
@@ -55,46 +58,15 @@ def parseCommandLine():
 def getFileIds(args):
   global mosaicConfig
 
-  # Set the page limits
-  limit = 10
-  page  = 1
-
-  # Set fileTypes to the supplied value of false
-  fileTypes = args.file_type if args.file_type else "false"
-
-  # Get all files of the requested type
-  data    = json.loads(os.popen(api_pf.getProjectFiles(mosaicConfig, args.project, limit, page, fileTypes)).read())
-  noPages = math.ceil(float(data['count']) / float(limit))
-  for projectFile in data['data']:
-    print(projectFile['name'], ": ", projectFile['id'], sep = "")
-
-  # Loop over remaining pages of files
-  if noPages > 1:
-    for i in range(1, noPages, 1):
-      data = json.loads(os.popen(api_pf.getProjectFiles(mosaicConfig, args.project, limit, i + 1, fileTypes)).read())
-      for sampleFile in data['data']:
-        print(sampleFile['name'], ": ", sampleFile['id'], sep = "")
-
-  # Now get all the sample files
-  data    = json.loads(os.popen(api_sf.getAllSampleFiles(mosaicConfig, args.project, limit, page)).read())
-  noPages = math.ceil(float(data['count']) / float(limit))
-  for sampleFile in data['data']:
-    print(sampleFile['name'], ": ", sampleFile['id'], sep = "")
-
-  # Loop over remaining pages of files
-  if noPages > 1:
-    for i in range(1, noPages, 1):
-      data = json.loads(os.popen(api_sf.getAllSampleFiles(mosaicConfig, args.project, limit, i + 1)).read())
-      for sampleFile in data['data']:
-        print(sampleFile['name'], ": ", sampleFile['id'], sep = "")
+  data = api_sf.getSampleFiles(mosaicConfig, args.project_id, sampleId, fileType)
 
 # Get the file url
 def getUrl(args):
   global mosaicConfig
 
   # Get the URL
-  data = json.loads(os.popen(api_sf.getSampleFileUrl(mosaicConfig, args.project, args.file_id, "false")).read())
-  print(data['url'])
+  url = api_sf.getFileUrl(mosaicConfig, args.project_id, args.file_id, 'false')
+  print(url)
 
 # Get all the project attributes for the project
 def getAnnotations(projectId):

@@ -122,6 +122,22 @@ def getUserPublicProjectAttributes(config):
   # Return the information
   return pAtts
 
+# Get all timestamp attributes
+def getTimestampsDictNameId(config, projectId):
+  attributes = {}
+
+  # Get the attributes
+  try: data = json.loads(os.popen(getProjectAttributesCommand(config, projectId)).read())
+  except: fail('Failed to get project attributes for project ' + str(projectId))
+  if 'message' in data: fail('Failed to get project attributes for project' + str(projectId))
+
+  # Loop over all the attributes and return
+  for attribute in data:
+    if attribute['value_type'] == 'timestamp': attributes[attribute['name']] = attribute['id']
+
+  # Return the information
+  return attributes
+
 ######
 ###### Execute POST routes
 ######

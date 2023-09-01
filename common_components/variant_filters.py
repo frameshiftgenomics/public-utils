@@ -35,7 +35,9 @@ def setVariantFilters(mosaicConfig, api_ps, api_va, api_vf, projectId, filtersJs
 def createSampleMap(samples):
 
   sampleMap = {}
-  for sample in samples: sampleMap[samples[sample]['relation'].lower()] = samples[sample]['id']
+  for sample in samples:
+    if not samples[sample]['relation']: fail('Sample attribute "Relation" must be preesnt and populated for all samples (not value exists for "' + str(sample) + '")')
+    sampleMap[samples[sample]['relation'].lower()] = samples[sample]['id']
 
   # Return the sample map
   return sampleMap
