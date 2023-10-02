@@ -451,7 +451,7 @@ def fail(message):
 # Initialise global variables
 
 # Store the version
-version = "0.1.2"
+version = "0.1.3"
 
 # Store mosaic info, e.g. the token, url etc.
 mosaicConfig = {}
