@@ -113,6 +113,18 @@ def getCollectionProjectsDictNameId(config, projectId):
   # Return the projectIds
   return names
 
+# Get information about a single project
+def getProject(config, projectId):
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getProjectCommand(config, projectId)).read())
+  except: fail('Failed to get projects for collection: ' + str(projectId))
+  if 'message' in data: fail('Failed to get projects for collection: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return the projectIds
+  return data
+
+
 ######
 ###### Execute POST routes
 ######

@@ -39,6 +39,21 @@ def getAnnotationDictNameId(config, projectId):
   # Return the list of annotation ids
   return annotations
 
+# Return a dictionary with annotation names as keys and ids and uids as values
+def getAnnotationDictNameIdUid(config, projectId):
+  annotations = {}
+
+  # Execute the GET route
+  try: data = json.loads(os.popen(getVariantAnnotationsCommand(config, projectId)).read())
+  except: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to execute the GET variant annotations route for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Loop over the returned data object and put the filter ids in a list to return
+  for annotation in data: annotations[annotation['name']] = {'id': annotation['id'], 'uid': annotation['uid']}
+
+  # Return the list of annotation ids
+  return annotations
+
 # Return a list of annotation ids
 def getAnnotationIds(config, projectId):
   ids = []

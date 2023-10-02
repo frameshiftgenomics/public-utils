@@ -169,8 +169,11 @@ def getAttributeIds(args, projectId):
   global projectAttributes
   global sampleAttributes
 
-  # First, get all the project attribute ids from the Peddy Attributes project
-  projectAttributes = api_pa.getProjectAttributesNameIdUid(mosaicConfig, projectId)
+  # First, get all the project attribute ids from the Peddy Attributes project, ignoring system attributes
+  # e.g. those that have is_custom = False
+  attributes = api_pa. getProjectAttributes(mosaicConfig, projectId)
+  for attribute in attributes:
+    if attribute['is_custom']: projectAttributes[attribute['name']] = {'id': attribute['id'], 'uid': attribute['uid']}
 
   # Get all the sample attribute ids from the Peddy Attributes project
   data = api_sa.getSampleAttributes(mosaicConfig, projectId)

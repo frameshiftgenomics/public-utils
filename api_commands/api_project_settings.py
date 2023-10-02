@@ -12,6 +12,15 @@ import json
 ###### Execute GET routes
 ######
 
+# Get all the project settings
+def getProjectSettings(config, projectId):
+  try: data = json.loads(os.popen(getProjectSettingsCommand(config, projectId)).read())
+  except: fail('Failed to get the settings for for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get the settings for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return the project reference
+  return data
+
 # Get the project reference
 def getProjectReference(config, projectId):
   try: data = json.loads(os.popen(getProjectSettingsCommand(config, projectId)).read())
@@ -20,6 +29,15 @@ def getProjectReference(config, projectId):
 
   # Return the project reference
   return data['reference']
+
+# Get the project privacy level
+def getProjectPrivacyLevel(config, projectId):
+  try: data = json.loads(os.popen(getProjectSettingsCommand(config, projectId)).read())
+  except: fail('Failed to get the settings for for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get the settings for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Return the project reference
+  return data['privacy_level']
 
 ######
 ###### Execute POST routes
@@ -46,6 +64,15 @@ def setVariantFilterSortOrder(mosaicConfig, projectId, filterRecords):
   try: data = json.loads(os.popen(putSortVariantFiltersCommand(mosaicConfig, projectId, filterRecords)).read())
   except: fail('Failed to set the variant filter sort order for project: ' + str(projectId))
   if 'message' in data: fail('Failed to set the variant filter sort order for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+# Set the privacy level of the project
+def setProjectPrivacy(mosaicConfig, projectId, privacyLevel):
+  allowedPrivacyLevels = ['public', 'protected', 'private']
+  if privacyLevel not in allowedPrivacyLevels: fail('Defined privacy level (' + str(privacyLevel) + ') is not valid. Allowed values are\n  ' + str('\n  '.join(allowedPrivacyLevels)))
+
+  try: data = json.loads(os.popen(putPrivacyLevel(mosaicConfig, projectId, privacyLevel)).read())
+  except: fail('Failed to set the privacy level to ' + str(privacyLevel) + ' for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to set the privacy level to ' + str(privacyLevel) + ' for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
 ######
 ###### Execute DELETE routes
@@ -115,6 +142,17 @@ def putSortVariantFiltersCommand(mosaicConfig, projectId, filterRecords):
     if i == 0: command += '["VARIANT_FILTERS|' + str(record['category']) + '", [' + ','.join(record['sortOrder']) + ']]'
     else: command += ', ["VARIANT_FILTERS|' + str(record['category']) + '", [' + ','.join(record['sortOrder']) + ']]'
   command += ']}}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/settings' + '"'
+
+  return command
+
+# Set the privacy level of a project
+def putPrivacyLevel(mosaicConfig, projectId, privacyLevel):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"privacy_level": "' + str(privacyLevel) + '"}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/settings' + '"'
 
   return command

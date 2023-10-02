@@ -389,7 +389,7 @@
                                         "gene_symbol_GRCh38",
                                         "gene_consequence_GRCh38",
                                         "genotype_per_sample",
-                                        "revel_grch38_4b79421f",
+                                        "revel_grch38_4b79421f"
                                 ],
                                 "sort": {
                                         "column_uid": "revel_grch38_4b79421f",

@@ -239,6 +239,18 @@
 			"display_type": "text",
 			"severity": ""
 		},
+		"gnomAD v3.1.2 Genomes Hemizygotes": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v3.1.2 Genomes Non-PAR": {
+			"type": "float",
+			"category": "gnomAD",
+			"display_type": "text",
+			"severity": ""
+		},
 		"MutScore": {
 			"type": "float",
 			"category": "Scores",
