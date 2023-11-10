@@ -10,8 +10,13 @@ import json
 from random import random
 
 from sys import path
-path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]) + "/api_commands")
-path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]) + "/common_components")
+#path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]) + "/api_commands")
+#path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]) + "/common_components")
+#import mosaic_config
+
+path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]) + "/../api_commands")
+path.append("/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[0:-1]) + "/../common_components")
+import command_line_parser as clp
 import mosaic_config
 import api_sample_hpo_terms as api_shpo
 
@@ -27,15 +32,19 @@ def main():
   mosaicConfig   = mosaic_config.mosaicConfigFile(args.config)
   mosaicConfig   = mosaic_config.commandLineArguments(mosaicConfig, mosaicRequired)
 
-  # Get all the intervals for the project
+  # Get all the HPO terms for the project
+  hpoList = ''
   if args.sample_id:
     hpoTerms = api_shpo.getSampleHpo(mosaicConfig, args.project_id, args.sample_id)
-    for hpo in hpoTerms: print(hpo)
+    for hpo in hpoTerms: hpoList += str(hpo['hpo_id']) + ','
   else:
     hpoTerms = api_shpo.getProjectHpo(mosaicConfig, args.project_id)
     for sampleId in hpoTerms:
-      print('Sample: ' + str(sampleId))
-      for hpo in hpoTerms[sampleId]: print(hpo)
+      for hpo in hpoTerms[sampleId]: hpoList += str(hpo['hpo_id']) + ','
+
+  # Remove the trailing command and print the list
+  hpoList = hpoList.rstrip(',')
+  print(hpoList)
 
 # Input options
 def parseCommandLine():

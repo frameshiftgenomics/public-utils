@@ -54,7 +54,7 @@ def getProjectHpo(config, projectId):
   # Loop over the returned data object and put the filter ids in a list to return
   for hpo in data:
     if hpo['sample_id'] not in hpos: hpos[hpo['sample_id']] = []
-    hpos[hpo['sample_id']].append({'id': hpo['id'], 'hpoTermId': hpo['hpo_term_id'], 'label': hpo['label']})
+    hpos[hpo['sample_id']].append({'id': hpo['id'], 'hpoTermId': hpo['hpo_term_id'], 'label': hpo['label'], 'hpo_id': hpo['hpo_id']})
 
   # Return the dictionary
   return hpos
