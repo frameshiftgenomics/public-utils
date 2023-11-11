@@ -40,16 +40,8 @@ def main():
 
   # If there is a sample id, output the pedigree
   else:
-    print('#Family_id', 'individual_id', 'paternal_id', 'maternal_id', 'sex', 'affected_status', sep = '\t')
-    ped     = api_ped.getPedigree(mosaicConfig, args.project_id, args.sample_id)
-    samples = {}
-    for sampleInfo in ped: samples[sampleInfo['id']] = sampleInfo['name']
-    for sampleInfo in ped:
-      pedigreeInfo = sampleInfo['pedigree']
-      paternalName = samples[pedigreeInfo['paternal_id']] if pedigreeInfo['paternal_id'] else 0
-      maternalName = samples[pedigreeInfo['maternal_id']] if pedigreeInfo['maternal_id'] else 0
-      print(pedigreeInfo['kindred_id'], sampleInfo['name'], paternalName, maternalName, pedigreeInfo['sex'], pedigreeInfo['affection_status'], sep = '\t')
-      #{'kindred_id': '2e2df4b6-24cf-412f-aef3-d3dbb8d8e7b5', 'kindred_name': '3002', 'sample_id': 56980, 'paternal_id': 56982, 'maternal_id': 56981, 'sex': 1, 'affection_status': 2}
+    ped = api_ped.getPedLines(mosaicConfig, args.project_id, args.sample_id)
+    for line in ped: print(line)
 
 # Input options
 def getArgs():

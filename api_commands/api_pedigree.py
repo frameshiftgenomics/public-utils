@@ -25,6 +25,29 @@ def getPedigree(config, projectId, sampleId):
   # Return the pedigree information
   return samples
 
+# Get the pedigree information based on a sample id and then populate a list with the lines of a ped file
+def getPedLines(config, projectId, sampleId):
+  pedLines = []
+  pedLines.append('#Family_id\tindividual_id\tpaternal_id\tmaternal_id\tsex\taffected_status')
+
+  # Get the pedigree information
+  try: data = json.loads(os.popen(getPedigreeCommand(config, projectId, sampleId)).read())
+  except: fail('Failed to get pedigree information for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to get pedigree information for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Get the sample names and ids
+  samples = {}
+  for sample in data: samples[sample['id']] = sample['name']
+  for sample in data:
+    pedigreeInfo = sample['pedigree']
+    paternalName = samples[pedigreeInfo['paternal_id']] if pedigreeInfo['paternal_id'] else 0
+    maternalName = samples[pedigreeInfo['maternal_id']] if pedigreeInfo['maternal_id'] else 0
+    line         = str(pedigreeInfo['kindred_id']) + '\t' + str(sample['name']) +'\t' + str(paternalName) + '\t' + str(maternalName) + '\t' + str(pedigreeInfo['sex']) + '\t' + str(pedigreeInfo['affection_status'])
+    pedLines.append(line)
+  
+  # Return the pedigree information
+  return pedLines
+
 ######
 ###### Execute POST routes
 ######
