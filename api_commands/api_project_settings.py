@@ -47,7 +47,16 @@ def getProjectPrivacyLevel(config, projectId):
 ###### Execute PUT routes
 ######
 
-# Set the default variant annotations
+# Set the privacy level of the project
+def setProjectPrivacy(mosaicConfig, projectId, privacyLevel):
+  allowedPrivacyLevels = ['public', 'protected', 'private']
+  if privacyLevel not in allowedPrivacyLevels: fail('Defined privacy level (' + str(privacyLevel) + ') is not valid. Allowed values are\n  ' + str('\n  '.join(allowedPrivacyLevels)))
+
+  try: data = json.loads(os.popen(putPrivacyLevel(mosaicConfig, projectId, privacyLevel)).read())
+  except: fail('Failed to set the privacy level to ' + str(privacyLevel) + ' for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to set the privacy level to ' + str(privacyLevel) + ' for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+# Set the default sample attribute table columns and analytics charts
 def setDefaultTableAndCharts(mosaicConfig, projectId, columnIds, chartIds):
   try: data = json.loads(os.popen(setDefaultTableAndChartsCommand(mosaicConfig, projectId, columnIds, chartIds)).read())
   except: fail('Failed to set the default variant annotations for project: ' + str(projectId))
@@ -64,15 +73,6 @@ def setVariantFilterSortOrder(mosaicConfig, projectId, filterRecords):
   try: data = json.loads(os.popen(putSortVariantFiltersCommand(mosaicConfig, projectId, filterRecords)).read())
   except: fail('Failed to set the variant filter sort order for project: ' + str(projectId))
   if 'message' in data: fail('Failed to set the variant filter sort order for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
-
-# Set the privacy level of the project
-def setProjectPrivacy(mosaicConfig, projectId, privacyLevel):
-  allowedPrivacyLevels = ['public', 'protected', 'private']
-  if privacyLevel not in allowedPrivacyLevels: fail('Defined privacy level (' + str(privacyLevel) + ') is not valid. Allowed values are\n  ' + str('\n  '.join(allowedPrivacyLevels)))
-
-  try: data = json.loads(os.popen(putPrivacyLevel(mosaicConfig, projectId, privacyLevel)).read())
-  except: fail('Failed to set the privacy level to ' + str(privacyLevel) + ' for project: ' + str(projectId))
-  if 'message' in data: fail('Failed to set the privacy level to ' + str(privacyLevel) + ' for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
 ######
 ###### Execute DELETE routes

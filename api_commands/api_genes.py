@@ -34,7 +34,18 @@ def getGeneSetsDictName(mosaicConfig, projectId):
 ###### Execute POST routes
 ######
 
-# Create a gene set based on a list of gene ids or names
+# Create a gene set based on a list of gene ids
+def postGeneSetByIds(mosaicConfig, projectId, name, description, genes):
+
+  # Add the existing genes to the gene set
+  try: data  = json.loads(os.popen(postGeneSetByIdCommand(mosaicConfig, projectId, name, description, genes)).read())
+  except: fail('Failed to create the gene set: ' + str(name))
+  if 'message' in data: fail('Failed to create the gene set: ' + str(name) + '. API returned the message: ' + str(data['message']))
+
+  # Return all the data
+  return data['id']
+
+# Create a gene set based on a list of gene names
 def postGeneSetByName(mosaicConfig, projectId, name, description, genes, organism):
   genesToAdd  = []
   genesToSkip = []
@@ -108,6 +119,17 @@ def getGeneSetsCommand(mosaicConfig, projectId):
 ######
 
 # Post a gene set using a list of gene ids
+def postGeneSetByIdCommand(mosaicConfig, projectId, name, description, genes):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" ' 
+  command += '-d \'{"name": "' + str(name) + '", "description": "' + str(description) + '", "is_public_to_project": "true", "gene_ids": ' + str(genes) + '}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/genes/sets' + '"'
+
+  return command
+
+# Post a gene set using a list of gene names
 def postGeneSetByNameCommand(mosaicConfig, projectId, name, description, genes):
   token = mosaicConfig['MOSAIC_TOKEN']
   url   = mosaicConfig['MOSAIC_URL']
