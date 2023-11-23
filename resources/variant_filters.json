@@ -1,5 +1,7 @@
 {
 	"categories": {
+		"Exomiser": {
+		},
 		"Inheritance" : {
 			"High quality de novo": "1",
 			"All other de novo": "2"

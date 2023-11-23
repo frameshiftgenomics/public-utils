@@ -224,7 +224,7 @@ def getAnnotationInformation(config, annotationId, projectId):
 # Create a new annotation and return the id and uid
 def createPrivateAnnotationIdUid(config, ann, valueType, projectId):
 
-  # Eexcute the command
+  # Execute the command
   try: data = json.loads(os.popen(postCreateVariantAnnotationsCommand(config, ann, valueType, 'private', projectId)).read())
   except: fail('Failed to create private variant annotation for project: ' + str(projectId))
   if 'message' in data: fail('Failed to create private variant annotation for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
