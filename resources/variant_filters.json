@@ -1,8 +1,5 @@
 {
 	"categories": {
-		"Exomiser": {
-			"Top Candidates": "1"
-		},
 		"Inheritance" : {
 			"High quality de novo": "1",
 			"All other de novo": "2"

@@ -232,6 +232,17 @@ def createPrivateAnnotationIdUid(config, ann, valueType, projectId):
   # Store the id and uid
   return {'id': data['id'], 'uid': data['uid']}
 
+# Create a new annotation with a category and return the id and uid
+def createPrivateAnnotationCategoryIdUid(config, ann, valueType, projectId, category):
+
+  # Execute the command
+  try: data = json.loads(os.popen(postCreateVariantAnnotationCategoryCommand(config, ann, valueType, 'private', projectId, category)).read())
+  except: fail('Failed to create private variant annotation for project: ' + str(projectId))
+  if 'message' in data: fail('Failed to create private variant annotation for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+  # Store the id and uid
+  return {'id': data['id'], 'uid': data['uid']}
+
 # Create a new annotation with severity and return the uid
 def createAnnotationSeverityUid(config, projectId, name, valueType, privacy, fields):
   try: data = json.loads(os.popen(postCreateVariantAnnotationWithSeverityCommand(config, name, valueType, privacy, fields, projectId)).read())
@@ -365,6 +376,17 @@ def postCreateVariantAnnotationsCommand(mosaicConfig, name, valueType, privacy, 
 
   command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token)
   command += '" -d \'{"name": "' + str(name) + '", "value_type": "' + str(valueType) + '", "privacy_level": "' + str(privacy) + '"}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/variants/annotations' + '"'
+
+  return command
+
+# Create a variant annotation with a category set
+def postCreateVariantAnnotationCategoryCommand(mosaicConfig, name, valueType, privacy, projectId, category):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token)
+  command += '" -d \'{"name": "' + str(name) + '", "value_type": "' + str(valueType) + '", "privacy_level": "' + str(privacy) + '", "category": "' + str(category) + '"}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/variants/annotations' + '"'
 
   return command
