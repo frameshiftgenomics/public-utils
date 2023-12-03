@@ -77,8 +77,8 @@ def parseCommandLine():
   # Required arguments
   parser.add_argument('--project_id', '-p', required = True, metavar = "integer", help = "The Mosaic project id to upload attributes to")
   parser.add_argument('--template_project_id', '-m', required = True, metavar = "integer", help = "The Mosaic project id of the template to run")
-  parser.add_argument('--token', '-t', required = False, metavar = "string", help = "The Mosaic authorization token")
-  parser.add_argument('--url', '-u', required = False, metavar = "string", help = "The base url for Mosaic")
+  parser.add_argument('--token', '-t', required = True, metavar = "string", help = "The Mosaic authorization token")
+  parser.add_argument('--url', '-u', required = True, metavar = "string", help = "The base url for Mosaic")
 
   # Store the version
   parser.add_argument('--version', '-v', action="version", version='Mosaic templates version: ' + str(version))

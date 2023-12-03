@@ -89,6 +89,22 @@ def createVariantFilterWithDisplay(mosaicConfig, projectId, name, category, colu
   return data['id']
 
 ######
+###### Execute PUT routes
+######
+
+# Update a filter
+def updateVariantFilter(mosaicConfig, projectId, name, filterId, annotationFilters):
+  try: data = json.loads(os.popen(putVariantFilterCommand(mosaicConfig, name, annotationFilters, projectId, filterId)).read())
+  except: fail('Failed to PUT variant filter "' + str(name) + '" in project ' + str(projectId))
+  if 'message' in data: fail('Failed to PUT variant filter "' + str(name) + '" in project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+# Update a filter including specifying columns and sort order
+def updateVariantFilterColSort(mosaicConfig, projectId, name, filterId, columnIds, sortColumnId, sortDirection, annotationFilters):
+  try: data = json.loads(os.popen(putVariantFilterColSortCommand(mosaicConfig, name, columnIds, sortColumnId, sortDirection, annotationFilters, projectId, filterId)).read())
+  except: fail('Failed to PUT variant filter "' + str(name) + '" in project ' + str(projectId))
+  if 'message' in data: fail('Failed to PUT variant filter "' + str(name) + '" in project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+######
 ###### Execute DELETE routes
 ######
 
@@ -178,6 +194,28 @@ def putVariantFilterCommand(mosaicConfig, name, annotationFilters, projectId, fi
 
   command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-d \'{"name": "' + str(name) + '", "filter": ' + json.dumps(annotationFilters) + '}\' '
+  command += str(url) + 'api/v1/projects/' + str(projectId) + '/variants/filters/' + str(filterId)
+
+  return command
+
+# Update a variant filter including specifying the display columns and sort order
+def putVariantFilterColSortCommand(mosaicConfig, name, columnIds, sortColumnId, sortDirection, annotationFilters, projectId, filterId):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  # Define the direction of the sort
+  if sortDirection == 'ASC': direction = 'ASC'
+  elif sortDirection == 'ascending': direction = 'ASC'
+  elif sortDirection == 'DESC': direction = 'DESC'
+  elif sortDirection == 'descending': direction = 'DESC'
+  else: fail('Unknown sort direction (' + str(sortDirection) + ') in api_variant_filters.py > postVariantFilterWithDisplayCommand')
+
+  command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"name": "' + str(name) + '", '
+  command += '"selected_variant_column_uids": [' + ', '.join(str(cId) for cId in columnIds) + '], '
+  command += '"sort_by_column_uid": "' + str(sortColumnId) + '", '
+  command += '"sort_dir": "' + str(direction) + '", '
+  command += '"filter": ' + json.dumps(annotationFilters) + '}\' '
   command += str(url) + 'api/v1/projects/' + str(projectId) + '/variants/filters/' + str(filterId)
 
   return command
