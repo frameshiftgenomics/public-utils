@@ -56,6 +56,18 @@ def setProjectPrivacy(mosaicConfig, projectId, privacyLevel):
   except: fail('Failed to set the privacy level to ' + str(privacyLevel) + ' for project: ' + str(projectId))
   if 'message' in data: fail('Failed to set the privacy level to ' + str(privacyLevel) + ' for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
+# Set the project reference
+def setReference(mosaicConfig, projectId, reference):
+  try: data = json.loads(os.popen(setReferenceCommand(mosaicConfig, projectId, reference)).read())
+  except: fail('Failed to set project reference for project ' + str(projectId))
+  if 'message' in data: fail('Failed to set project reference for project ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+# Set the project as a template project
+def setAsTemplate(mosaicConfig, projectId):
+  try: data = json.loads(os.popen(setAsTemplateCommand(mosaicConfig, projectId)).read())
+  except: fail('Failed to set project ' + str(projectId) + ' as a template project')
+  if 'message' in data: fail('Failed to set project ' + str(projectId) + ' as a template project. API returned the message: ' + str(data['message']))
+
 # Set the default sample attribute table columns and analytics charts
 def setDefaultTableAndCharts(mosaicConfig, projectId, columnIds, chartIds):
   try: data = json.loads(os.popen(setDefaultTableAndChartsCommand(mosaicConfig, projectId, columnIds, chartIds)).read())
@@ -116,6 +128,28 @@ def setDefaultTableAndChartsCommand(mosaicConfig, projectId, columnIds, chartIds
   command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-d \'{"selected_sample_attribute_chart_data": {"chart_ids": ' + str(chartIds) + ', "chart_data": {}}, '
   command += '"selected_sample_attribute_column_ids": ' + str(columnIds) + '}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/settings' + '"'
+
+  return command
+
+# Set the project reference
+def setReferenceCommand(mosaicConfig, projectId, reference):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"reference": "' + str(reference) + '"}\' '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/settings' + '"'
+
+  return command
+
+# Set the project to be a template project
+def setAsTemplateCommand(mosaicConfig, projectId):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command  = 'curl -S -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer ' + str(token) + '" '
+  command += '-d \'{"is_template": "true"}\' '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/settings' + '"'
 
   return command

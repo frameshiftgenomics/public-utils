@@ -36,7 +36,7 @@ def createSampleMap(samples):
 
   sampleMap = {}
   for sample in samples:
-    if not samples[sample]['relation']: fail('Sample attribute "Relation" must be preesnt and populated for all samples (not value exists for "' + str(sample) + '")')
+    if not samples[sample]['relation']: fail('Sample attribute "Relation" must be present and populated for all samples (no value exists for "' + str(sample) + '")')
     sampleMap[samples[sample]['relation'].lower()] = samples[sample]['id']
 
   # Return the sample map
