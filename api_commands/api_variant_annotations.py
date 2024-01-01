@@ -221,7 +221,7 @@ def getAnnotationInformation(config, annotationId, projectId):
 ###### Execute the POST routes
 ######
 
-# Create a new annotation and return the id and uid
+# Create a new private annotation and return the id and uid
 def createPrivateAnnotationIdUid(config, ann, valueType, projectId):
 
   # Execute the command

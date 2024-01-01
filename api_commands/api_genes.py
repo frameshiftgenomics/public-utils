@@ -74,6 +74,14 @@ def postGeneSetByName(mosaicConfig, projectId, name, description, genes, organis
   # Return all the data
   return data['id'], genesToSkip
 
+# Create a gene set based on a list of gene ids
+def deleteGeneSet(mosaicConfig, projectId, setId):
+
+  # Add the existing genes to the gene set
+  try: data = os.popen(deleteGeneSetCommand(mosaicConfig, projectId, setId))
+  except: fail('Failed to delete the gene set with id ' + str(setId))
+  if 'message' in data: fail('Failed to delete the gene set with id ' + str(setId) + '. API returned the message: ' + str(data['message']))
+
 ######
 ###### Execute the PUT routes
 ######
@@ -151,6 +159,16 @@ def postGeneSetByNameCommand(mosaicConfig, projectId, name, description, genes):
 ######
 ###### DELETE routes
 ######
+
+# Post a gene set using a list of gene names
+def deleteGeneSetCommand(mosaicConfig, projectId, setId):
+  token = mosaicConfig['MOSAIC_TOKEN']
+  url   = mosaicConfig['MOSAIC_URL']
+
+  command = 'curl -S -s -X DELETE -H "Authorization: Bearer ' + str(token) + '" '
+  command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/genes/sets/' + str(setId) + '"'
+
+  return command
 
 # If the script fails, provide an error message and exit
 def fail(message):
