@@ -42,7 +42,8 @@ def commandLineArguments(config, required):
 
     # If the required field was not provided via a config file, or the command line, fail
     if not value and not field in config:
-      print(required[field]['desc'], ' is required. You can either supply this with "', required[field]['long'], ' (', required[field]['short'], ')" or', sep = '')
+      if 'short' in required[field]: print(required[field]['desc'], ' is required. You can either supply this with "', required[field]['long'], ' (', required[field]['short'], ')" or', sep = '')
+      else: print(required[field]['desc'], ' is required. You can either supply this with "', required[field]['long'], '" or', sep = '')
       print("supply a config file '--config (-c)' which includes the line:")
       print('  ', field, '=<VALUE>', sep = '')
       exit(1)

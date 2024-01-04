@@ -1,6 +1,6 @@
 {
 	"version": "0.0.1",
-	"reference": "GRCh38",
+	"reference": "GRCh37",
 	"annotations": {
 		"CADD Raw": {
 			"type": "float",
@@ -46,7 +46,7 @@
 			"display_type": "text",
 			"severity": ""
 		},
-		"Gene Consequence GRCh38": {
+		"Gene Consequence GRCh37": {
 			"type": "text",
 			"category": "Gene Annotations",
 			"display_type": "badge",
@@ -204,77 +204,11 @@
 			"display_type": "text",
 			"severity": ""
 		},
-		"gnomAD v3.1.2 Genomes Allele Count": {
-			"type": "float",
-			"category": "gnomAD",
-			"display_type": "text",
-			"severity": ""
-		},
-		"gnomAD v3.1.2 Genomes Allele Number": {
-			"type": "float",
-			"category": "gnomAD",
-			"display_type": "text",
-			"severity": ""
-		},
-		"gnomAD v3.1.2 Genomes Allele Frequency": {
-			"type": "float",
-			"category": "gnomAD",
-			"display_type": "percent",
-			"severity": ""
-		},
-		"gnomAD v3.1.2 Genomes Popmax Allele Frequency": {
-			"type": "float",
-			"category": "gnomAD",
-			"display_type": "percent",
-			"severity": ""
-		},
-		"gnomAD v3.1.2 Genomes Homozygotes": {
-			"type": "float",
-			"category": "gnomAD",
-			"display_type": "text",
-			"severity": ""
-		},
-		"gnomAD v3.1.2 Genomes Depth": {
-			"type": "float",
-			"category": "gnomAD",
-			"display_type": "text",
-			"severity": ""
-		},
-		"gnomAD v3.1.2 Genomes Hemizygotes": {
-			"type": "float",
-			"category": "gnomAD",
-			"display_type": "text",
-			"severity": ""
-		},
-		"gnomAD v3.1.2 Genomes Non-PAR": {
-			"type": "float",
-			"category": "gnomAD",
-			"display_type": "text",
-			"severity": ""
-		},
 		"MutScore": {
 			"type": "float",
 			"category": "Scores",
 			"display_type": "percent",
 			"severity": ""
-		},
-		"OMIM Inheritance": {
-			"type": "string",
-			"category": "Phenotype Information",
-			"display_type": "text",
-			"severity": ""
-		},
-		"OMIM Phenotype": {
-			"type": "string",
-			"category": "Phenotype Information",
-			"display_type": "text",
-			"severity": ""
-		},
-		"pLI": {
-			"type": "float",
-			"category": "Gene Annotations",
-			"display_type": "percent",
-			"severity": {".1": 9, ".10001": 9, ".9": 5}
 		},
 		"REVEL": {
 			"type": "float",
