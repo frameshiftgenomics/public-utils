@@ -152,6 +152,18 @@ def attachBaiFile(config, name, nickname, uri, reference, sampleName, sampleId, 
   except: fail('Failed to attach bai file to project: ' + str(projectId))
   if 'message' in data: fail('Failed to attach bai file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
+# Attach a cram file to a project
+def attachCramFile(config, name, nickname, uri, reference, sampleName, sampleId, projectId):
+  try: data = json.loads(os.popen(postSampleFileCommand(config, name, nickname, 'cram', uri, reference, sampleName, sampleId, projectId)).read())
+  except: fail('Failed to attach cram file to project: ' + str(projectId))
+  if 'message' in data: fail('Failed to attach cram file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+# Attach a crai file to a project
+def attachCraiFile(config, name, nickname, uri, reference, sampleName, sampleId, projectId):
+  try: data = json.loads(os.popen(postSampleFileCommand(config, name, nickname, 'crai', uri, reference, sampleName, sampleId, projectId)).read())
+  except: fail('Failed to attach crai file to project: ' + str(projectId))
+  if 'message' in data: fail('Failed to attach crai file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
 # Attach an alignstats.json file to a project
 def attachAlignstatsFile(config, name, nickname, uri, reference, sampleName, sampleId, projectId):
   try: data = json.loads(os.popen(postSampleFileCommand(config, name, nickname, 'alignstats.json', uri, reference, sampleName, sampleId, projectId)).read())

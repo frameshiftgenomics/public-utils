@@ -2,25 +2,50 @@
 	"version": "0.0.1",
 	"reference": "GRCh37",
 	"annotations": {
+		"AM_PR": {
+			"name": "AM Protein",
+			"type": "string",
+			"category": "Alpha Missense",
+			"display_type": "",
+			"severity": ""
+		},
+		"AM_SC": {
+			"name": "AM Score",
+			"type": "float",
+			"category": "Alpha Missense",
+			"display_type": "",
+			"severity": ""
+		},
+		"AM_PATH": {
+			"name": "AM Pathogenicity",
+			"type": "string",
+			"category": "Alpha Missense",
+			"display_type": "",
+			"severity": ""
+		},
 		"CADD Raw": {
+			"name": "CADD Raw",
 			"type": "float",
 			"category": "Scores",
 			"display_type": "text",
 			"severity": ""
 		},
 		"CADD Phred": {
+			"name": "CADD Phred",
 			"type": "float",
 			"category": "Scores",
 			"display_type": "text",
 			"severity": ""
 		},
 		"CCR": {
+			"name": "CCR",
 			"type": "float",
 			"category": "Scores",
 			"display_type": "text",
 			"severity": ""
 		},
 		"ClinVar 2023-03-26" : {
+			"name": "ClinVar 2023-03-26",
 			"type": "string",
 			"category": "ClinVar",
 			"display_type": "badge",
@@ -41,12 +66,14 @@
 			}
 		},
 		"EVE": {
+			"name": "EVE",
 			"type": "float",
 			"category": "Scores",
 			"display_type": "text",
 			"severity": ""
 		},
 		"Gene Consequence GRCh37": {
+			"name": "Gene Consequence GRCh37",
 			"type": "text",
 			"category": "Gene Annotations",
 			"display_type": "badge",
@@ -127,144 +154,161 @@
 			}
 		},
 		"gnomAD v2.1.1 Exomes Allele Count": {
+			"name": "Allele Count (v2 exomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Exomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Exomes Allele Number": {
+			"name": "Allele Number (v2 exomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Exomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Exomes Allele Frequency": {
+			"name": "Allele Frequency (v2 exomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Exomes",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Exomes Popmax Allele Frequency": {
+			"name": "Popmax Allele Frequency (v2 exomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Exomes",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Exomes Homozygotes": {
+			"name": "Homozygotes (v2 exomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Exomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Exomes Depth": {
+			"name": "Depth (v2 exomes)",
 			"type": "float",
-			"category": "gnomAD",
-			"display_type": "text",
-			"severity": ""
-		},
-		"gnomAD v2.1.1 Genomes Depth": {
-			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Exomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Allele Count": {
+			"name": "Allele Count (v2 genomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Allele Number": {
+			"name": "Alelle Number (v2 genomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Allele Frequency": {
+			"name": "Allele Frequency (v2 genomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Popmax Allele Frequency": {
+			"name": "Popmax Allele Frequency (v2 genomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Homozygotes": {
+			"name": "Homozygotes (v2 genomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Depth": {
+			"name": "Depth (v2 genomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"MutScore": {
+			"name": "MutScore",
 			"type": "float",
 			"category": "Scores",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"REVEL": {
+			"name": "REVEL",
 			"type": "float",
 			"category": "Scores",
 			"display_type": "percent",
 			"severity": {".5": 8, ".9": 1, ".75": 3}
 		},
 		"SpliceAI Max Score": {
+			"name": "SpliceAI Max Score",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"SpliceAI Acceptor Loss Score": {
+			"name": "SpliceAI Acceptor Loss Score",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"SpliceAI Acceptor Loss Position": {
+			"name": "SpliceAI Acceptor Loss Position",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "text",
 			"severity": ""
 		},
 		"SpliceAI Donor Loss Score": {
+			"name": "SpliceAI Donor Loss Score",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"SpliceAI Donor Loss Position": {
+			"name": "SpliceAI Donor Loss Position",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "text",
 			"severity": ""
 		},
 		"SpliceAI Acceptor Gain Score": {
+			"name": "SpliceAI Acceptor Gain Score",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"SpliceAI Acceptor Gain Position": {
+			"name": "SpliceAI Acceptor Gain Position",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "text",
 			"severity": ""
 		},
 		"SpliceAI Donor Gain Score": {
+			"name": "SpliceAI Donor Gain Score",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"SpliceAI Donor Gain Position": {
+			"name": "SpliceAI Donor Gain Position",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "text",

@@ -78,6 +78,11 @@ def readAnnotationsJson(jsonFilename):
   for annotation in annotations:
     jsonInfo['annotations'][annotation] = {}
 
+    # The annotation name must be defined
+    try: jsonInfo['annotations'][annotation]['name'] = annotations[annotation]['name']
+    except: fail('The json file does not contain the "name" field for annotation "' + str(annotation) + '"')
+
+    # The annotation type ('float' or 'string') is required
     try: jsonInfo['annotations'][annotation]['type'] = annotations[annotation]['type']
     except: fail('The json file does not contain the "type" field for annotation "' + str(annotation) + '"')
 
@@ -99,15 +104,16 @@ def annotationStatus(project, projectId, annotationsInfo, publicAnnotations):
 
   # Loop over the annotations that should exist in the project and create or update as necessary
   for annotation in annotationsInfo['annotations']:
-    if annotation not in availableAnnotations: annotationId, annotationUid = createAnnotation(project, projectId, annotation, annotationsInfo['annotations'][annotation])
+    name = annotationsInfo['annotations'][annotation]['name']
+    if name not in availableAnnotations: annotationId, annotationUid = createAnnotation(project, projectId, name, annotationsInfo['annotations'][annotation])
     else:
       category    = annotationsInfo['annotations'][annotation]['category']
       displayType = annotationsInfo['annotations'][annotation]['display_type'] if annotationsInfo['annotations'][annotation]['display_type'] else 'text'
       severity    = annotationsInfo['annotations'][annotation]['severity']
 
       # If updating an annotation, use the original_project_id to ensure the update occurs
-      originalProjectId = availableAnnotations[annotation]['original_project_id']
-      updateAnnotation(project, originalProjectId, annotation, annotationsInfo['annotations'][annotation], availableAnnotations[annotation])
+      originalProjectId = availableAnnotations[name]['original_project_id']
+      updateAnnotation(project, originalProjectId, name, annotationsInfo['annotations'][annotation], availableAnnotations[name])
 
 # Create a new public annotation
 def createAnnotation(project, projectId, name, annotation):

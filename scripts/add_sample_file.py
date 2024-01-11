@@ -79,6 +79,8 @@ def addFile(args):
   elif args.type == 'tbi': api_sf.attachTbiFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
   elif args.type == 'bam': api_sf.attachBamFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
   elif args.type == 'bai': api_sf.attachBaiFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
+  elif args.type == 'cram': api_sf.attachCramFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
+  elif args.type == 'crai': api_sf.attachCraiFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
   elif args.type == 'alignstats.json': api_sf.attachAlignstatsFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
   elif args.type == 'peddy.html': api_sf.attachPeddyFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
   else: fail('Unknown file type: ' + str(args.type))

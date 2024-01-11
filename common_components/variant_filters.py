@@ -172,9 +172,10 @@ def getFilters(filtersInfo, categories, filters, samples, sampleMap, annotations
               if 'direction' not in filtersInfo['filters'][name]['display']['sort']: fail('public_utils/common_components/variant_filters.py: Field "direction" is missing from the "display" > "sort" section for filter ' + str(name))
 
               # Check the column to sort on is a valid uid, or is defined in the annotation map
-              if filtersInfo['filters'][name]['display'][field]['column_uid'] not in uids:
-                if filtersInfo['filters'][name]['display'][field]['column_uid'] in annotationMap: uid = annotationMap[filtersInfo['filters'][name]['display'][field]['column_uid']]
-                else: fail('public_utils/common_components/variant_filters.py: Unknown uid (' + str(uid) + ') in "display" > "sort" > "column_uid" for variant filter ' + str(name))
+              sortUid = filtersInfo['filters'][name]['display'][field]['column_uid']
+              if sortUid not in uids:
+                if sortUid in annotationMap: uid = annotationMap[sortUid]
+                else: fail('public_utils/common_components/variant_filters.py: Unknown uid (' + str(sortUid) + ') in "display" > "sort" > "column_uid" for variant filter ' + str(name))
               else: uid = filtersInfo['filters'][name]['display'][field]['column_uid']
               filters[name]['sortColumnUid'] = uid 
 

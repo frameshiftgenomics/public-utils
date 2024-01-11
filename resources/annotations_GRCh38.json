@@ -3,24 +3,28 @@
 	"reference": "GRCh38",
 	"annotations": {
 		"CADD Raw": {
+			"name": "CADD Raw",
 			"type": "float",
 			"category": "Scores",
 			"display_type": "text",
 			"severity": ""
 		},
 		"CADD Phred": {
+			"name": "CADD Phred",
 			"type": "float",
 			"category": "Scores",
 			"display_type": "text",
 			"severity": ""
 		},
 		"CCR": {
+			"name": "CCR",
 			"type": "float",
 			"category": "Scores",
 			"display_type": "text",
 			"severity": ""
 		},
 		"ClinVar 2023-03-26" : {
+			"name": "ClinVar 2023-03-26",
 			"type": "string",
 			"category": "ClinVar",
 			"display_type": "badge",
@@ -41,12 +45,14 @@
 			}
 		},
 		"EVE": {
+			"name": "EVE",
 			"type": "float",
 			"category": "Scores",
 			"display_type": "text",
 			"severity": ""
 		},
 		"Gene Consequence GRCh38": {
+			"name": "Gene Consequence GRCh38",
 			"type": "text",
 			"category": "Gene Annotations",
 			"display_type": "badge",
@@ -127,210 +133,280 @@
 			}
 		},
 		"gnomAD v2.1.1 Exomes Allele Count": {
+			"name": "Allele Count v2.1.1 Exomes",
 			"type": "float",
 			"category": "gnomAD",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Exomes Allele Number": {
+			"name": "Allele Number (v2 Exomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Exomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Exomes Allele Frequency": {
+			"name": "Allele Frequency (v2 Exomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Exomes",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Exomes Popmax Allele Frequency": {
+			"name": "Popmax Allele Frequency (v2 Exomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Exomes",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Exomes Homozygotes": {
+			"name": "Homozygotes (v2 Exomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Exomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Exomes Depth": {
+			"name": "Depth (v2 Exomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Exomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Depth": {
+			"name": "Depth (v2 Exomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Allele Count": {
+			"name": "Allele Count (v2 Exomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Allele Number": {
+			"name": "Allele Number (v2 Exomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Allele Frequency": {
+			"name": "Allele Frequency (v2 Exomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Popmax Allele Frequency": {
+			"name": "Popmax Allele Frequency (v2 Exomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Homozygotes": {
+			"name": "Homozygotes (v2 Exomes)",
 			"type": "float",
-			"category": "gnomAD",
-			"display_type": "text",
-			"severity": ""
-		},
-		"gnomAD v2.1.1 Genomes Depth": {
-			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v3.1.2 Genomes Allele Count": {
+			"name": "Allele Count (v3)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v3.1.2",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v3.1.2 Genomes Allele Number": {
+			"name": "Allele Number (v3)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v3.1.2",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v3.1.2 Genomes Allele Frequency": {
+			"name": "Allele Frequency (v3)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v3.1.2",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"gnomAD v3.1.2 Genomes Popmax Allele Frequency": {
+			"name": "Popmax Allele Frequency (v3)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v3.1.2",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"gnomAD v3.1.2 Genomes Homozygotes": {
+			"name": "Homozygotes (v3)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v3.1.2",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v3.1.2 Genomes Depth": {
+			"name": "Depth (v3)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v3.1.2",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v3.1.2 Genomes Hemizygotes": {
+			"name": "Hemizygotes (v3)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v3.1.2",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v3.1.2 Genomes Non-PAR": {
+			"name": "Non-PAR (v3)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v3.1.2",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v4.0.0 Genomes Allele Count": {
+			"name": "Allele Count (v4)",
+			"type": "float",
+			"category": "gnomAD v4.0.0",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v4.0.0 Genomes Allele Number": {
+			"name": "Allele Number (v4)",
+			"type": "float",
+			"category": "gnomAD v4.0.0",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v4.0.0 Genomes Allele Frequency": {
+			"name": "Allele Frequency (v4)",
+			"type": "float",
+			"category": "gnomAD v4.0.0",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v4.0.0 Genomes Allele Popmax Allele Frequency": {
+			"name": "Popmax Allele Frequency (v4)",
+			"type": "float",
+			"category": "gnomAD v4.0.0",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v4.0.0 Genomes Homozygotes": {
+			"name": "Homozygotes (v4)",
+			"type": "float",
+			"category": "gnomAD v4.0.0",
+			"display_type": "text",
+			"severity": ""
+		},
+		"gnomAD v4.0.0 Genomes Hemizygotes": {
+			"name": "Hemizygotes (v4)",
+			"type": "float",
+			"category": "gnomAD v4.0.0",
 			"display_type": "text",
 			"severity": ""
 		},
 		"MutScore": {
+			"name": "MutScore",
 			"type": "float",
 			"category": "Scores",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"OMIM Inheritance": {
+			"name": "OMIM Inheritance",
 			"type": "string",
 			"category": "Phenotype Information",
 			"display_type": "text",
 			"severity": ""
 		},
 		"OMIM Phenotype": {
+			"name": "OMIM Phenotype",
 			"type": "string",
 			"category": "Phenotype Information",
 			"display_type": "text",
 			"severity": ""
 		},
 		"pLI": {
+			"name": "pLI",
 			"type": "float",
 			"category": "Gene Annotations",
 			"display_type": "percent",
 			"severity": {".1": 9, ".10001": 9, ".9": 5}
 		},
 		"REVEL": {
+			"name": "REVEL",
 			"type": "float",
 			"category": "Scores",
 			"display_type": "percent",
 			"severity": {".5": 8, ".9": 1, ".75": 3}
 		},
 		"SpliceAI Max Score": {
+			"name": "SpliceAI Max Score",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"SpliceAI Acceptor Loss Score": {
+			"name": "SpliceAI Acceptor Loss Score",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"SpliceAI Acceptor Loss Position": {
+			"name": "SpliceAI Acceptor Loss Position",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "text",
 			"severity": ""
 		},
 		"SpliceAI Donor Loss Score": {
+			"name": "SpliceAI Donor Loss Score",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"SpliceAI Donor Loss Position": {
+			"name": "SpliceAI Donor Loss Position",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "text",
 			"severity": ""
 		},
 		"SpliceAI Acceptor Gain Score": {
+			"name": "SpliceAI Acceptor Gain Score",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"SpliceAI Acceptor Gain Position": {
+			"name": "SpliceAI Acceptor Gain Position",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "text",
 			"severity": ""
 		},
 		"SpliceAI Donor Gain Score": {
+			"name": "SpliceAI Donor Gain Score",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"SpliceAI Donor Gain Position": {
+			"name": "SpliceAI Donor Gain Position",
 			"type": "float",
 			"category": "Splice AI",
 			"display_type": "text",
