@@ -44,8 +44,8 @@
 			"display_type": "text",
 			"severity": ""
 		},
-		"ClinVar 2023-03-26" : {
-			"name": "ClinVar 2023-03-26",
+		"ClinVar 2024-01-07" : {
+			"name": "ClinVar 2024-01-07",
 			"type": "string",
 			"category": "ClinVar",
 			"display_type": "badge",
