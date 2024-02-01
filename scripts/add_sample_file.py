@@ -83,6 +83,7 @@ def addFile(args):
   elif args.type == 'crai': api_sf.attachCraiFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
   elif args.type == 'alignstats.json': api_sf.attachAlignstatsFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
   elif args.type == 'peddy.html': api_sf.attachPeddyFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
+  elif args.type == 'pdf': api_sf.attachPeddyFile(mosaicConfig, args.name, args.nickname, args.uri, reference, args.sample_name, sampleId, args.project_id)
   else: fail('Unknown file type: ' + str(args.type))
 
 # If the script fails, provide an error message and exit

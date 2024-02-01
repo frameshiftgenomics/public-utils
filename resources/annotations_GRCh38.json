@@ -2,6 +2,20 @@
 	"version": "0.0.1",
 	"reference": "GRCh38",
 	"annotations": {
+		"Class (AM)": {
+			"name": "Class (AM)",
+			"type": "string",
+			"category": "Alpha Missense",
+			"display_type": "text",
+			"severity": ""
+		},
+		"Score (AM)": {
+			"name": "Score (AM)",
+			"type": "float",
+			"category": "Alpha Missense",
+			"display_type": "text",
+			"severity": ""
+		},
 		"CADD Raw": {
 			"name": "CADD Raw",
 			"type": "float",
@@ -133,9 +147,9 @@
 			}
 		},
 		"gnomAD v2.1.1 Exomes Allele Count": {
-			"name": "Allele Count v2.1.1 Exomes",
+			"name": "Allele Count (v2 Exomes)",
 			"type": "float",
-			"category": "gnomAD",
+			"category": "gnomAD v2.1.1 Exomes",
 			"display_type": "text",
 			"severity": ""
 		},
@@ -175,42 +189,42 @@
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Depth": {
-			"name": "Depth (v2 Exomes)",
+			"name": "Depth (v2 Genomes)",
 			"type": "float",
 			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Allele Count": {
-			"name": "Allele Count (v2 Exomes)",
+			"name": "Allele Count (v2 Genomes)",
 			"type": "float",
 			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Allele Number": {
-			"name": "Allele Number (v2 Exomes)",
+			"name": "Allele Number (v2 Genomes)",
 			"type": "float",
 			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "text",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Allele Frequency": {
-			"name": "Allele Frequency (v2 Exomes)",
+			"name": "Allele Frequency (v2 Genomes)",
 			"type": "float",
 			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Popmax Allele Frequency": {
-			"name": "Popmax Allele Frequency (v2 Exomes)",
+			"name": "Popmax Allele Frequency (v2 Genomes)",
 			"type": "float",
 			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "percent",
 			"severity": ""
 		},
 		"gnomAD v2.1.1 Genomes Homozygotes": {
-			"name": "Homozygotes (v2 Exomes)",
+			"name": "Homozygotes (v2 Genomes)",
 			"type": "float",
 			"category": "gnomAD v2.1.1 Genomes",
 			"display_type": "text",
