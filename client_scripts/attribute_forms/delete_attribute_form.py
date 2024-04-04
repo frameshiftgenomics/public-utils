@@ -14,12 +14,8 @@ def main():
   apiStore  = Store(config_file = args.client_config)
   apiMosaic = Mosaic(config_file = args.client_config)
 
-  # Open an api client project object for the defined project
-  project = apiMosaic.get_project(args.project_id)
-
-  # Delete the file
-  samples = project.get_samples()
-  for sample in samples: print(sample['name'], ': ', sample['id'], sep = '')
+  # Delete the attribute form
+  apiMosaic.delete_attribute_form(args.attribute_form_id)
 
 # Input options
 def parseCommandLine():
@@ -29,8 +25,8 @@ def parseCommandLine():
   parser.add_argument('--client_config', '-c', required = True, metavar = 'string', help = 'The ini config file for Mosaic')
   parser.add_argument('--api_client', '-a', required = True, metavar = 'string', help = 'The api_client directory')
 
-  # The project id to which the filter is to be added is required
-  parser.add_argument('--project_id', '-p', required = True, metavar = 'integer', help = 'The Mosaic project id to upload attributes to')
+  # The id of the attribute form to delete
+  parser.add_argument('--attribute_form_id', '-i', required = True, metavar = 'string', help = 'The id of the attribute form to delete')
 
   return parser.parse_args()
 

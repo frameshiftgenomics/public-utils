@@ -88,14 +88,14 @@ def getAllSampleFiles(config, projectId, sampleId):
   if 'message' in data: fail('Failed to get sample files for project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
   # Loop over the returned data object and put the filter ids in a list to return
-  for sFile in data['data']: ids[sFile['id']] = {'name': sFile['name'], 'uri': sFile['uri'], 'vcf_sample_name': sFile['vcf_sample_name']}
+  for sFile in data['data']: ids[sFile['id']] = {'name': sFile['name'], 'uri': sFile['uri'], 'vcf_sample_name': sFile['vcf_sample_name'], 'type': sFile['type']}
 
   # Determine the number of pages
   noPages = int( math.ceil( float(data['count']) / float(limit) ) )
 
   # Loop over all necessary pages
   for page in range(1, noPages):
-    for sFile in data['data']: ids[sFile['id']] = {'name': sFile['name'], 'uri': sFile['uri'], 'vcf_sample_name': sFile['vcf_sample_name']}
+    for sFile in data['data']: ids[sFile['id']] = {'name': sFile['name'], 'uri': sFile['uri'], 'vcf_sample_name': sFile['vcf_sample_name'], 'type': sFile['type']}
 
   # Return the sample files
   return ids
@@ -175,6 +175,18 @@ def attachPeddyFile(config, name, nickname, uri, reference, sampleName, sampleId
   try: data = json.loads(os.popen(postSampleFileCommand(config, name, nickname, 'peddy.html', uri, reference, sampleName, sampleId, projectId)).read())
   except: fail('Failed to attach alignstats json file to project: ' + str(projectId))
   if 'message' in data: fail('Failed to attach alignstats json file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+# Attach a bigwig file to a project
+def attachBigwigFile(config, name, nickname, uri, reference, sampleName, sampleId, projectId):
+  try: data = json.loads(os.popen(postSampleFileCommand(config, name, nickname, 'bw', uri, reference, sampleName, sampleId, projectId)).read())
+  except: fail('Failed to attach bigwig file to project: ' + str(projectId))
+  if 'message' in data: fail('Failed to attach bigwig file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
+
+# Attach a bed file to a project
+def attachBedFile(config, name, nickname, uri, reference, sampleName, sampleId, projectId):
+  try: data = json.loads(os.popen(postSampleFileCommand(config, name, nickname, 'bed.gz', uri, reference, sampleName, sampleId, projectId)).read())
+  except: fail('Failed to attach bed file to project: ' + str(projectId))
+  if 'message' in data: fail('Failed to attach bed file to project: ' + str(projectId) + '. API returned the message: ' + str(data['message']))
 
 ######
 ###### Execute DELETE routes

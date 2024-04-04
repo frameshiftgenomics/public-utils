@@ -1,6 +1,7 @@
 import os
 import argparse
 
+from pprint import pprint
 from sys import path
 
 def main():
@@ -17,8 +18,12 @@ def main():
   # Open an api client project object for the defined project
   project = apiMosaic.get_project(args.project_id)
 
-  # Delete the file
-  project.post_project_file(name = args.name, file_type = args.file_type, uri = args.uri, reference = args.reference)
+  # Set the values to update
+  reference = args.reference if args.reference else None
+  privacyLevel = args.privacy_level if args.privacy_level else None
+
+  # Update the project settings
+  project.put_project_settings(privacy_level=None, reference=None, selected_sample_attribute_chart_data=None, selected_sample_attribute_column_ids=None, selected_variant_annotation_ids=None, sorted_annotations=None, is_template=args.is_template)
 
 # Input options
 def parseCommandLine():
@@ -31,11 +36,10 @@ def parseCommandLine():
   # The project id to which the filter is to be added is required
   parser.add_argument('--project_id', '-p', required = True, metavar = 'integer', help = 'The Mosaic project id to upload attributes to')
 
-  # Arguments related to the file to add
-  parser.add_argument('--name', '-n', required = True, metavar = 'string', help = 'The name of the file being attached')
-  parser.add_argument('--file_type', '-t', required = True, metavar = 'string', help = 'The file type of the file being attached')
-  parser.add_argument('--uri', '-u', required = True, metavar = 'string', help = 'The uri of the file being attached')
-  parser.add_argument('--reference', '-r', required = True, metavar = 'string', help = 'The project reference')
+  # Optional arguments
+  parser.add_argument('--privacy_level', '-l', required = False, metavar = 'string', help = 'The privacy level to assign to the project')
+  parser.add_argument('--is_template', '-t', required = False, action='store_true', help = 'The privacy level to assign to the project')
+  parser.add_argument('--reference', '-r', required = False, metavar = 'string', help = 'The genome reference to assign to the project')
 
   return parser.parse_args()
 

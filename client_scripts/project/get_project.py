@@ -1,6 +1,7 @@
 import os
 import argparse
 
+from pprint import pprint
 from sys import path
 
 def main():
@@ -18,7 +19,7 @@ def main():
   project = apiMosaic.get_project(args.project_id)
 
   # Delete the file
-  project.post_project_file(name = args.name, file_type = args.file_type, uri = args.uri, reference = args.reference)
+  pprint(project.get_project())
 
 # Input options
 def parseCommandLine():
@@ -30,12 +31,6 @@ def parseCommandLine():
 
   # The project id to which the filter is to be added is required
   parser.add_argument('--project_id', '-p', required = True, metavar = 'integer', help = 'The Mosaic project id to upload attributes to')
-
-  # Arguments related to the file to add
-  parser.add_argument('--name', '-n', required = True, metavar = 'string', help = 'The name of the file being attached')
-  parser.add_argument('--file_type', '-t', required = True, metavar = 'string', help = 'The file type of the file being attached')
-  parser.add_argument('--uri', '-u', required = True, metavar = 'string', help = 'The uri of the file being attached')
-  parser.add_argument('--reference', '-r', required = True, metavar = 'string', help = 'The project reference')
 
   return parser.parse_args()
 

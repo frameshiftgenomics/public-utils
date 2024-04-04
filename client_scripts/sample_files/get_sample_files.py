@@ -7,6 +7,7 @@ def main():
 
   # Parse the command line
   args = parseCommandLine()
+  if not args.write_info: args.write_info = 1
 
   # Import the api client
   path.append(args.api_client)
@@ -17,8 +18,15 @@ def main():
   # Open an api client project object for the defined project
   project = apiMosaic.get_project(args.project_id)
 
-  # Delete the file
-  project.post_project_file(name = args.name, file_type = args.file_type, uri = args.uri, reference = args.reference)
+  # Get all of the sample files
+  sampleFileGenerator = project.get_sample_files(args.sample_id)
+  for sample in sampleFileGenerator:
+    if int(args.write_info) == 1: print(sample['name'], ': ', sample['id'], ', ', sample['type'], sep = '')
+    elif int(args.write_info) == 2:
+      print(sample['name'])
+      print('  ', sample['id'], sep = '')
+      print('  ', sample['type'], sep = '')
+      print('  ', sample['uri'], sep = '')
 
 # Input options
 def parseCommandLine():
@@ -32,10 +40,10 @@ def parseCommandLine():
   parser.add_argument('--project_id', '-p', required = True, metavar = 'integer', help = 'The Mosaic project id to upload attributes to')
 
   # Arguments related to the file to add
-  parser.add_argument('--name', '-n', required = True, metavar = 'string', help = 'The name of the file being attached')
-  parser.add_argument('--file_type', '-t', required = True, metavar = 'string', help = 'The file type of the file being attached')
-  parser.add_argument('--uri', '-u', required = True, metavar = 'string', help = 'The uri of the file being attached')
-  parser.add_argument('--reference', '-r', required = True, metavar = 'string', help = 'The project reference')
+  parser.add_argument('--sample_id', '-s', required = True, metavar = 'string', help = 'The sample id the file is attached to')
+
+  # Determine what information to print to screen
+  parser.add_argument('--write_info', '-w', required = False, metavar = 'integer', help = 'What information should be written to screen:')
 
   return parser.parse_args()
 

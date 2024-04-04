@@ -1,6 +1,7 @@
 import os
 import argparse
 
+from pprint import pprint
 from sys import path
 
 def main():
@@ -17,8 +18,22 @@ def main():
   # Open an api client project object for the defined project
   project = apiMosaic.get_project(args.project_id)
 
-  # Delete the file
-  project.post_project_file(name = args.name, file_type = args.file_type, uri = args.uri, reference = args.reference)
+  # Get the project settings
+  for attribute in project.get_project_attributes():
+    print(attribute['name'], ' (id: ', attribute['id'], ')', sep = '')
+    if attribute['description']: print('  description: ', attribute['description'], sep = '')
+    print('    uid: ', attribute['uid'], sep = '')
+    print('    value_type: ', attribute['value_type'], sep = '')
+    print('    original_project_id: ', attribute['original_project_id'], sep = '')
+    print('    is_custom: ', attribute['is_custom'], sep = '')
+    print('    is_editable: ', attribute['is_editable'], sep = '')
+    print('    is_public: ', attribute['is_public'], sep = '')
+    if attribute['predefined_values']:
+      print('    predefined_values:')
+      for value in attribute['predefined_values']: print('      ', value, sep = '')
+    if attribute['source']: print('    source: ', attribute['source'], sep = '')
+    if attribute['start_attribute_id']: print('    Start id: ', attribute['start_attribute_id'], ', End id: ', attribute['end_attribute_id'], sep = '')
+    print('    created_at: ', attribute['created_at'], ', updated_at: ', attribute['updated_at'], sep = '')
 
 # Input options
 def parseCommandLine():
@@ -30,12 +45,6 @@ def parseCommandLine():
 
   # The project id to which the filter is to be added is required
   parser.add_argument('--project_id', '-p', required = True, metavar = 'integer', help = 'The Mosaic project id to upload attributes to')
-
-  # Arguments related to the file to add
-  parser.add_argument('--name', '-n', required = True, metavar = 'string', help = 'The name of the file being attached')
-  parser.add_argument('--file_type', '-t', required = True, metavar = 'string', help = 'The file type of the file being attached')
-  parser.add_argument('--uri', '-u', required = True, metavar = 'string', help = 'The uri of the file being attached')
-  parser.add_argument('--reference', '-r', required = True, metavar = 'string', help = 'The project reference')
 
   return parser.parse_args()
 
