@@ -1,6 +1,7 @@
 import os
 import argparse
 
+from pprint import pprint
 from sys import path
 
 def main():
@@ -17,9 +18,16 @@ def main():
   # Open an api client project object for the defined project
   project = apiMosaic.get_project(args.project_id)
 
-  # Get all projects in the collection
-  projects = project.get_collection_projects()
-  for project in projects: print(project['nickname'])
+  # Get the project settings
+  for annotation in project.get_variant_annotations():
+    if not args.verbose: print(annotation['name'], ': ', annotation['id'], sep = '')
+    else:
+      print(annotation['name'], ' (id: ', annotation['id'], ')', sep = '')
+      print('    uid: ', annotation['uid'], sep = '')
+      print('    privacy_level: ', annotation['privacy_level'], sep = '')
+      print('    value_type: ', annotation['value_type'], sep = '')
+      print('    severity: ', annotation['severity'], sep = '')
+      print('    category: ', annotation['category'], sep = '')
 
 # Input options
 def parseCommandLine():
@@ -30,7 +38,10 @@ def parseCommandLine():
   parser.add_argument('--api_client', '-a', required = True, metavar = 'string', help = 'The api_client directory')
 
   # The project id to which the filter is to be added is required
-  parser.add_argument('--project_id', '-p', required = True, metavar = 'integer', help = 'The Mosaic project id to upload attributes to')
+  parser.add_argument('--project_id', '-p', required = True, metavar = 'integer', help = 'The Mosaic project id to get annotations for')
+
+  # Verbose output
+  parser.add_argument('--verbose', '-v', required = False, action = 'store_true', help = 'Provide a verbose output')
 
   return parser.parse_args()
 

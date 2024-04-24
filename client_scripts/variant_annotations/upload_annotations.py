@@ -7,7 +7,6 @@ def main():
 
   # Parse the command line
   args = parseCommandLine()
-  if not args.write_info: args.write_info = 1
 
   # Import the api client
   path.append(args.api_client)
@@ -18,16 +17,9 @@ def main():
   # Open an api client project object for the defined project
   project = apiMosaic.get_project(args.project_id)
 
-  # Get all of the sample files
-  sampleFileGenerator = project.get_sample_files(args.sample_id)
-  for sample in sampleFileGenerator:
-    if int(args.write_info) == 1: print(sample['name'], ': ', sample['id'], ', ', sample['type'], sep = '')
-    elif int(args.write_info) == 2:
-      print(sample['name'])
-      print('  id: ', sample['id'], sep = '')
-      print('  type: ', sample['type'], sep = '')
-      print('  uri: ', sample['uri'], sep = '')
-      print('  vcf sample name: ', sample['vcf_sample_name'], sep = '')
+  # Upload the variant annotations
+  data = project.post_annotation_file(args.tsv, allow_deletion = 'true', disable_successful_notification = 'true')
+  print(data['message'], '. Annotation upload job id: ', data['redis_job_id'], sep = '')
 
 # Input options
 def parseCommandLine():
@@ -38,13 +30,10 @@ def parseCommandLine():
   parser.add_argument('--api_client', '-a', required = True, metavar = 'string', help = 'The api_client directory')
 
   # The project id to which the filter is to be added is required
-  parser.add_argument('--project_id', '-p', required = True, metavar = 'integer', help = 'The Mosaic project id to upload attributes to')
+  parser.add_argument('--project_id', '-p', required = True, metavar = 'integer', help = 'The Mosaic project id to add variant filters to')
 
-  # Arguments related to the file to add
-  parser.add_argument('--sample_id', '-s', required = True, metavar = 'string', help = 'The sample id the file is attached to')
-
-  # Determine what information to print to screen
-  parser.add_argument('--write_info', '-w', required = False, metavar = 'integer', help = 'What information should be written to screen:')
+  # Additional arguments
+  parser.add_argument('--tsv', '-t', required = True, metavar = 'string', help = 'The annotatoin tsv file to upload')
 
   return parser.parse_args()
 
