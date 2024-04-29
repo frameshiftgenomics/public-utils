@@ -21,7 +21,7 @@ def main():
   # Get the project settings
   isEditable = 'false' if args.is_editable else 'true'
   values = args.predefined_values.split(',') if args.predefined_values else None
-  data = project.put_project_attributes(args.attribute_id, description=args.description, name=args.name, predefined_values=values, is_editable=isEditable)
+  data = project.put_project_attributes(args.attribute_id, description=args.description, name=args.name, predefined_values=values, is_editable=isEditable, value=args.value)
 
 # Input options
 def parseCommandLine():
@@ -40,6 +40,7 @@ def parseCommandLine():
   parser.add_argument('--name', '-n', required = False, metavar = 'string', help = 'The name of the attribute')
   parser.add_argument('--is_editable', '-e', required = False, action = 'store_true', help = 'If set, the attribute will not be editable')
   parser.add_argument('--predefined_values', '-r', required = False, metavar = 'string', help = 'A comma separated list of values that will be available by default')
+  parser.add_argument('--value', '-v', required = False, metavar = 'string', help = 'The value of the attribute')
 
   return parser.parse_args()
 

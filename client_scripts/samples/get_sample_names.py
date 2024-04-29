@@ -19,7 +19,8 @@ def main():
 
   # Delete the file
   samples = project.get_samples()
-  for sample in samples: print(sample['name'], ': ', sample['id'], sep = '')
+  for sample in samples:
+    print(sample['name'], ': ', sample['id'], sep = '')
 
 # Input options
 def parseCommandLine():

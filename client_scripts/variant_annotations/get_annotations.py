@@ -24,6 +24,9 @@ def main():
     else:
       print(annotation['name'], ' (id: ', annotation['id'], ')', sep = '')
       print('    uid: ', annotation['uid'], sep = '')
+      print('    versions: ')
+      for version in annotation['annotation_versions']:
+        print('        ', version['version'], ': ', version['id'], sep = '')
       print('    privacy_level: ', annotation['privacy_level'], sep = '')
       print('    value_type: ', annotation['value_type'], sep = '')
       print('    severity: ', annotation['severity'], sep = '')

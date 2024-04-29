@@ -17,44 +17,98 @@ def main():
   path.append(args.api_client)
   from mosaic import Mosaic, Project, Store
   store   = Store(config_file = args.config)
-  mosaic  = Mosaic(config_file = args.config)
-  project = mosaic.get_project(args.project_id)
+  apiMosaic  = Mosaic(config_file = args.config)
+  project = apiMosaic.get_project(args.project_id)
 
   # Check that the json containing the required defaults exists and read in the information
   #if not exists(args.json): fail('Json file (' + str(args.json) + ') does not exist')
-  try: jsonFile = open(args.json, 'r')
-  except: fail('Could not open the json file: ' + str(args.json))
-  try: jsonInfo = json.load(jsonFile)
-  except: fail('Could not read contents of json file ' + str(args.json) + '. Check that this is a valid json')
-  jsonFile.close()
+  try:
+    json_file = open(args.json, 'r')
+  except:
+    fail('Could not open the json file: ' + str(args.json))
+  try:
+    json_info = json.load(json_file)
+  except:
+    fail('Could not read contents of json file ' + str(args.json) + '. Check that this is a valid json')
+  json_file.close()
 
-  # Set the analytics default charts
+  # Check if this is a collection
+  data = project.get_project()
+  if data['is_collection']:
+    project_ids = []
+    for sub_project in data['collection_projects']:
+      project_ids.append(sub_project['child_project_id'])
+  else:
+    project_ids = [args.project_id]
 
-  # Set the samples table defaults
-  samplesTableColumns = []
-  if 'sample_table' not in jsonInfo: warning('No information on the Samples table - defaults will not be set')
-  else: samplesTableColumns = jsonInfo['sample_table']
+  # Loop over all the projects (for a collection) and apply the filters
+  for project_id in project_ids:
+    project = apiMosaic.get_project(project_id)
+    print('Setting project defaults for ', project.name, ' (id:', project_id,')', sep = '')
 
-  # Set the variants table defaults
-  variantAnnotations = []
-  if 'annotations' not in jsonInfo: warning('No information on the Variants table annotations - defaults will not be set')
-  else: variantAnnotations = jsonInfo['annotations']
+    # Get all the sample attributes in the project
+    sample_attributes = {}
+    for sample_attribute in project.get_sample_attributes():
+      sample_attributes[sample_attribute['uid']] = sample_attribute['id']
+  
+    annotations = {}
+    for annotation in project.get_variant_annotations():
+      annotations[annotation['uid']] = annotation['id']
 
-  # Set the variant watchlist annotation defaults
-  watchlist = []
-  if 'watchlist_annotations' not in jsonInfo: warning('No information on the pinned Variants table annotations - defaults will not be set')
-  else: watchlist = jsonInfo['watchlist_annotations']
+    # Set the analytics default charts
+  
+    # Set the samples table defaults
+    #samples_table_columns = json_info['sample_table'] if 'sample_table' in json_info else []
+    samples_table_columns = []
+    if 'sample_table' in json_info:
+      for uid in json_info['sample_table']:
+        if uid not in sample_attributes:
+          fail('Sample table defaults includes a sample attribute that is not available: ' + uid)
+        samples_table_columns.append(sample_attributes[uid])
+  
+    # Set the variants table defaults. The json file can include both annotation versions, or just annotation ids. If
+    # annotation ids are provided, use the latest version
+    annotation_version_ids = []
+    if 'annotations'in json_info:
+      for uid in json_info['annotations']:
+        if uid not in annotations:
+          fail('Unknown annotation uid: ' + uid)
+        annotation_id = annotations[uid]
 
-  # Set the project settings
-  data = project.put_project_settings(selected_sample_attribute_column_ids = samplesTableColumns, selected_variant_annotation_ids = variantAnnotations, default_variant_set_annotation_ids = watchlist)
-
-  # Get the id of the variant watchlist
-  watchlistId = False
-  for variantSet in project.get_variant_sets():
-    if variantSet['name'] == 'Variant Watchlist':
-      watchlistId = variantSet['id']
-      break
-  if watchlistId: project.post_project_dashboard(dashboard_type = 'variant_set', is_active = 'true', variant_set_id = watchlistId)
+        # Find the latest version for this annotation
+        annotation_version_id = False
+        for annotation_version in project.get_variant_annotation_versions(annotation_id):
+          if not annotation_version_id:
+            annotation_version_id = annotation_version['id']
+          elif annotation_version['id'] > annotation_version_id:
+            annotation_version_id = annotation_version['id']
+  
+        # Store the annotation version id
+        annotation_version_ids.append(annotation_version_id)
+  
+    if 'annotation_versions' in json_info:
+      annotation_version_ids = annotation_version_ids + json_info['annotation_versions']
+  
+    # Set the variant watchlist annotation defaults
+    watchlist = []
+    if 'watchlist_annotations' not in json_info:
+      warning('No information on the pinned Variants table annotations - defaults will not be set')
+    else:
+      watchlist = json_info['watchlist_annotations']
+  
+    # Set the project settings
+    data = project.put_project_settings(selected_sample_attribute_column_ids = samples_table_columns, \
+           selected_variant_annotation_version_ids = annotation_version_ids, \
+           default_variant_set_annotation_ids = watchlist)
+  
+#    # Get the id of the variant watchlist
+#    watchlist_id = False
+#    for variant_set in project.get_variant_sets():
+#      if variant_set['name'] == 'Variant Watchlist':
+#        watchlist_id = variant_set['id']
+#        break
+#    if watchlist_id:
+#      project.post_project_dashboard(dashboard_type = 'variant_set', is_active = 'true', variant_set_id = watchlist_id)
 
 # Input options
 def parseCommandLine():

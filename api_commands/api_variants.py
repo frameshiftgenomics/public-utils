@@ -20,6 +20,7 @@ def postUploadVariants(mosaicConfig, filename, fileType, projectId):
 
   command  = 'curl -S -s -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-F "file=@' + str(filename) + '" -F "type=' + str(fileType) + '" -F "create_variant_set=false' + '" '
+  command += '-F "disable_successful_notification=true" '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/variants/upload' + '"'
 
   return command
@@ -31,6 +32,7 @@ def postUploadVariantsWithSet(mosaicConfig, filename, fileType, name, projectId)
 
   command  = 'curl -S -s -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ' + str(token) + '" '
   command += '-F "file=@' + str(filename) + '" -F "type=' + str(fileType) + '" -F "create_variant_set=true" -F "name=' + str(name) + '" '
+  command += '-F "disable_successful_notification=true" '
   command += '"' + str(url) + 'api/v1/projects/' + str(projectId) + '/variants/upload' + '"'
 
   return command

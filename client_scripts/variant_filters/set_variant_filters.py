@@ -7,6 +7,7 @@ import importlib
 import sys
 
 from os.path import exists
+from pprint import pprint
 from sys import path
 
 def main():
@@ -23,56 +24,85 @@ def main():
   # Open an api client project object for the defined project
   project = apiMosaic.get_project(args.project_id)
 
-  # Get information on the sample available in the Mosaic project. Some variant filters require filtering on genotype. The variant filter
-  # description will contain terms like "Proband": "alt". Therefore, the term Proband needs to be converted to a Mosaic sample id. If
-  # genotype based filters are being omitted, this can be skipped
-  samples    = {}
-  hasProband = False
-  proband    = False
-  if not args.no_genotype_filters: 
-    samples = {}
-    for sample in project.get_samples():
-      samples[sample['name']] = {'id': sample['id'], 'relation': False}
-      for attribute in project.get_attributes_for_sample(sample['id']):
-        if attribute['uid'] == 'relation':
-          for value in attribute['values']:
-            if value['sample_id'] == sample['id']:
-              samples[sample['name']]['relation'] = value['value']
-              if value['value'] == 'Proband':
-                if hasProband: fail('Multiple samples in the Mosaic project are listed as the proband')
-                hasProband = True
-                proband    = sample['name']
-              break
+  # Check if this is a collection
+  data = project.get_project()
+  if data['is_collection']:
+    project_ids = []
+    for sub_project in data['collection_projects']:
+      project_ids.append(sub_project['child_project_id'])
+  else:
+    project_ids = [args.project_id]
 
-  # Get all of the annotations in the current project. When creating a filter, the project will be checked to ensure that it has all of the
-  # required annotations before creating the filter
-  annotations    = {}
-  annotationUids = {}
-  for annotation in project.get_variant_annotations():
-    annotations[annotation['name']] = {'id': annotation['id'], 'uid': annotation['uid'], 'type': annotation['value_type'], 'privacy_level': annotation['privacy_level']}
-  for annotation in annotations:
-    annotationUids[annotations[annotation]['uid']] = {'name': annotation, 'type': annotations[annotation]['type']}
+  # Loop over all the projects (for a collection) and apply the filters
+  for project_id in project_ids:
+    project = apiMosaic.get_project(project_id)
+    print('Setting filters for project ', project.name, ' (id:', project_id,')', sep = '')
 
-  # Get HPO terms from Mosaic
-  hpoTerms = []
-  for hpoTerm in project.get_sample_hpo_terms(samples[proband]['id']):
-    hpoTerms.append({'hpo_id': hpoTerm['hpo_id'], 'label': hpoTerm['label']})
-
-  # Determine all of the variant filters that are to be added; remove any filters that already exist with the same name; fill out variant
-  # filter details not in the json (e.g. the uids of private annotations); create the filters; and finally update the project settings to
-  # put the filters in the correct category and sort order. Note that the filters to be applied depend on the family structure. E.g. de novo
-  # filters won't be added to projects without parents
-  sampleMap                 = createSampleMap(samples)
-  annotationMap             = createAnnotationMap(annotations)
-  filtersInfo               = readVariantFiltersJson(args.variant_filters)
-  filterCategories, filters = getFilterCategories(filtersInfo)
-  filters                   = getFilters(filtersInfo, filterCategories, filters, samples, sampleMap, annotations, annotationMap, annotationUids, hpoTerms)
-
-  # Get all of the filters that exist in the project, and check which of these share a name with a filter to be created
-  deleteFilters(project, args.project_id, filters)
-
-  # Create all the required filters and update their categories and sort order in the project settings
-  createFilters(project, args.project_id, annotations, filterCategories, filters)
+    # Get information on the sample available in the Mosaic project. Some variant filters require filtering on genotype. The variant filter
+    # description will contain terms like "Proband": "alt". Therefore, the term Proband needs to be converted to a Mosaic sample id. If
+    # genotype based filters are being omitted, this can be skipped
+    samples    = {}
+    hasProband = False
+    proband    = False
+    if not args.no_genotype_filters: 
+      samples = {}
+      for sample in project.get_samples():
+        samples[sample['name']] = {'id': sample['id'], 'relation': False}
+        for attribute in project.get_attributes_for_sample(sample['id']):
+          if attribute['uid'] == 'relation':
+            for value in attribute['values']:
+              if value['sample_id'] == sample['id']:
+                samples[sample['name']]['relation'] = value['value']
+                if value['value'] == 'Proband':
+                  if hasProband: fail('Multiple samples in the Mosaic project are listed as the proband')
+                  hasProband = True
+                  proband    = sample['name']
+                break
+  
+    # Get all of the annotations in the current project. When creating a filter, the project will be checked to ensure that it has all of the
+    # required annotations before creating the filter
+    annotations    = {}
+    annotationUids = {}
+    for annotation in project.get_variant_annotations():
+  
+      # Loop over the annotation versions and get the latest (highest id)
+      annotation_version_id = False
+      for annotation_version in annotation['annotation_versions']:
+        if not annotation_version_id:
+          annotation_version_id = annotation_version['id']
+        elif annotation_version['id'] > annotation_version_id:
+          annotation_version_id = annotation_version['id']
+  
+      annotations[annotation['name']] = {'id': annotation['id'], 'annotation_version_id': annotation_version_id, 'uid': annotation['uid'], 'type': annotation['value_type'], 'privacy_level': annotation['privacy_level']}
+    for annotation in annotations:
+      annotationUids[annotations[annotation]['uid']] = {'name': annotation, 'type': annotations[annotation]['type'], 'annotation_version_id': annotations[annotation]['annotation_version_id']}
+  
+  
+  #  for annotation in project.get_variant_annotations():
+  #    annotations[annotation['name']] = {'id': annotation['id'], 'uid': annotation['uid'], 'type': annotation['value_type'], 'privacy_level': annotation['privacy_level']}
+  #  for annotation in annotations:
+  #    annotationUids[annotations[annotation]['uid']] = {'name': annotation, 'type': annotations[annotation]['type']}
+  
+    # Get HPO terms from Mosaic
+    hpoTerms = []
+    for hpoTerm in project.get_sample_hpo_terms(samples[proband]['id']):
+      hpoTerms.append({'hpo_id': hpoTerm['hpo_id'], 'label': hpoTerm['label']})
+  
+    # Determine all of the variant filters that are to be added; remove any filters that already exist with the same name; fill out variant
+    # filter details not in the json (e.g. the uids of private annotations); create the filters; and finally update the project settings to
+    # put the filters in the correct category and sort order. Note that the filters to be applied depend on the family structure. E.g. de novo
+    # filters won't be added to projects without parents
+    sampleMap                 = createSampleMap(samples)
+    annotationMap             = createAnnotationMap(annotations)
+    filtersInfo               = readVariantFiltersJson(args.variant_filters)
+    filterCategories, filters = getFilterCategories(filtersInfo)
+    filters                   = getFilters(filtersInfo, filterCategories, filters, samples, sampleMap, annotations, annotationUids, annotationMap, annotationUids, hpoTerms)
+  
+    # Get all of the filters that exist in the project, and check which of these share a name with a filter to be created
+    deleteFilters(project, args.project_id, filters)
+  
+    # Create all the required filters and update their categories and sort order in the project settings
+    createFilters(project, args.project_id, annotations, annotationUids, filterCategories, filters)
 
 # Input options
 def parseCommandLine():
@@ -184,7 +214,7 @@ def getFilterCategories(filtersInfo):
   return categories, filters
 
 # Process all the information on the individual filters
-def getFilters(filtersInfo, categories, filters, samples, sampleMap, annotations, annotationMap, uids, hpoTerms):
+def getFilters(filtersInfo, categories, filters, samples, sampleMap, annotations, annotationUids, annotationMap, uids, hpoTerms):
 
   # Check all required sections and no others are present
   for section in filtersInfo:
@@ -231,7 +261,7 @@ def getFilters(filtersInfo, categories, filters, samples, sampleMap, annotations
           filters[name]['info'] = checkGenotypeFilters(filters[name]['info'], name, list(samples.keys()), sampleMap)
 
         # Check all of the annotation filters
-        filters[name]['info'] = checkAnnotationFilters(filters[name]['info'], name, annotations, annotationMap, uids)
+        filters[name]['info'] = checkAnnotationFilters(filters[name]['info'], name, annotations, annotationUids, annotationMap, uids)
 
         # Check for any HPO information
         if 'hpo_filters' in filters[name]['info']['filters']:
@@ -354,7 +384,7 @@ def checkGenotypeFilters(data, name, sampleIds, sampleMap):
   return data
 
 # Process the annotation filters
-def checkAnnotationFilters(data, name, annotations, annotationMap, uids):
+def checkAnnotationFilters(data, name, annotations, annotationUids, annotationMap, uids):
 
   # Make sure the annotation_filters section exists
   if 'annotation_filters' not in data['filters']:
@@ -450,6 +480,9 @@ def checkAnnotationFilters(data, name, annotations, annotationMap, uids):
       if not hasRequiredValue:
         fail('public_utils/common_components/variant_filters.py: Annotation filter ' + str(name) + ' contains a filter based on a float, but no comparison operators have been included')
 
+    # Include annotation_version_id for the selected uid
+    aFilter['annotation_version_id'] = annotationUids[aFilter['uid']]['annotation_version_id']
+
   # Return the updated annotation information
   return data
 
@@ -486,7 +519,7 @@ def deleteFilters(project, projectId, filters):
       project.delete_variant_filter(existingFilter['id'])
 
 # Create all the required filters and update their categories and sort order in the project settings
-def createFilters(project, projectId, annotations, categories, filters):
+def createFilters(project, projectId, annotations, annotationUids, categories, filters):
   sortedFilters = []
   for category in categories:
     record      = {'category': category, 'sortOrder': []}
@@ -499,19 +532,19 @@ def createFilters(project, projectId, annotations, categories, filters):
 
         # If the variant table display is getting modified, get the ids of the columns to show in the table as an array,
         # the id of the column to sort on and the sort direction
-        columnUids    = []
-        sortColumnUid = None
+        columnIds    = []
+        sortColumnid = None
         sortDirection = None
         if filters[name]['setDisplay']:
           for columnUid in filters[name]['columnUids']:
-            columnUids.append(str(columnUid))
-          #for columnUid in filters[name]['columnUids']: columnUids.append('"' + str(columnUid) + '"')
-          sortColumnUid = filters[name]['sortColumnUid']
+            columnIds.append(annotationUids[columnUid]['annotation_version_id'])
+          sortColumnId = str(annotationUids[filters[name]['sortColumnUid']]['annotation_version_id'])
           if filters[name]['sortDirection'] == 'ascending':
             sortDirection = 'ASC'
           elif filters[name]['sortDirection'] == 'descending':
             sortDirection = 'DESC'
-        filterInfo = project.post_variant_filter(name = name, category = category, column_uids = columnUids, sort_column_uid = sortColumnUid, sort_direction = sortDirection, filter_data = filters[name]['info']['filters'])
+
+        filterInfo = project.post_variant_filter(name = name, category = category, column_ids = columnIds, sort_column_id = sortColumnId, sort_direction = sortDirection, filter_data = filters[name]['info']['filters'])
         filterId   = filterInfo['id']
         record['sortOrder'].append(str(filterId))
         useCategory = True
