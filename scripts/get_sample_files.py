@@ -66,9 +66,9 @@ def getFiles(args):
     for fileId in data:
       print('  File: ', fileId, sep = '')
       print('    Name: ', data[fileId]['name'], sep = '')
+      print('    Type: ', data[fileId]['type'], sep = '')
       print('    URI:  ', data[fileId]['uri'], sep = '')
       print('    VCF sample name: ', data[fileId]['vcf_sample_name'], sep = '')
-      print(data); exit(0)
 
 # If the script fails, provide an error message and exit
 def fail(message):

@@ -15,8 +15,11 @@ def main():
   apiStore  = Store(config_file = args.client_config)
   apiMosaic = Mosaic(config_file = args.client_config)
 
-  # Get the project settings
-  print(apiMosaic.get_job_status(args.job_id)['status'])
+  # Open an api client project object for the defined project
+  project = apiMosaic.get_project(args.project_id)
+
+  # Delete the annotation
+  data = project.delete_variant_annotation(args.annotation_id)
 
 # Input options
 def parseCommandLine():
@@ -26,8 +29,11 @@ def parseCommandLine():
   parser.add_argument('--client_config', '-c', required = True, metavar = 'string', help = 'The ini config file for Mosaic')
   parser.add_argument('--api_client', '-a', required = True, metavar = 'string', help = 'The api_client directory')
 
-  # The job id to query
-  parser.add_argument('--job_id', '-j', required = True, metavar = 'integer', help = 'The Mosaic redis job is to get the status of')
+  # The project id to which the filter is to be added is required
+  parser.add_argument('--project_id', '-p', required = True, metavar = 'integer', help = 'The Mosaic project id to get annotations for')
+
+  # The id of the annotation to delete
+  parser.add_argument('--annotation_id', '-i', required = True, metavar = 'integer', help = 'The id of the annotation to delete')
 
   return parser.parse_args()
 

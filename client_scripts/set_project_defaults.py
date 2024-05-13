@@ -51,11 +51,14 @@ def main():
     for sample_attribute in project.get_sample_attributes():
       sample_attributes[sample_attribute['uid']] = sample_attribute['id']
   
+    # Get all the annotations in the project
     annotations = {}
     for annotation in project.get_variant_annotations():
       annotations[annotation['uid']] = annotation['id']
 
+
     # Set the analytics default charts
+
   
     # Set the samples table defaults
     #samples_table_columns = json_info['sample_table'] if 'sample_table' in json_info else []
@@ -69,11 +72,28 @@ def main():
     # Set the variants table defaults. The json file can include both annotation versions, or just annotation ids. If
     # annotation ids are provided, use the latest version
     annotation_version_ids = []
+    annotations_to_import = False
     if 'annotations'in json_info:
       for uid in json_info['annotations']:
+
+        # If the uid does not correspond to an annotation in the project it will need to be imported
         if uid not in annotations:
-          fail('Unknown annotation uid: ' + uid)
-        annotation_id = annotations[uid]
+
+          # If annotations_to_import doesn't exist, get all the annotations that can be imported.
+          # We only call this route if it's required, but once it exists, get the id of the annotation
+          # that has been specified and import it
+          if not annotations_to_import:
+            annotations_to_import = {}
+            for annotation in project.get_variant_annotations_to_import():
+              annotations_to_import[annotation['uid']] = annotation['id']
+
+          # Get the id of the annotation to import and import it
+          annotation_id = annotations_to_import[uid]
+          project.post_import_annotation(annotation_id)
+
+        # Otherwise, just get the annotation id for the annotation in the project
+        else:
+          annotation_id = annotations[uid]
 
         # Find the latest version for this annotation
         annotation_version_id = False

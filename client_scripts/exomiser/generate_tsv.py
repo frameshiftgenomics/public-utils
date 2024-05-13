@@ -39,6 +39,7 @@ def main():
   annotations = create_annotation(project, existing_annotations, annotations, 'Gene Variant Score', 'float')
   annotations = create_annotation(project, existing_annotations, annotations, 'Variant Score', 'float')
   annotations = create_annotation(project, existing_annotations, annotations, 'MOI', 'string')
+  annotations = create_annotation(project, existing_annotations, annotations, 'Contributing Variant', 'string')
 
   # Open the output tsv file
   output_tsv = open(args.output_tsv, 'w')
@@ -50,6 +51,7 @@ def main():
     annotations['Gene Variant Score']['uid'], \
     annotations['Variant Score']['uid'], \
     annotations['MOI']['uid'], \
+    annotations['Contributing Variant']['uid'], \
     sep = '\t', file = output_tsv)
 
   # Store the variants information
@@ -82,7 +84,8 @@ def main():
                    'pheno': fields[7],
                    'geneVar': fields[8],
                    'variant': fields[9],
-                   'moi': fields[4]}
+                   'moi': fields[4],
+                   'contrib': fields[10]}
 
     # If the ref or alt allele are 'N', change them to '*'
     if variantInfo[i]['ref'] == 'N': variantInfo[i]['ref'] = '*'
@@ -93,7 +96,16 @@ def main():
     if chrom not in variants: variants[chrom] = {}
     if start not in variants[chrom]: variants[chrom][start] = {}
     if end not in variants[chrom][start]:
-      variants[chrom][start][end] = {'ref': variantInfo[i]['ref'], 'alt': variantInfo[i]['alt'], 'rank': rank, 'pvalue': variantInfo[i]['pvalue'], 'comb': variantInfo[i]['comb'], 'pheno': variantInfo[i]['pheno'], 'geneVar': variantInfo[i]['geneVar'], 'variant': variantInfo[i]['variant'], 'moi': variantInfo[i]['moi']}
+      variants[chrom][start][end] = {'ref': variantInfo[i]['ref'], \
+                                     'alt': variantInfo[i]['alt'], \
+                                     'rank': rank, 
+                                     'pvalue': variantInfo[i]['pvalue'], \
+                                     'comb': variantInfo[i]['comb'], \
+                                     'pheno': variantInfo[i]['pheno'], \
+                                     'geneVar': variantInfo[i]['geneVar'], \
+                                     'variant': variantInfo[i]['variant'], \
+                                     'moi': variantInfo[i]['moi'], \
+                                     'contrib': variantInfo[i]['contrib']}
     else:
       variants[chrom][start][end]['rank']    = variants[chrom][start][end]['rank'] + ',' + rank
       variants[chrom][start][end]['pvalue']  = variants[chrom][start][end]['pvalue'] + ',' + variantInfo[i]['pvalue']
@@ -102,12 +114,24 @@ def main():
       variants[chrom][start][end]['geneVar'] = variants[chrom][start][end]['geneVar'] + ',' + variantInfo[i]['geneVar']
       variants[chrom][start][end]['variant'] = variants[chrom][start][end]['variant'] + ',' + variantInfo[i]['variant']
       variants[chrom][start][end]['moi']     = variants[chrom][start][end]['moi'] + ',' + variantInfo[i]['moi']
+      variants[chrom][start][end]['contrib'] = variants[chrom][start][end]['contrib'] + ',' + variantInfo[i]['contrib']
 
   # Loop over all variants and write them to file
   for chrom in variants:
     for start in variants[chrom]:
       for end in variants[chrom][start]:
-         print(chrom, start, end, variants[chrom][start][end]['ref'], variants[chrom][start][end]['alt'], variants[chrom][start][end]['rank'], variants[chrom][start][end]['pvalue'], variants[chrom][start][end]['comb'], variants[chrom][start][end]['pheno'], variants[chrom][start][end]['geneVar'], variants[chrom][start][end]['variant'], variants[chrom][start][end]['moi'], sep = '\t', file = output_tsv)
+         print(chrom, start, end, \
+           variants[chrom][start][end]['ref'], \
+           variants[chrom][start][end]['alt'], \
+           variants[chrom][start][end]['rank'], \
+           variants[chrom][start][end]['pvalue'], \
+           variants[chrom][start][end]['comb'], \
+           variants[chrom][start][end]['pheno'], \
+           variants[chrom][start][end]['geneVar'], \
+           variants[chrom][start][end]['variant'], \
+           variants[chrom][start][end]['moi'], \
+           variants[chrom][start][end]['contrib'], \
+           sep = '\t', file = output_tsv)
 
   # Close the input and output files
   input_tsv.close()

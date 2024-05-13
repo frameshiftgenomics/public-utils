@@ -18,8 +18,10 @@ def main():
   project = apiMosaic.get_project(args.project_id)
 
   # Upload the variant annotations
-  data = project.post_annotation_file(args.tsv, allow_deletion = 'true', disable_successful_notification = 'true')
-  print(data['message'], '. Annotation upload job id: ', data['redis_job_id'], sep = '')
+  allow_deletion = 'true' if args.allow_deletion else 'false'
+  disable_successful_notification = 'true' if args.disable_successful_notification else 'false'
+  data = project.post_annotation_file(args.tsv, allow_deletion = allow_deletion, disable_successful_notification = disable_successful_notification)
+  print(data['message'], '. Annotation upload job id: ', data['redis_job_id'], ', file: ', args.tsv, sep = '')
 
 # Input options
 def parseCommandLine():
@@ -33,7 +35,9 @@ def parseCommandLine():
   parser.add_argument('--project_id', '-p', required = True, metavar = 'integer', help = 'The Mosaic project id to add variant filters to')
 
   # Additional arguments
-  parser.add_argument('--tsv', '-t', required = True, metavar = 'string', help = 'The annotatoin tsv file to upload')
+  parser.add_argument('--tsv', '-t', required = True, metavar = 'string', help = 'The annotation tsv file to upload')
+  parser.add_argument('--allow_deletion', '-d', required = False, action = 'store_true', help = 'If tsv file contains blank annotation, overwrite the existing value in the database will null. Default: false')
+  parser.add_argument('--disable_successful_notification', '-n', required = False, action = 'store_false', help = 'Only send notifications if the upload fails. Default: true')
 
   return parser.parse_args()
 

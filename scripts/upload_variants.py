@@ -75,7 +75,7 @@ def uploadVariants(args):
     except: fail('Couldn\'t upload variants to Mosaic')
 
   # If a message is returned instead of data, check that the user has access to the project
-  if 'message' in data: print('Upload resulted in the following message:\n  ' + str(data['message']))
+  print(str(data['message']), '. Variant upload job id: ', str(data['redis_job_id']), sep = '')
 
 # If the script fails, provide an error message and exit
 def fail(message):
@@ -88,6 +88,7 @@ mosaicConfig = {}
 # The available display types
 allowedMethods = ["allele"]
 allowedMethods.append("no-validation")
+allowedMethods.append("raw")
 
 if __name__ == "__main__":
   main()
